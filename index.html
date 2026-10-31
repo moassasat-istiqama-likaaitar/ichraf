@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#A0522D">
+<title>الإشراف التربوي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --clay:#A0522D; --clay-d:#7A3B1E; --clay-l:#F4E2D3; --amber:#E69138; --amber-l:#FCEBD5;
+  --bg:#FBF6EF; --card:#FFFFFF; --ink:#2B1D14; --muted:#7A6A5E; --line:#EADBC8; --soft:#F6EEE4;
+  --ok:#2E7D5B; --ok-l:#E2F1E9; --warn:#B9770E; --warn-l:#FBEFD9; --bad:#B23A2E; --bad-l:#F8E1DE;
+  --s1:#B23A2E; --s2:#D9822B; --s3:#C9A227; --s4:#6E9E4F; --s5:#2E7D5B;
+  --shadow:0 1px 2px rgba(60,30,10,.06),0 4px 14px rgba(60,30,10,.06);
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#17110D; --card:#221A14; --ink:#F3E9DD; --muted:#B5A595; --line:#3A2C22; --soft:#2B2119;
+    --clay-l:#3A2418; --amber-l:#3B2A14; --ok-l:#16302A; --warn-l:#3A2D12; --bad-l:#3A1C18;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#17110D; --card:#221A14; --ink:#F3E9DD; --muted:#B5A595; --line:#3A2C22; --soft:#2B2119;
+  --clay-l:#3A2418; --amber-l:#3B2A14; --ok-l:#16302A; --warn-l:#3A2D12; --bad-l:#3A1C18;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 14px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Naskh Arabic",serif;font-size:16px;line-height:1.7;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,h4,button,.btn,.chip,.num,label,.tab,select,input{font-family:"Changa",sans-serif}
+h1,h2,h3,h4{margin:0;line-height:1.35}
+a{color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+
+/* الشريط العلوي */
+.top{position:sticky;top:0;z-index:20;background:var(--clay);color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.12)}
+.top .wrap{display:flex;align-items:center;gap:12px;min-height:58px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.mark{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
+.brand-t{min-width:0}
+.brand-t b{display:block;font-family:Changa;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand-t small{display:block;font-family:Changa;font-size:12.5px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{background:rgba(255,255,255,.14);border:0;color:#fff;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none}
+.icon-btn:hover{background:rgba(255,255,255,.24)}
+
+/* بطاقات وعناصر */
+main{padding:18px 0 110px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:16px}
+.stack>*+*{margin-top:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.small{font-size:13.5px}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:380px){.kpi .num{font-size:20px}.kpi{padding:10px}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.kpi .num{font-size:24px;font-weight:700;color:var(--clay)}
+.kpi .lbl{font-size:13px;color:var(--muted);font-family:Changa}
+.page-h{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.page-h h2{font-size:21px;flex:1;min-width:0}
+.back{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;height:38px;padding:0 12px;display:inline-flex;align-items:center;gap:6px;font-size:14px}
+
+.btn{border:0;border-radius:11px;padding:10px 16px;font-size:15px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;transition:transform .08s,filter .15s}
+.btn:active{transform:scale(.98)}
+.btn-p{background:var(--clay);color:#fff}
+.btn-p:hover{filter:brightness(1.08)}
+.btn-a{background:var(--amber);color:#2B1D14}
+.btn-g{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.btn-ok{background:var(--ok);color:#fff}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.btn-block{width:100%}
+
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:500;background:var(--soft);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.chip.ok{background:var(--ok-l);color:var(--ok);border-color:transparent}
+.chip.warn{background:var(--warn-l);color:var(--warn);border-color:transparent}
+.chip.bad{background:var(--bad-l);color:var(--bad);border-color:transparent}
+.chip.clay{background:var(--clay-l);color:var(--clay);border-color:transparent}
+
+.field{display:block}
+.field>span{display:block;font-size:14px;font-weight:500;margin-bottom:5px;color:var(--muted);font-family:Changa}
+input,select,textarea{width:100%;border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:11px;padding:10px 12px;font-size:16px;min-height:46px;outline:none}
+textarea{font-family:"Noto Naskh Arabic",serif;min-height:110px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--clay);box-shadow:0 0 0 3px var(--clay-l)}
+.form{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.form .full{grid-column:1/-1}
+
+.search{position:relative}
+.search input{padding-inline-start:40px}
+.search svg{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);opacity:.5}
+
+.tabs{display:flex;gap:6px;background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:4px;overflow-x:auto}
+.tab{border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:9px;font-size:14.5px;font-weight:500;white-space:nowrap;flex:1}
+.tab.on{background:var(--card);color:var(--clay);box-shadow:var(--shadow);font-weight:600}
+
+/* بطاقة معلم */
+.tcard{display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:border-color .15s,transform .1s}
+.tcard:hover{border-color:var(--amber)}
+.tcard h3{font-size:16.5px}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:30px;height:8px;border-radius:5px;background:var(--line)}
+.dot.open{background:var(--amber)}
+.dot.done{background:var(--ok)}
+
+/* الزيارات */
+.slot{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+.slot .n{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;font-family:Changa;font-weight:700;background:var(--soft);color:var(--muted);flex:none}
+.slot.done .n{background:var(--ok-l);color:var(--ok)}
+.slot.open .n{background:var(--amber-l);color:var(--warn)}
+.slot .b{flex:1;min-width:0}
+.score-big{font-family:Changa;font-weight:700;font-size:22px;color:var(--ok)}
+
+.bar{height:10px;border-radius:6px;background:var(--soft);overflow:hidden;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--clay));border-radius:6px;transition:width .3s}
+
+/* الملء */
+.fill-layout{display:grid;gap:16px}
+@media (min-width:900px){.fill-layout{grid-template-columns:250px 1fr}.axis-nav{position:sticky;top:76px;align-self:start;max-height:calc(100vh - 100px);overflow:auto}}
+@media (max-width:899px){.axis-nav{display:none}}
+.axis-nav a{display:flex;justify-content:space-between;gap:8px;padding:7px 10px;border-radius:9px;text-decoration:none;font-family:Changa;font-size:14px;color:var(--ink)}
+.axis-nav a:hover{background:var(--soft)}
+.axis-nav .sec{font-family:Changa;font-weight:600;color:var(--clay);font-size:13px;margin:10px 4px 4px}
+.sec-h{font-size:17px;color:var(--clay);margin:20px 2px 8px;display:flex;align-items:center;gap:8px}
+.sec-h:before{content:"";width:6px;height:20px;border-radius:3px;background:var(--amber)}
+.axis{padding:0;overflow:hidden}
+.axis>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;font-family:Changa;font-weight:600;font-size:16px}
+.axis>summary::-webkit-details-marker{display:none}
+.axis>summary .cnt{margin-inline-start:auto}
+.axis>summary:after{content:"";width:9px;height:9px;border-left:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .2s;flex:none}
+.axis[open]>summary:after{transform:rotate(135deg)}
+.item{padding:12px 16px;border-top:1px solid var(--line);display:grid;gap:8px}
+@media (min-width:700px){.item{grid-template-columns:1fr auto;align-items:center}}
+.item .t{font-size:15.5px}
+.item .tag{font-family:Changa;font-size:11.5px;color:var(--muted);margin-inline-start:6px}
+.item.missing .t:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--amber);margin-inline-end:7px;vertical-align:middle}
+.scale{display:flex;gap:6px}
+.sv{width:44px;height:44px;border-radius:11px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-family:Changa;font-weight:700;font-size:17px;transition:all .12s}
+.sv:hover{border-color:var(--muted)}
+.sv.on{color:#fff;border-color:transparent}
+.sv.on.v1{background:var(--s1)}.sv.on.v2{background:var(--s2)}.sv.on.v3{background:var(--s3)}.sv.on.v4{background:var(--s4)}.sv.on.v5{background:var(--s5)}
+.sv.draft{box-shadow:0 0 0 3px var(--amber-l),0 0 0 5px var(--amber)}
+.numin{width:110px;text-align:center}
+.numin.draft{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-l)}
+
+.savebar{position:fixed;inset-inline:0;bottom:0;z-index:15;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(60,30,10,.08);padding:10px 0 calc(10px + env(safe-area-inset-bottom))}
+.savebar .wrap{display:flex;align-items:center;gap:12px}
+.savebar .info{flex:1;min-width:0;font-family:Changa;font-size:14px}
+
+.sess-pick{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.sess-pick button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:11px;padding:8px 12px;text-align:start;min-width:150px;font-size:13.5px;line-height:1.5}
+.sess-pick button.on{border-color:var(--clay);background:var(--clay-l)}
+.sess-pick b{display:block;font-size:14.5px}
+
+/* جداول بسيطة */
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px}
+.tbl th,.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:start}
+.tbl th{font-family:Changa;font-weight:600;color:var(--muted);font-size:13px}
+.tbl-wrap{overflow-x:auto}
+
+/* نافذة ونخب */
+.modal-bg{position:fixed;inset:0;background:rgba(30,15,5,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
+@media (min-width:640px){.modal-bg{align-items:center}}
+.modal{background:var(--card);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));animation:up .2s}
+@media (min-width:640px){.modal{border-radius:18px}}
+.modal h3{font-size:19px;margin-bottom:12px}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+@keyframes fade{from{opacity:0}}
+@keyframes up{from{transform:translateY(24px);opacity:.4}}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#2B1D14;color:#fff;padding:10px 18px;border-radius:12px;z-index:60;font-family:Changa;font-size:14.5px;box-shadow:var(--shadow);max-width:calc(100% - 32px);animation:up .2s}
+.toast.err{background:var(--bad)}
+.loading{position:fixed;inset:0;z-index:70;background:rgba(251,246,239,.55);display:grid;place-items:center}
+:root[data-theme="dark"] .loading{background:rgba(23,17,13,.55)}
+.spin{width:42px;height:42px;border-radius:50%;border:4px solid var(--clay-l);border-top-color:var(--clay);animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* الدخول */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:radial-gradient(circle at 20% 0%,var(--amber-l),transparent 50%),radial-gradient(circle at 100% 100%,var(--clay-l),transparent 55%),var(--bg)}
+.login .card{width:100%;max-width:420px;padding:26px 22px}
+.login .logo{width:62px;height:62px;border-radius:18px;background:var(--clay);display:grid;place-items:center;margin:0 auto 12px}
+.login h1{text-align:center;font-size:24px;color:var(--clay)}
+.login p.sub{text-align:center;margin:2px 0 18px}
+.code-big{font-family:Changa;font-size:38px;font-weight:700;letter-spacing:10px;text-align:center;color:var(--clay);background:var(--clay-l);border-radius:14px;padding:10px;direction:ltr}
+.empty{text-align:center;padding:34px 16px;color:var(--muted)}
+.banner{border-radius:12px;padding:10px 14px;font-family:Changa;font-size:14px;background:var(--warn-l);color:var(--warn)}
+.banner.info{background:var(--clay-l);color:var(--clay)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ======================== الإعداد ======================== */
+// ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
+const API_URL = 'PASTE_YOUR_WEB_APP_URL_HERE';
+
+/* ======================== أدوات ======================== */
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const LS = {
+  get(k){ try{ return JSON.parse(localStorage.getItem(k)); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+const ICON = {
+  logo:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M9 8h6M9 12h4"/></svg>',
+  logoBig:'<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M9 8h6M9 12h4"/></svg>',
+  back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
+  search:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  out:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h12"/></svg>',
+  moon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  sync:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16M3 12a9 9 0 0 1 15.5-6.2L21 8M21 3v5h-5M3 21v-5h5"/></svg>'
+};
+
+let S = { auth: LS.get('ishraf.auth'), B: null, login: {}, tab: LS.get('ishraf.tab') || 'sup', q: '', filter: 'all', fillSession: {} };
+
+function toast(msg, err){
+  document.querySelectorAll('.toast').forEach(x => x.remove());
+  const t = document.createElement('div');
+  t.className = 'toast' + (err ? ' err' : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), err ? 4200 : 2600);
+}
+let loadingN = 0;
+function loading(on){
+  loadingN += on ? 1 : -1;
+  let el = $('#loading');
+  if (loadingN > 0 && !el){ el = document.createElement('div'); el.id='loading'; el.className='loading'; el.innerHTML='<div class="spin"></div>'; document.body.appendChild(el); }
+  if (loadingN <= 0 && el){ el.remove(); loadingN = 0; }
+}
+
+async function api(action, payload = {}, opts = {}){
+  if (!opts.silent) loading(true);
+  try{
+    const res = await fetch(API_URL, {
+      method:'POST', redirect:'follow',
+      headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ action, auth: S.auth ? { school:S.auth.school, user:S.auth.user, code:S.auth.code } : null }, payload))
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || 'خطأ غير معروف');
+    return j.data;
+  } catch(e){
+    if (e instanceof TypeError) throw new Error('تعذّر الاتصال بالخادم، تحقق من الإنترنت');
+    throw e;
+  } finally { if (!opts.silent) loading(false); }
+}
+
+function modal(html, onMount, onClose){
+  const bg = document.createElement('div');
+  bg.className = 'modal-bg';
+  bg.innerHTML = '<div class="modal">' + html + '</div>';
+  document.body.appendChild(bg);
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; bg.remove(); if (onClose) onClose(); };
+  bg.addEventListener('click', e => { if (e.target === bg) close(); });
+  bg.querySelectorAll('[data-close]').forEach(b => b.onclick = close);
+  if (onMount) onMount(bg.querySelector('.modal'), close);
+  const first = bg.querySelector('input:not([type=file]),select,textarea');
+  if (first && matchMedia('(min-width:640px)').matches) first.focus();
+  return close;
+}
+function confirmBox(title, text, okLabel){
+  return new Promise(res => {
+    let ok = false;
+    modal(`<h3>${esc(title)}</h3><p>${text}</p><div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="cfOk">${esc(okLabel||'تأكيد')}</button></div>`,
+      (m, close) => { m.querySelector('#cfOk').onclick = () => { ok = true; close(); }; },
+      () => res(ok));
+  });
+}
+
+/* ======================== السمة ======================== */
+function applyTheme(){ const t = LS.get('ishraf.theme'); if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); }
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  LS.set('ishraf.theme', cur === 'dark' ? 'light' : 'dark'); applyTheme();
+}
+applyTheme();
+
+/* ======================== البيانات ======================== */
+const B = () => S.B;
+const isDir = () => S.auth && S.auth.role === 'مدير';
+const tName = t => t ? `${t.last} ${t.first}` : '—';
+const allTeachers = () => B().teachers.concat(B().extraTeachers || []);
+const teacher = id => allTeachers().find(t => t.id === id);
+const userName = id => (B().users.find(u => u.id === id) || {}).name || '—';
+const visitsOf = tid => B().visits.filter(v => v.teacher === tid).sort((a,b) => a.number - b.number);
+const sessionsOf = vid => B().sessions.filter(s => s.visit === vid).sort((a,b) => a.number - b.number);
+const resultsOf = vid => B().results[vid] || {};
+const itemsFor = type => B().cfg.items.filter(it => it.scope === 'الكل' || it.scope === type);
+const axis = id => B().cfg.axes.find(a => a.id === id);
+const draftKey = vid => 'ishraf.draft.' + S.auth.school + '.' + vid;
+const getDraft = vid => LS.get(draftKey(vid)) || {};
+const setDraft = (vid, d) => Object.keys(d).length ? LS.set(draftKey(vid), d) : LS.del(draftKey(vid));
+
+function progress(v){
+  const t = teacher(v.teacher);
+  const items = itemsFor(t ? t.type : '');
+  const r = resultsOf(v.id);
+  const done = items.filter(it => r[it.id] !== undefined).length;
+  return { done, total: items.length, pct: items.length ? Math.round(done * 100 / items.length) : 0 };
+}
+
+function computeScore(items, scores){
+  const cfg = B().cfg;
+  let sum = 0, w = 0;
+  const perAxis = {};
+  cfg.axes.forEach(ax => {
+    const vals = items.filter(it => it.axis === ax.id && it.kind === 'علامة' && scores[it.id] !== undefined).map(it => Number(scores[it.id]));
+    if (!vals.length) return;
+    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+    perAxis[ax.id] = avg;
+    if (ax.coef > 0){ sum += avg * ax.coef; w += ax.coef; }
+  });
+  const score = w ? Math.round(((sum / w - cfg.min) / (cfg.max - cfg.min)) * 1000) / 10 : null;
+  let grade = '';
+  if (score !== null) cfg.scale.forEach(s => { if (score >= s.min) grade = s.label; });
+  return { score, grade, perAxis };
+}
+
+function teacherState(t){
+  const vs = visitsOf(t.id);
+  if (vs.some(v => v.status === 'مفتوحة')) return 'open';
+  if (vs.filter(v => v.status === 'مكتملة').length >= t.planned) return 'done';
+  return vs.length ? 'progress' : 'none';
+}
+
+async function reload(silent){
+  S.B = await api('bootstrap', {}, { silent });
+}
+
+/* ======================== التوجيه ======================== */
+function go(h){ if (location.hash === h) render(); else location.hash = h; }
+window.addEventListener('hashchange', render);
+
+async function boot(){
+  if (!S.auth) return render();
+  try { await reload(); }
+  catch(e){
+    if (/الجلسة|الحساب|الرمز المؤقت/.test(e.message)) { logout(true); toast(e.message, true); return; }
+    toast(e.message, true);
+  }
+  render();
+}
+
+function logout(silent){
+  S.auth = null; S.B = null; LS.del('ishraf.auth');
+  if (!silent) toast('تم الخروج');
+  location.hash = '';
+  render();
+}
+
+function render(){
+  if (!S.auth || !S.B) return renderLogin();
+  if (S.lastRoute !== location.hash){ S.lastRoute = location.hash; window.scrollTo(0, 0); }
+  S.onChange = null; S.onInput = null;
+  const h = location.hash.replace(/^#\/?/, '').split('/');
+  const [r, id] = h;
+  let html;
+  if (r === 't') html = viewTeacher(id);
+  else if (r === 'v') html = viewVisit(id);
+  else if (r === 'fill') html = viewFill(id);
+  else if (r === 'close') html = viewClose(id);
+  else html = isDir() ? viewDirector() : viewSupervisor();
+  $('#app').innerHTML = shell(html);
+  bindShell();
+  if (r === 'fill') bindFill(id);
+  if (r === 'close') bindClose(id);
+}
+
+function shell(inner){
+  return `<header class="top"><div class="wrap">
+      <div class="brand"><div class="mark">${ICON.logo}</div>
+        <div class="brand-t"><b>${esc(B().school.name || 'الإشراف التربوي')}</b><small>${esc(S.auth.name)} · ${esc(S.auth.role)} · ${esc(B().cfg.season)}</small></div></div>
+      <button class="icon-btn" data-act="sync" title="تحديث">${ICON.sync}</button>
+      <button class="icon-btn" data-act="theme" title="الوضع الليلي">${ICON.moon}</button>
+      <button class="icon-btn" data-act="logout" title="خروج">${ICON.out}</button>
+    </div></header><main><div class="wrap">${inner}</div></main>`;
+}
+
+function bindShell(){
+  $('#app').onclick = async e => {
+    const el = e.target.closest('[data-go],[data-act]');
+    if (!el) return;
+    if (el.dataset.go !== undefined) return go(el.dataset.go);
+    const fn = ACT[el.dataset.act];
+    if (fn) { e.preventDefault(); try { await fn(el); } catch(err){ toast(err.message, true); } }
+  };
+  $('#app').oninput = e => {
+    if (e.target.id === 'q'){ S.q = e.target.value; const pos = e.target.selectionStart; render(); const q = $('#q'); if (q){ q.focus(); q.setSelectionRange(pos,pos); } return; }
+    if (S.onInput) S.onInput(e);
+  };
+  $('#app').onchange = e => { if (S.onChange) S.onChange(e); };
+}
+
+/* ======================== الدخول ======================== */
+async function renderLogin(){
+  const L = S.login;
+  const last = LS.get('ishraf.last') || {};
+  $('#app').innerHTML = `<div class="login"><div class="card">
+    <div class="logo">${ICON.logoBig}</div>
+    <h1>الإشراف التربوي</h1>
+    <p class="sub muted small">${L.mustChange ? 'اختر رمزك الشخصي' : 'الدخول إلى حسابك'}</p>
+    <div id="lb" class="stack"></div>
+  </div></div>`;
+  const lb = $('#lb');
+
+  if (L.mustChange){
+    lb.innerHTML = `<div class="banner info">مرحبًا ${esc(L.mustChange.name)}، هذا دخولك الأول. ضع رمزًا شخصيًا تحفظه (4 إلى 8 أرقام).</div>
+      <label class="field"><span>الرمز الجديد</span><input id="n1" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password"></label>
+      <label class="field"><span>تأكيد الرمز</span><input id="n2" type="password" inputmode="numeric" maxlength="8" autocomplete="new-password"></label>
+      <button class="btn btn-p btn-block" id="saveCode">حفظ الرمز والدخول</button>
+      <button class="btn btn-g btn-block" id="cancelCode">رجوع</button>`;
+    $('#cancelCode').onclick = () => { S.login.mustChange = null; S.auth = null; renderLogin(); };
+    $('#saveCode').onclick = async () => {
+      const a = $('#n1').value.trim(), b = $('#n2').value.trim();
+      if (!/^\d{4,8}$/.test(a)) return toast('الرمز يجب أن يكون من 4 إلى 8 أرقام', true);
+      if (a !== b) return toast('الرمزان غير متطابقين', true);
+      try{
+        await api('changeCode', { newCode: a });
+        S.auth.code = a; LS.set('ishraf.auth', S.auth); S.login = {};
+        toast('تم حفظ رمزك');
+        await boot();
+      } catch(e){ toast(e.message, true); }
+    };
+    return;
+  }
+
+  if (!L.schools){
+    lb.innerHTML = '<div style="display:grid;place-items:center;padding:20px"><div class="spin"></div></div>';
+    try { L.schools = await api('schools', {}, { silent:true }); }
+    catch(e){ lb.innerHTML = `<div class="banner">${esc(e.message)}</div><button class="btn btn-g btn-block" onclick="renderLogin()">إعادة المحاولة</button>`; return; }
+    if (!L.school && last.school && L.schools.some(s => s.code === last.school)) L.school = last.school;
+    if (L.school){ try { L.users = await api('users', { school: L.school }, { silent:true }); } catch(e){} }
+  }
+  const users = L.users || [];
+  lb.innerHTML = `
+    <label class="field"><span>المدرسة</span>
+      <select id="sch"><option value="">— اختر المدرسة —</option>${L.schools.map(s => `<option value="${esc(s.code)}" ${s.code===L.school?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>
+    <label class="field"><span>الاسم</span>
+      <select id="usr" ${L.school ? '' : 'disabled'}><option value="">— اختر اسمك —</option>${users.map(u => `<option value="${esc(u.id)}" ${u.id===(L.user||last.user)?'selected':''}>${esc(u.name)} (${esc(u.role)})</option>`).join('')}</select></label>
+    <label class="field"><span>الرمز</span><input id="cod" type="password" inputmode="numeric" maxlength="8" autocomplete="current-password"></label>
+    <button class="btn btn-p btn-block" id="doLogin">دخول</button>
+    <p class="muted small" style="text-align:center;margin:4px 0 0">نسيت رمزك؟ اتصل بالإدارة العامة لإعادة تعيينه.</p>`;
+  $('#sch').onchange = async e => {
+    L.school = e.target.value; L.user = ''; L.users = [];
+    if (L.school){ try { L.users = await api('users', { school: L.school }); } catch(err){ toast(err.message, true); } }
+    renderLogin();
+  };
+  $('#usr').onchange = e => { L.user = e.target.value; };
+  $('#cod').onkeydown = e => { if (e.key === 'Enter') $('#doLogin').click(); };
+  $('#doLogin').onclick = async () => {
+    const school = $('#sch').value, user = $('#usr').value, code = $('#cod').value.trim();
+    if (!school || !user || !code) return toast('أكمل المدرسة والاسم والرمز', true);
+    try{
+      const r = await api('login', { auth: { school, user, code } });
+      S.auth = { school, user, code, name: r.user.name, role: r.user.role, schoolName: r.school.name };
+      LS.set('ishraf.last', { school, user });
+      if (r.mustChange){ S.login.mustChange = r.user; return renderLogin(); }
+      LS.set('ishraf.auth', S.auth); S.login = {};
+      location.hash = '';
+      await boot();
+    } catch(e){ toast(e.message, true); }
+  };
+}
+
+/* ======================== المشرف: معلميّ ======================== */
+function teacherCard(t){
+  const vs = visitsOf(t.id);
+  const dots = Array.from({ length: Math.max(t.planned, vs.length) }, (_, i) => {
+    const v = vs.find(x => x.number === i + 1);
+    return `<span class="dot ${v ? (v.status === 'مكتملة' ? 'done' : 'open') : ''}"></span>`;
+  }).join('');
+  const last = vs.filter(v => v.score !== null).pop();
+  const st = teacherState(t);
+  const chip = { open:'<span class="chip warn">زيارة مفتوحة</span>', done:'<span class="chip ok">اكتملت الزيارات</span>', progress:'<span class="chip">جارية</span>', none:'<span class="chip">لم تبدأ</span>' }[st];
+  return `<div class="card tcard" data-go="#/t/${esc(t.id)}">
+    <div class="spread"><h3>${esc(tName(t))}</h3>${chip}</div>
+    <div class="row small muted"><span>${esc(t.level || '—')}</span>·<span>${esc(t.type || '—')}</span>${t.experience === 0 ? '<span class="chip clay">جديد</span>' : ''}</div>
+    <div class="spread"><div class="dots">${dots}</div>${last ? `<span class="num" style="color:var(--ok);font-weight:700">${last.score}</span>` : ''}</div>
+    ${isDir() ? `<div class="small muted">المشرف: ${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</div>` : ''}
+  </div>`;
+}
+
+function filterTeachers(list){
+  const q = S.q.trim();
+  return list.filter(t => (!q || tName(t).includes(q) || (t.level||'').includes(q)) && (S.filter === 'all' || teacherState(t) === S.filter || (S.filter === 'none' && teacherState(t) === 'progress')));
+}
+
+function viewSupervisor(){
+  const ts = B().teachers.filter(t => t.active);
+  const planned = ts.reduce((a,t) => a + t.planned, 0);
+  const done = B().visits.filter(v => v.status === 'مكتملة' && v.supervisor === S.auth.user).length;
+  const open = B().visits.filter(v => v.status === 'مفتوحة' && v.supervisor === S.auth.user).length;
+  const list = filterTeachers(ts);
+  const extra = (B().extraTeachers || []);
+  const f = (k, l) => `<button class="tab ${S.filter===k?'on':''}" data-act="filter" data-k="${k}">${l}</button>`;
+  return `<div class="stack">
+    <div class="kpis">
+      <div class="kpi"><div class="num">${ts.length}</div><div class="lbl">معلمون مسندون</div></div>
+      <div class="kpi"><div class="num">${done}<span class="muted" style="font-size:15px"> / ${planned}</span></div><div class="lbl">زيارات مكتملة</div></div>
+      <div class="kpi"><div class="num" style="color:var(--warn)">${open}</div><div class="lbl">زيارات مفتوحة</div></div>
+    </div>
+    <div class="spread"><h2 style="font-size:20px">معلميّ</h2>
+      <div class="row"><button class="btn btn-g" data-act="import">استيراد من إكسل</button><button class="btn btn-p" data-act="addTeacher">+ معلم</button></div></div>
+    <div class="search">${ICON.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>
+    <div class="tabs">${f('all','الكل')}${f('none','لم تكتمل')}${f('open','مفتوحة')}${f('done','مكتملة')}</div>
+    ${list.length ? `<div class="grid g2">${list.map(teacherCard).join('')}</div>` : `<div class="card empty">${ts.length ? 'لا نتائج مطابقة' : 'لا يوجد معلمون مسندون إليك بعد.<br>أضف معلمًا أو استورد قائمة من إكسل، أو اطلب من المدير إسنادهم إليك.'}</div>`}
+    ${extra.length ? `<h3 class="sec-h">زيارات سابقة لمعلمين نُقلوا إلى مشرف آخر</h3><div class="grid g2">${extra.map(teacherCard).join('')}</div>` : ''}
+  </div>`;
+}
+
+/* ======================== صفحة المعلم ======================== */
+function viewTeacher(id){
+  const t = teacher(id);
+  if (!t) return `<div class="card empty">المعلم غير موجود</div>`;
+  const vs = visitsOf(id);
+  const mine = !isDir() && t.supervisor === S.auth.user;
+  const hasOpen = vs.some(v => v.status === 'مفتوحة');
+  const n = Math.max(t.planned, vs.length);
+  const slots = Array.from({ length: n }, (_, i) => {
+    const v = vs.find(x => x.number === i + 1);
+    if (v){
+      const p = progress(v);
+      return `<div class="slot ${v.status==='مكتملة'?'done':'open'}"><div class="n">${i+1}</div>
+        <div class="b"><b style="font-family:Changa">الزيارة ${i+1}</b>
+          <div class="small muted">${v.status==='مكتملة' ? 'مكتملة في ' + esc(v.closed.slice(0,10)) : `مفتوحة · ${p.done}/${p.total} بند`} ${v.supervisor !== S.auth.user && !isDir() ? '· ' + esc(userName(v.supervisor)) : ''}</div></div>
+        ${v.status==='مكتملة' ? `<div style="text-align:center"><div class="score-big">${v.score ?? '—'}</div><div class="small muted">${esc(v.grade)}</div></div>` : ''}
+        <button class="btn ${v.status==='مكتملة'?'btn-g':'btn-a'}" data-go="#/v/${esc(v.id)}">${v.status==='مكتملة'?'عرض':'متابعة'}</button></div>`;
+    }
+    const canStart = mine && !hasOpen && i === vs.length && t.active;
+    return `<div class="slot"><div class="n">${i+1}</div><div class="b"><b style="font-family:Changa">الزيارة ${i+1}</b><div class="small muted">لم تبدأ</div></div>
+      ${canStart ? `<button class="btn btn-p" data-act="startVisit" data-id="${esc(id)}">بدء الزيارة</button>` : ''}</div>`;
+  }).join('');
+  const info = [['المستوى المدرَّس', t.level], ['نوع القسم', t.type], ['المستوى التعليمي', t.edu], ['الخبرة', t.experience === '' ? 'غير محددة' : t.experience + ' سنة'], ['الجنس', t.gender], ['الزيارات المقررة', t.planned]];
+  return `<div class="page-h"><button class="back" data-go="#/">${ICON.back} رجوع</button><h2>${esc(tName(t))}</h2>
+      ${(mine || isDir()) ? `<button class="btn btn-g" data-act="editTeacher" data-id="${esc(id)}">تعديل</button>` : ''}</div>
+    <div class="stack">
+      <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))">
+        ${info.map(([k,v]) => `<div><div class="small muted" style="font-family:Changa">${k}</div><div>${esc(v || '—')}</div></div>`).join('')}
+      </div>${!t.active ? '<div class="banner" style="margin-top:12px">هذا المعلم موقوف</div>' : ''}</div>
+      <h3 class="sec-h">الزيارات</h3>
+      <div class="stack">${slots}</div>
+    </div>`;
+}
+
+/* ======================== صفحة الزيارة ======================== */
+function viewVisit(id){
+  const v = B().visits.find(x => x.id === id);
+  if (!v) return `<div class="card empty">الزيارة غير موجودة</div>`;
+  const t = teacher(v.teacher);
+  const ss = sessionsOf(id);
+  const editable = !isDir() && v.supervisor === S.auth.user && v.status === 'مفتوحة';
+  const p = progress(v);
+  const draft = getDraft(id);
+  const nDraft = Object.keys(draft).length;
+  const sessRows = ss.map(s => `<div class="slot"><div class="n">ح${s.number}</div>
+      <div class="b"><b style="font-family:Changa">${esc(s.subject || 'حصة')}${s.title ? ' — ' + esc(s.title) : ''}</b>
+      <div class="small muted">${esc(s.date)}${s.from ? ' · ' + esc(s.from) + (s.to ? ' – ' + esc(s.to) : '') : ''}${(s.boys!==''||s.girls!=='') ? ` · ذكور ${esc(s.boys||0)} · إناث ${esc(s.girls||0)}` : ''}</div></div>
+      ${editable ? `<button class="btn btn-g" data-act="editSession" data-v="${esc(id)}" data-id="${esc(s.id)}">تعديل</button>` : ''}</div>`).join('');
+
+  let body;
+  if (v.status === 'مكتملة'){
+    const items = itemsFor(t ? t.type : '');
+    const scores = {}; Object.entries(resultsOf(id)).forEach(([k, o]) => scores[k] = o.value);
+    const c = computeScore(items, scores);
+    const tr = B().cfg.trainings.filter(x => v.trainings.includes(x.id));
+    body = `<div class="card"><div class="spread"><div><div class="small muted" style="font-family:Changa">النقطة النهائية</div><div class="score-big" style="font-size:34px">${v.score ?? '—'} <span class="muted" style="font-size:16px">/ 100</span></div></div>
+        <span class="chip ok" style="font-size:15px;padding:4px 14px">${esc(v.grade || '—')}</span></div></div>
+      ${axisTable(items, scores, c)}
+      ${v.notes ? `<div class="card"><h4 style="margin-bottom:6px">ملاحظات المشرف</h4><div style="white-space:pre-wrap">${esc(v.notes)}</div></div>` : ''}
+      ${tr.length ? `<div class="card"><h4 style="margin-bottom:8px">التكوينات المقترحة</h4><div class="row">${tr.map(x => `<span class="chip clay">${esc(x.name)}</span>`).join('')}</div></div>` : ''}
+      <div class="banner info">التقرير المطبوع (A4 مع خانة المدير والختم) يأتي في الدفعة القادمة.</div>`;
+  } else {
+    body = `<div class="card stack">
+        <div class="spread"><b style="font-family:Changa">تقدّم الملء</b><span class="num">${p.done} / ${p.total}</span></div>
+        <div class="bar"><i style="width:${p.pct}%"></i></div>
+        ${nDraft ? `<div class="banner">لديك ${nDraft} علامات غير محفوظة على هذا الجهاز</div>` : ''}
+        ${editable ? `<div class="row"><button class="btn btn-p" data-go="#/fill/${esc(id)}" ${ss.length ? '' : 'disabled'}>ملء البنود</button>
+          <button class="btn btn-ok" data-go="#/close/${esc(id)}" ${p.done === p.total && ss.length && !nDraft ? '' : 'disabled'}>إغلاق الزيارة</button></div>
+          ${ss.length ? '' : '<div class="small muted">سجّل حصة ميدانية أولًا، ثم املأ البنود.</div>'}` : `<div class="small muted">${isDir() ? 'عرض فقط' : 'هذه الزيارة لمشرف آخر'}</div>`}
+      </div>`;
+  }
+  return `<div class="page-h"><button class="back" data-go="#/t/${esc(v.teacher)}">${ICON.back} رجوع</button>
+      <h2>${esc(tName(t))} · الزيارة ${v.number}</h2><span class="chip ${v.status==='مكتملة'?'ok':'warn'}">${esc(v.status)}</span></div>
+    <div class="stack">
+      ${isDir() ? `<div class="small muted">المشرف: ${esc(userName(v.supervisor))}</div>` : ''}
+      ${body}
+      <div class="spread"><h3 class="sec-h" style="margin:8px 2px">الحصص الميدانية</h3>${editable ? `<button class="btn btn-a" data-act="addSession" data-v="${esc(id)}">+ حصة ميدانية</button>` : ''}</div>
+      ${ss.length ? `<div class="stack">${sessRows}</div>` : '<div class="card empty">لا توجد حصص مسجلة بعد</div>'}
+    </div>`;
+}
+
+function axisTable(items, scores, c){
+  const cfg = B().cfg;
+  const rows = cfg.axes.filter(ax => items.some(it => it.axis === ax.id)).map(ax => {
+    const counts = items.filter(it => it.axis === ax.id && it.kind !== 'علامة');
+    const val = c.perAxis[ax.id];
+    const cell = counts.length ? counts.map(it => `${esc(it.text)}: <b>${scores[it.id] ?? '—'}</b>`).join(' · ') : (val !== undefined ? `<b>${val.toFixed(2)}</b> / ${cfg.max}` : '—');
+    return `<tr><td class="muted small">${esc(ax.section)}</td><td>${esc(ax.name)}</td><td>${cell}</td></tr>`;
+  }).join('');
+  return `<div class="card tbl-wrap"><table class="tbl"><thead><tr><th>القسم</th><th>المحور</th><th>المتوسط</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+/* ======================== الملء ======================== */
+function viewFill(id){
+  const v = B().visits.find(x => x.id === id);
+  if (!v || v.status !== 'مفتوحة' || v.supervisor !== S.auth.user) return `<div class="card empty">لا يمكن ملء هذه الزيارة</div>`;
+  const t = teacher(v.teacher);
+  const ss = sessionsOf(id);
+  if (!ss.length) { setTimeout(() => go('#/v/' + id)); return ''; }
+  if (!S.fillSession[id] || !ss.some(s => s.id === S.fillSession[id])) S.fillSession[id] = ss[ss.length - 1].id;
+  const cur = S.fillSession[id];
+  const items = itemsFor(t.type);
+  const res = resultsOf(id);
+  const draft = getDraft(id);
+  const cfg = B().cfg;
+  const sessNum = sid => (ss.find(s => s.id === sid) || {}).number;
+
+  let nav = '', body = '', lastSec = '';
+  cfg.axes.forEach(ax => {
+    const its = items.filter(it => it.axis === ax.id);
+    if (!its.length) return;
+    const filled = its.filter(it => draft[it.id] !== undefined || res[it.id] !== undefined).length;
+    if (ax.section !== lastSec){ nav += `<div class="sec">${esc(ax.section)}</div>`; body += `<h3 class="sec-h">${esc(ax.section)}</h3>`; lastSec = ax.section; }
+    nav += `<a href="javascript:void(0)" data-act="jump" data-ax="${esc(ax.id)}"><span>${esc(ax.name)}</span><span class="chip ${filled===its.length?'ok':''}" data-cnt="${esc(ax.id)}">${filled}/${its.length}</span></a>`;
+    body += `<details class="card axis" id="ax-${esc(ax.id)}" ${filled < its.length ? 'open' : ''}>
+      <summary>${esc(ax.name)} <span class="chip ${filled===its.length?'ok':''} cnt" data-cnt="${esc(ax.id)}">${filled}/${its.length}</span></summary>
+      ${its.map(it => {
+        const saved = res[it.id];
+        const val = draft[it.id] !== undefined ? draft[it.id] : (saved ? saved.value : undefined);
+        const isDraft = draft[it.id] !== undefined;
+        const tag = saved && !isDraft ? `<span class="tag">ح${sessNum(saved.session) || '?'}</span>` : '';
+        const ctl = it.kind === 'علامة'
+          ? `<div class="scale">${Array.from({ length: cfg.max - cfg.min + 1 }, (_, k) => cfg.min + k).map(n => `<button class="sv v${Math.min(5, Math.max(1, Math.round((n - cfg.min) * 4 / (cfg.max - cfg.min)) + 1))} ${val === n ? 'on' : ''} ${val === n && isDraft ? 'draft' : ''}" data-act="pick" data-it="${esc(it.id)}" data-n="${n}">${n}</button>`).join('')}</div>`
+          : `<input class="numin ${isDraft ? 'draft' : ''}" type="number" min="0" inputmode="numeric" data-num="${esc(it.id)}" value="${val ?? ''}">`;
+        return `<div class="item ${val === undefined ? 'missing' : ''}" data-row="${esc(it.id)}"><div class="t">${esc(it.text)}${tag}</div>${ctl}</div>`;
+      }).join('')}
+    </details>`;
+  });
+  return `<div class="page-h"><button class="back" data-go="#/v/${esc(id)}">${ICON.back} الزيارة</button><h2>${esc(tName(t))} · ملء البنود</h2></div>
+    <div class="card stack" style="margin-bottom:14px">
+      <div class="small muted" style="font-family:Changa">العلامات التي تسجّلها الآن تُنسب إلى الحصة:</div>
+      <div class="sess-pick">${ss.map(s => `<button class="${s.id===cur?'on':''}" data-act="pickSess" data-v="${esc(id)}" data-id="${esc(s.id)}"><b>ح${s.number} · ${esc(s.subject || 'حصة')}</b><span class="muted">${esc(s.date)}</span></button>`).join('')}</div>
+    </div>
+    <div class="fill-layout"><nav class="card axis-nav">${nav}</nav><div>${body}</div></div>
+    <div class="savebar"><div class="wrap"><div class="info" id="sbInfo"></div><button class="btn btn-p" data-act="saveScores" data-v="${esc(id)}" id="sbBtn">حفظ</button></div></div>`;
+}
+
+function bindFill(id){
+  updateSaveBar(id);
+  S.onChange = (e => {
+    const k = e.target.dataset && e.target.dataset.num;
+    if (!k) return;
+    const d = getDraft(id); const raw = e.target.value.trim();
+    const saved = resultsOf(id)[k];
+    if (raw === '' || (saved && Number(raw) === saved.value)) delete d[k];
+    else if (/^\d+$/.test(raw)) d[k] = Number(raw);
+    else { toast('اكتب عددًا صحيحًا', true); return; }
+    setDraft(id, d);
+    e.target.classList.toggle('draft', d[k] !== undefined);
+    refreshCounts(id); updateSaveBar(id);
+  });
+}
+
+function refreshCounts(id){
+  const v = B().visits.find(x => x.id === id), t = teacher(v.teacher);
+  const items = itemsFor(t.type), res = resultsOf(id), d = getDraft(id);
+  document.querySelectorAll('[data-cnt]').forEach(el => {
+    const its = items.filter(it => it.axis === el.dataset.cnt);
+    const f = its.filter(it => d[it.id] !== undefined || res[it.id] !== undefined).length;
+    el.textContent = `${f}/${its.length}`;
+    el.classList.toggle('ok', f === its.length);
+  });
+}
+
+function updateSaveBar(id){
+  const v = B().visits.find(x => x.id === id), t = teacher(v.teacher);
+  const items = itemsFor(t.type), res = resultsOf(id), d = getDraft(id);
+  const filled = items.filter(it => d[it.id] !== undefined || res[it.id] !== undefined).length;
+  const n = Object.keys(d).length;
+  const info = $('#sbInfo'), btn = $('#sbBtn');
+  if (!info) return;
+  info.innerHTML = `${filled} / ${items.length} بند ${n ? `· <span style="color:var(--warn)">${n} غير محفوظة</span>` : '· كل شيء محفوظ'}`;
+  btn.textContent = n ? `حفظ (${n})` : 'حفظ';
+  btn.disabled = !n;
+}
+
+/* ======================== الإغلاق ======================== */
+function viewClose(id){
+  const v = B().visits.find(x => x.id === id);
+  if (!v || v.status !== 'مفتوحة' || v.supervisor !== S.auth.user) return `<div class="card empty">لا يمكن إغلاق هذه الزيارة</div>`;
+  const t = teacher(v.teacher);
+  const items = itemsFor(t.type);
+  const scores = {}; Object.entries(resultsOf(id)).forEach(([k, o]) => scores[k] = o.value);
+  const missing = items.filter(it => scores[it.id] === undefined).length;
+  const c = computeScore(items, scores);
+  const nd = LS.get('ishraf.close.' + id) || { notes: '', trainings: [] };
+  const cats = [...new Set(B().cfg.trainings.map(x => x.category))];
+  return `<div class="page-h"><button class="back" data-go="#/v/${esc(id)}">${ICON.back} الزيارة</button><h2>إغلاق الزيارة ${v.number} · ${esc(tName(t))}</h2></div>
+    <div class="stack">
+      ${missing ? `<div class="banner">بقيت ${missing} بنود غير مملوءة، لا يمكن الإغلاق بعد.</div>` : ''}
+      <div class="card spread"><div><div class="small muted" style="font-family:Changa">النقطة المحسوبة</div><div class="score-big" style="font-size:34px">${c.score ?? '—'} <span class="muted" style="font-size:16px">/ 100</span></div></div><span class="chip ok" style="font-size:15px;padding:4px 14px">${esc(c.grade || '—')}</span></div>
+      ${axisTable(items, scores, c)}
+      <div class="card stack"><label class="field"><span>ملاحظات المشرف على الزيارة</span><textarea id="notes" placeholder="الملاحظات والتوجيهات التي ستظهر في التقرير">${esc(nd.notes)}</textarea></label></div>
+      <div class="card stack"><h4>التكوينات المقترحة للمعلم</h4>
+        ${cats.map(cat => `<div><div class="small muted" style="font-family:Changa;margin-bottom:6px">${esc(cat)}</div><div class="row">
+          ${B().cfg.trainings.filter(x => x.category === cat).map(x => `<label class="chip ${nd.trainings.includes(x.id)?'clay':''}" style="cursor:pointer;padding:6px 12px;font-size:14px"><input type="checkbox" data-tr="${esc(x.id)}" ${nd.trainings.includes(x.id)?'checked':''} style="width:auto;min-height:0;margin:0"> ${esc(x.name)}</label>`).join('')}
+        </div></div>`).join('')}
+      </div>
+      <button class="btn btn-ok btn-block" data-act="closeVisit" data-v="${esc(id)}" ${missing ? 'disabled' : ''}>إغلاق الزيارة نهائيًا</button>
+      <p class="small muted" style="text-align:center">بعد الإغلاق لا يمكن تعديل العلامات. إعادة الفتح تتم من الإدارة العامة فقط.</p>
+    </div>`;
+}
+
+function bindClose(id){
+  const save = () => {
+    const tr = [...document.querySelectorAll('[data-tr]')].filter(x => x.checked).map(x => x.dataset.tr);
+    document.querySelectorAll('[data-tr]').forEach(x => x.parentElement.classList.toggle('clay', x.checked));
+    const n = $('#notes');
+    if (n) LS.set('ishraf.close.' + id, { notes: n.value, trainings: tr });
+  };
+  S.onInput = e => { if (e.target.id === 'notes') save(); };
+  S.onChange = e => { if (e.target.dataset && e.target.dataset.tr) save(); };
+}
+
+/* ======================== المدير ======================== */
+function viewDirector(){
+  const tab = S.tab;
+  const sups = B().users.filter(u => u.role === 'مشرف');
+  const ts = B().teachers;
+  const t = (k, l) => `<button class="tab ${tab===k?'on':''}" data-act="tab" data-k="${k}">${l}</button>`;
+  const done = B().visits.filter(v => v.status === 'مكتملة').length;
+  const planned = ts.filter(x => x.active).reduce((a, x) => a + x.planned, 0);
+  let body = '';
+  if (tab === 'sup'){
+    body = `<div class="spread"><h2 style="font-size:20px">المشرفون</h2><button class="btn btn-p" data-act="addSup">+ مشرف</button></div>
+      ${sups.length ? `<div class="grid g2">${sups.map(u => {
+        const myT = ts.filter(x => x.supervisor === u.id && x.active);
+        const pl = myT.reduce((a, x) => a + x.planned, 0);
+        const dn = B().visits.filter(v => v.supervisor === u.id && v.status === 'مكتملة').length;
+        const op = B().visits.filter(v => v.supervisor === u.id && v.status === 'مفتوحة').length;
+        return `<div class="card stack">
+          <div class="spread"><h3 style="font-size:16.5px">${esc(u.name)}</h3>${u.active ? (u.tempCode ? '<span class="chip warn">لم يُفعَّل</span>' : '<span class="chip ok">مفعّل</span>') : '<span class="chip bad">موقوف</span>'}</div>
+          <div class="small muted">${u.phone ? esc(u.phone) + ' · ' : ''}${myT.length} معلم · ${dn}/${pl} زيارة مكتملة${op ? ` · ${op} مفتوحة` : ''}</div>
+          ${pl ? `<div class="bar"><i style="width:${Math.round(dn*100/pl)}%"></i></div>` : ''}
+          ${u.tempCode ? `<div class="banner info">رمز التفعيل: <b style="letter-spacing:3px">${esc(u.tempCode)}</b> — سلّمه للمشرف</div>` : ''}
+          <div class="row"><button class="btn btn-g" data-act="supActive" data-id="${esc(u.id)}" data-on="${u.active ? 0 : 1}">${u.active ? 'إيقاف' : 'تفعيل'}</button></div>
+        </div>`; }).join('')}</div>` : '<div class="card empty">لا يوجد مشرفون بعد. أضف أول مشرف.</div>'}`;
+  } else if (tab === 'tea'){
+    const q = S.q.trim();
+    const list = ts.filter(x => !q || tName(x).includes(q) || (x.level||'').includes(q))
+      .filter(x => S.filter !== 'unassigned' || !x.supervisor);
+    const unassigned = ts.filter(x => !x.supervisor && x.active).length;
+    body = `<div class="spread"><h2 style="font-size:20px">المعلمون</h2>
+        <div class="row"><button class="btn btn-g" data-act="import">استيراد من إكسل</button><button class="btn btn-p" data-act="addTeacher">+ معلم</button></div></div>
+      ${unassigned ? `<div class="banner">${unassigned} معلمين غير مسندين إلى مشرف</div>` : ''}
+      <div class="row"><div class="search" style="flex:1;min-width:220px">${ICON.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>
+        <button class="btn ${S.filter==='unassigned'?'btn-a':'btn-g'}" data-act="filter" data-k="${S.filter==='unassigned'?'all':'unassigned'}">غير المسندين</button></div>
+      <div class="card tbl-wrap" style="padding:6px 10px"><table class="tbl"><thead><tr><th>المعلم</th><th>المستوى</th><th>القسم</th><th>الزيارات</th><th style="min-width:170px">المشرف</th><th></th></tr></thead><tbody>
+      ${list.map(x => { const vs = visitsOf(x.id); return `<tr style="${x.active ? '' : 'opacity:.5'}"><td><a href="#/t/${esc(x.id)}" style="font-weight:600;text-decoration:none">${esc(tName(x))}</a></td><td class="small">${esc(x.level)}</td><td class="small">${esc(x.type)}</td>
+        <td class="small">${vs.filter(v => v.status==='مكتملة').length}/${x.planned}</td>
+        <td><select data-assign="${esc(x.id)}" style="min-height:38px;padding:6px 8px;font-size:14px"><option value="">— غير مسند —</option>${sups.filter(u => u.active || u.id === x.supervisor).map(u => `<option value="${esc(u.id)}" ${u.id===x.supervisor?'selected':''}>${esc(u.name)}</option>`).join('')}</select></td>
+        <td><button class="btn btn-g" style="min-height:36px;padding:4px 10px" data-act="editTeacher" data-id="${esc(x.id)}">تعديل</button></td></tr>`; }).join('') || '<tr><td colspan="6" class="empty">لا يوجد معلمون</td></tr>'}
+      </tbody></table></div>`;
+  } else {
+    body = `<h2 style="font-size:20px">زيارات المشرفين</h2>
+      ${sups.map(u => {
+        const vs = B().visits.filter(v => v.supervisor === u.id).sort((a,b) => (b.created||'').localeCompare(a.created||''));
+        if (!vs.length) return '';
+        return `<h3 class="sec-h">${esc(u.name)} <span class="chip">${vs.length}</span></h3><div class="stack">${vs.map(v => {
+          const p = progress(v);
+          return `<div class="slot ${v.status==='مكتملة'?'done':'open'}" style="cursor:pointer" data-go="#/v/${esc(v.id)}"><div class="n">${v.number}</div>
+            <div class="b"><b>${esc(tName(teacher(v.teacher)))}</b><div class="small muted">${v.status==='مكتملة' ? 'مكتملة · ' + esc(v.closed.slice(0,10)) : `مفتوحة · ${p.done}/${p.total} بند`}</div></div>
+            ${v.score !== null ? `<div style="text-align:center"><div class="score-big">${v.score}</div><div class="small muted">${esc(v.grade)}</div></div>` : ''}</div>`; }).join('')}</div>`;
+      }).join('') || '<div class="card empty">لا توجد زيارات بعد هذا الموسم</div>'}`;
+  }
+  return `<div class="stack">
+    <div class="kpis">
+      <div class="kpi"><div class="num">${sups.filter(u => u.active).length}</div><div class="lbl">مشرفون</div></div>
+      <div class="kpi"><div class="num">${ts.filter(x => x.active).length}</div><div class="lbl">معلمون</div></div>
+      <div class="kpi"><div class="num">${done}<span class="muted" style="font-size:15px"> / ${planned}</span></div><div class="lbl">زيارات مكتملة</div></div>
+    </div>
+    <div class="tabs">${t('sup','المشرفون')}${t('tea','المعلمون')}${t('vis','الزيارات')}</div>
+    ${body}
+  </div>`;
+}
+
+/* ======================== النماذج ======================== */
+function teacherForm(t){
+  const L = B().cfg.lists;
+  const opt = (list, val) => `<option value="">—</option>` + (list || []).map(x => `<option ${x===val?'selected':''}>${esc(x)}</option>`).join('');
+  const sups = B().users.filter(u => u.role === 'مشرف' && (u.active || u.id === t.supervisor));
+  return `<div class="form">
+    <label class="field"><span>اللقب *</span><input name="last" value="${esc(t.last)}"></label>
+    <label class="field"><span>الاسم *</span><input name="first" value="${esc(t.first)}"></label>
+    <label class="field"><span>اسم الأب</span><input name="father" value="${esc(t.father)}"></label>
+    <label class="field"><span>الجنس</span><select name="gender">${opt(L['الجنس'], t.gender)}</select></label>
+    <label class="field"><span>المستوى المدرَّس</span><select name="level">${opt(L['المستويات المدرَّسة'], t.level)}</select></label>
+    <label class="field"><span>المستوى التعليمي</span><select name="edu">${opt(L['المستوى التعليمي'], t.edu)}</select></label>
+    <label class="field"><span>نوع القسم *</span><select name="type">${opt(L['نوع القسم'], t.type)}</select></label>
+    <label class="field"><span>سنة بداية العمل</span><input name="startYear" type="number" inputmode="numeric" min="1950" max="${B().cfg.seasonYear}" value="${esc(t.startYear)}" placeholder="مثال: 2019"></label>
+    <label class="field"><span>عدد الزيارات (اختياري)</span><input name="visitsOverride" type="number" min="1" max="6" value="${esc(t.visitsOverride)}" placeholder="تلقائي"></label>
+    ${isDir() ? `<label class="field"><span>المشرف</span><select name="supervisor"><option value="">— غير مسند —</option>${sups.map(u => `<option value="${esc(u.id)}" ${u.id===t.supervisor?'selected':''}>${esc(u.name)}</option>`).join('')}</select></label>` : ''}
+    ${t.id ? `<label class="field"><span>الحالة</span><select name="active"><option value="1" ${t.active!==false?'selected':''}>مفعّل</option><option value="0" ${t.active===false?'selected':''}>موقوف</option></select></label>` : ''}
+  </div>`;
+}
+
+function readForm(m){
+  const o = {};
+  m.querySelectorAll('[name]').forEach(el => o[el.name] = el.value.trim());
+  if (o.active !== undefined) o.active = o.active === '1';
+  return o;
+}
+
+function upsertTeacher(t){
+  const i = B().teachers.findIndex(x => x.id === t.id);
+  const visible = isDir() || t.supervisor === S.auth.user;
+  if (i >= 0){ if (visible) B().teachers[i] = t; else B().teachers.splice(i, 1); }
+  else if (visible) B().teachers.push(t);
+}
+
+function sessionForm(s){
+  const today = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  return `<div class="form">
+    <label class="field"><span>التاريخ *</span><input name="date" type="date" value="${esc(s.date || today)}"></label>
+    <label class="field"><span>من</span><input name="from" type="time" value="${esc(s.from)}"></label>
+    <label class="field"><span>إلى</span><input name="to" type="time" value="${esc(s.to)}"></label>
+    <label class="field"><span>المادة</span><input name="subject" value="${esc(s.subject)}" placeholder="القرآن الكريم، اللغة العربية…"></label>
+    <label class="field full"><span>عنوان الدرس</span><input name="title" value="${esc(s.title)}"></label>
+    <label class="field"><span>عدد الذكور</span><input name="boys" type="number" min="0" inputmode="numeric" value="${esc(s.boys)}"></label>
+    <label class="field"><span>عدد الإناث</span><input name="girls" type="number" min="0" inputmode="numeric" value="${esc(s.girls)}"></label>
+  </div>`;
+}
+
+/* ======================== الاستيراد من إكسل ======================== */
+const IMPORT_COLS = [['اللقب','last'],['الاسم','first'],['اسم الأب','father'],['الجنس','gender'],['المستوى المدرَّس','level'],['المستوى التعليمي','edu'],['نوع القسم','type'],['سنة بداية العمل','startYear']];
+function loadXLSX(){
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, no) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = ok; s.onerror = () => no(new Error('تعذّر تحميل قارئ ملفات إكسل'));
+    document.head.appendChild(s);
+  });
+}
+function normHeader(h){ return String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, ' ').trim(); }
+
+async function openImport(){
+  modal(`<h3>استيراد المعلمين من إكسل</h3>
+    <div class="stack">
+      <p class="small">حمّل النموذج، املأه بأسماء المعلمين (سطر لكل معلم)، ثم ارفعه هنا. الأعمدة: ${IMPORT_COLS.map(c => c[0]).join('، ')}${isDir() ? '، المشرف (اسمه كما في التطبيق — اختياري)' : ''}.</p>
+      <button class="btn btn-g" id="tpl">تحميل نموذج إكسل</button>
+      <label class="field"><span>ملف إكسل</span><input type="file" id="xf" accept=".xlsx,.xls,.csv"></label>
+      <div id="prev"></div>
+    </div>
+    <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="doImp" disabled>استيراد</button></div>`,
+  (m, close) => {
+    let rows = [];
+    m.querySelector('#tpl').onclick = async () => {
+      try{
+        await loadXLSX();
+        const head = IMPORT_COLS.map(c => c[0]).concat(isDir() ? ['المشرف'] : []);
+        const ex = ['بن أحمد','محمد','عمر','ذكر', (B().cfg.lists['المستويات المدرَّسة']||[''])[1] || '', (B().cfg.lists['المستوى التعليمي']||[''])[0] || '', (B().cfg.lists['نوع القسم']||[''])[0] || '', 2020];
+        const ws = XLSX.utils.aoa_to_sheet([head, ex]);
+        ws['!cols'] = head.map(() => ({ wch: 18 }));
+        const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+        XLSX.utils.book_append_sheet(wb, ws, 'المعلمون');
+        XLSX.writeFile(wb, 'نموذج_المعلمين.xlsx');
+      } catch(e){ toast(e.message, true); }
+    };
+    m.querySelector('#xf').onchange = async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try{
+        await loadXLSX();
+        const wb = XLSX.read(await f.arrayBuffer());
+        const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
+        const sups = B().users.filter(u => u.role === 'مشرف');
+        rows = raw.map(r => {
+          const o = {}; const keys = {};
+          Object.keys(r).forEach(k => keys[normHeader(k)] = r[k]);
+          IMPORT_COLS.forEach(([h, k]) => o[k] = String(keys[normHeader(h)] ?? '').trim());
+          if (isDir()){ const sn = String(keys['المشرف'] ?? '').trim(); const su = sups.find(u => u.name === sn); o.supervisor = su ? su.id : ''; }
+          return o;
+        }).filter(o => o.last || o.first);
+        const types = B().cfg.lists['نوع القسم'] || [];
+        const bad = rows.filter(o => !o.last || !o.first || (types.length && !types.includes(o.type))).length;
+        m.querySelector('#prev').innerHTML = rows.length ? `<div class="banner info">${rows.length} معلمًا في الملف${bad ? ` · <span style="color:var(--bad)">${bad} سطرًا فيه نقص (اللقب/الاسم/نوع القسم)</span>` : ''}</div>
+          <div class="tbl-wrap" style="max-height:220px;overflow:auto;margin-top:8px"><table class="tbl"><thead><tr><th>اللقب والاسم</th><th>المستوى</th><th>نوع القسم</th></tr></thead><tbody>
+          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}</td><td class="small" style="${types.includes(o.type)?'':'color:var(--bad)'}">${esc(o.type || 'ناقص')}</td></tr>`).join('')}</tbody></table></div>`
+          : '<div class="banner">لم أجد معلمين في الملف. تأكد من عناوين الأعمدة.</div>';
+        m.querySelector('#doImp').disabled = !rows.length;
+      } catch(err){ toast('تعذّرت قراءة الملف: ' + err.message, true); }
+    };
+    m.querySelector('#doImp').onclick = async () => {
+      try{
+        const r = await api('importTeachers', { rows });
+        r.added.forEach(upsertTeacher);
+        close();
+        const msg = `أُضيف ${r.added.length} معلمًا` + (r.skipped.length ? ` · ${r.skipped.length} مكرر لم يُضف` : '') + (r.errors.length ? ` · ${r.errors.length} أخطاء` : '');
+        if (r.errors.length) modal(`<h3>نتيجة الاستيراد</h3><p>${esc(msg)}</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>السطر</th><th>الخطأ</th></tr></thead><tbody>${r.errors.map(x => `<tr><td>${x.line}</td><td>${esc(x.error)}</td></tr>`).join('')}</tbody></table></div><div class="acts"><button class="btn btn-p" data-close>حسنًا</button></div>`);
+        else toast(msg);
+        render();
+      } catch(e){ toast(e.message, true); }
+    };
+  });
+}
+
+/* ======================== الإجراءات ======================== */
+const ACT = {
+  theme: () => toggleTheme(),
+  logout: async () => { if (await confirmBox('الخروج', 'هل تريد الخروج من حسابك على هذا الجهاز؟', 'خروج')) logout(); },
+  sync: async () => { await reload(); render(); toast('تم التحديث'); },
+  filter: el => { S.filter = el.dataset.k; render(); },
+  tab: el => { S.tab = el.dataset.k; S.q = ''; S.filter = 'all'; LS.set('ishraf.tab', S.tab); render(); },
+  jump: el => { const d = $('#ax-' + el.dataset.ax); if (d){ d.open = true; window.scrollTo({ top: d.getBoundingClientRect().top + scrollY - 76, behavior: 'smooth' }); } },
+
+  addTeacher: () => ACT.editTeacher({ dataset: {} }),
+  editTeacher: el => {
+    const t = el.dataset.id ? Object.assign({}, teacher(el.dataset.id)) : { supervisor: '' };
+    modal(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'إضافة معلم'}</h3>${teacherForm(t)}
+      <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svT">حفظ</button></div>`,
+      (m, close) => m.querySelector('#svT').onclick = async () => {
+        const o = readForm(m);
+        if (!o.last || !o.first || !o.type) return toast('اللقب والاسم ونوع القسم مطلوبة', true);
+        try{
+          const r = await api('saveTeacher', { teacher: Object.assign({ id: t.id }, o) });
+          upsertTeacher(r); close(); toast('تم الحفظ'); render();
+        } catch(e){ toast(e.message, true); }
+      });
+  },
+  import: () => openImport(),
+
+  startVisit: async el => {
+    const t = teacher(el.dataset.id);
+    if (!await confirmBox('بدء زيارة', `بدء الزيارة ${visitsOf(t.id).length + 1} للمعلم ${esc(tName(t))}؟`, 'بدء')) return;
+    const v = await api('createVisit', { teacherId: t.id });
+    B().visits.push(v);
+    go('#/v/' + v.id);
+    setTimeout(() => ACT.addSession({ dataset: { v: v.id } }), 50);
+  },
+  addSession: el => ACT.editSession({ dataset: { v: el.dataset.v } }),
+  editSession: el => {
+    const vid = el.dataset.v;
+    const s = el.dataset.id ? B().sessions.find(x => x.id === el.dataset.id) : {};
+    modal(`<h3>${s.id ? 'تعديل الحصة ح' + s.number : 'حصة ميدانية جديدة'}</h3>${sessionForm(s)}
+      <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svS">حفظ</button></div>`,
+      (m, close) => m.querySelector('#svS').onclick = async () => {
+        const o = readForm(m);
+        if (!o.date) return toast('التاريخ مطلوب', true);
+        try{
+          const r = await api('saveSession', { visitId: vid, session: Object.assign({ id: s.id }, o) });
+          const i = B().sessions.findIndex(x => x.id === r.id);
+          if (i >= 0) B().sessions[i] = r; else B().sessions.push(r);
+          S.fillSession[vid] = r.id;
+          close(); toast('تم حفظ الحصة'); render();
+        } catch(e){ toast(e.message, true); }
+      });
+  },
+  pickSess: el => { S.fillSession[el.dataset.v] = el.dataset.id; render(); },
+  pick: el => {
+    const vid = location.hash.split('/')[2];
+    const it = el.dataset.it, n = Number(el.dataset.n);
+    const d = getDraft(vid), saved = resultsOf(vid)[it];
+    const cur = d[it] !== undefined ? d[it] : (saved ? saved.value : undefined);
+    if (cur === n && d[it] !== undefined) delete d[it];
+    else if (saved && saved.value === n) delete d[it];
+    else d[it] = n;
+    setDraft(vid, d);
+    const row = el.closest('.item');
+    const val = d[it] !== undefined ? d[it] : (saved ? saved.value : undefined);
+    row.querySelectorAll('.sv').forEach(b => { const bn = Number(b.dataset.n); b.classList.toggle('on', bn === val); b.classList.toggle('draft', bn === val && d[it] !== undefined); });
+    row.classList.toggle('missing', val === undefined);
+    refreshCounts(vid); updateSaveBar(vid);
+  },
+  saveScores: async el => {
+    const vid = el.dataset.v;
+    const d = getDraft(vid);
+    if (!Object.keys(d).length) return;
+    const r = await api('saveScores', { visitId: vid, sessionId: S.fillSession[vid], scores: d });
+    B().results[vid] = r.results;
+    setDraft(vid, {});
+    toast(`تم الحفظ${r.edits ? ` · ${r.edits} تعديلات سُجّلت` : ''}`);
+    const y = scrollY; render(); window.scrollTo(0, y);
+  },
+  closeVisit: async el => {
+    const vid = el.dataset.v;
+    if (Object.keys(getDraft(vid)).length) return toast('احفظ العلامات أولًا', true);
+    if (!await confirmBox('إغلاق الزيارة', 'بعد الإغلاق تُحسب النقطة النهائية ولا يمكن تعديل العلامات. هل تؤكد؟', 'إغلاق نهائي')) return;
+    const nd = LS.get('ishraf.close.' + vid) || {};
+    const notes = ($('#notes') || {}).value ?? nd.notes ?? '';
+    const tr = [...document.querySelectorAll('[data-tr]')].filter(x => x.checked).map(x => x.dataset.tr);
+    const v = await api('closeVisit', { visitId: vid, notes, trainings: tr });
+    const i = B().visits.findIndex(x => x.id === vid); B().visits[i] = v;
+    LS.del('ishraf.close.' + vid);
+    toast('أُغلقت الزيارة — النقطة ' + v.score);
+    go('#/v/' + vid);
+  },
+
+  addSup: () => modal(`<h3>إضافة مشرف</h3><div class="form">
+      <label class="field full"><span>الاسم واللقب *</span><input name="name"></label>
+      <label class="field"><span>الهاتف</span><input name="phone" inputmode="tel"></label></div>
+      <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svU">إضافة</button></div>`,
+    (m, close) => m.querySelector('#svU').onclick = async () => {
+      const o = readForm(m);
+      if (o.name.length < 3) return toast('اكتب اسم المشرف ولقبه', true);
+      try{
+        const u = await api('addSupervisor', o);
+        B().users.push(u); close(); render();
+        modal(`<h3>تمت إضافة ${esc(u.name)}</h3><p>سلّم هذا الرمز للمشرف. سيدخل به أول مرة، ثم يختار رمزه الشخصي.</p>
+          <div class="code-big">${esc(u.tempCode)}</div><p class="small muted">يبقى الرمز ظاهرًا في بطاقة المشرف حتى يفعّل حسابه.</p>
+          <div class="acts"><button class="btn btn-p" data-close>حسنًا</button></div>`);
+      } catch(e){ toast(e.message, true); }
+    }),
+  supActive: async el => {
+    const on = el.dataset.on === '1';
+    const u = B().users.find(x => x.id === el.dataset.id);
+    if (!on && !await confirmBox('إيقاف المشرف', `إيقاف ${esc(u.name)}؟ لن يستطيع الدخول، وتبقى زياراته محفوظة.`, 'إيقاف')) return;
+    await api('setUserActive', { userId: u.id, active: on });
+    u.active = on; render();
+  }
+};
+
+document.addEventListener('change', async e => {
+  const id = e.target.dataset && e.target.dataset.assign;
+  if (!id) return;
+  try{
+    const t = await api('assignTeacher', { teacherId: id, supervisorId: e.target.value });
+    upsertTeacher(t); toast(t.supervisor ? 'أُسند إلى ' + userName(t.supervisor) : 'أُلغي الإسناد'); render();
+  } catch(err){ toast(err.message, true); render(); }
+});
+
+boot();
+</script>
+</body>
+</html>
