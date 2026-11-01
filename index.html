@@ -376,6 +376,37 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .rsign .stamp{flex:1;display:grid;place-items:center}
 .rsign .stamp i{width:22mm;height:22mm;border-radius:50%;border:.4mm dashed #C4B5FD;display:grid;place-items:center;font-family:Changa;font-size:7pt;color:#A99CC6;font-style:normal}
 .rfoot{display:flex;justify-content:space-between;font-size:6.8pt;color:#A99CC6;margin-top:2mm;border-top:.2mm solid #E7E2F3;padding-top:1mm}
+.a4+.a4{margin-top:10mm}
+.p2h{display:flex;justify-content:space-between;align-items:center;padding-bottom:2.5mm;border-bottom:.6mm solid #A0522D}
+.p2h h2{font-family:Changa;font-size:14pt;color:#4C1D95;margin:0;line-height:1.2}
+.p2h h2 small{display:block;font-size:8.5pt;color:#6E6488;font-weight:500}
+.p2h .badge{font-family:Changa;text-align:center;border-radius:3mm;padding:1.5mm 4mm;background:#F5F3FF;border:.3mm solid #C4B5FD;line-height:1.1}
+.p2h .badge b{display:block;font-size:17pt}
+.p2t{font-family:Changa;font-size:10.5pt;color:#4C1D95;margin:4mm 0 2mm;display:flex;align-items:center;gap:2mm}
+.p2t:before{content:"";width:1.4mm;height:4.5mm;border-radius:1mm;background:linear-gradient(#E69138,#A0522D)}
+.p2t small{font-family:"IBM Plex Sans Arabic";font-size:7.5pt;color:#6E6488;font-weight:400;margin-inline-start:auto}
+.p2secs{display:grid;grid-template-columns:repeat(3,1fr);gap:3mm;margin-top:3mm}
+.p2secs div{border-radius:3mm;padding:2mm 3mm;background:#F5F3FF;border:.25mm solid #E7E2F3}
+.p2secs b{display:block;font-family:Changa;font-size:18pt;line-height:1.1}
+.p2secs span{font-size:8pt;color:#6E6488}
+.axc{display:grid;grid-template-columns:38mm 1fr 18mm;gap:1.3mm 3mm;align-items:center}
+.axc .l{font-family:Changa;font-size:8.6pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.axc .l i{font-style:normal;color:#E69138}
+.axc .tr{position:relative;height:5.4mm;background:#F3F0FA;border-radius:1.5mm;overflow:hidden}
+.axc .tr .now{position:absolute;inset-inline-start:0;top:0;bottom:0;border-radius:1.5mm;display:flex;align-items:center;justify-content:flex-end;padding:0 1.5mm;color:#fff;font-family:Changa;font-weight:700;font-size:8pt}
+.axc .tr .prev{position:absolute;inset-inline-start:0;bottom:0;height:1.3mm;background:#4C1D95;opacity:.45;border-radius:1mm}
+.axc .d{font-family:Changa;font-size:8pt;text-align:center}
+.axc .grid50{position:absolute;top:0;bottom:0;width:.2mm;background:rgba(76,29,149,.25)}
+.rv{width:100%;border-collapse:collapse;font-size:8.3pt}
+.rv th{font-family:Changa;font-weight:600;color:#6E6488;font-size:7.6pt;text-align:start;padding:1mm 1.5mm;border-bottom:.3mm solid #CFC6E6}
+.rv td{padding:1.2mm 1.5mm;border-bottom:.2mm solid #E7E2F3;vertical-align:middle}
+.rv td.n{font-family:Changa;color:#A99CC6;width:5mm}
+.rv td.ax{color:#6E6488;font-size:7.6pt;width:30mm}
+.rv td.w{width:52mm;background:repeating-linear-gradient(transparent 0 3.6mm,#E7E2F3 3.6mm 3.8mm)}
+.rv.tall td{padding:2.6mm 1.5mm}
+.rv.tall td.w{background:repeating-linear-gradient(transparent 0 4.6mm,#E7E2F3 4.6mm 4.8mm)}
+.strong{display:flex;flex-wrap:wrap;gap:1.5mm}
+.strong span{background:#DDF6EC;color:#0B7A55;border-radius:1.5mm;padding:.6mm 2mm;font-size:7.8pt}
 @page{size:A4 portrait;margin:0}
 @media print{
   body{background:#fff!important}
@@ -384,6 +415,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
   html,body{height:auto!important;min-height:0!important}
   .rp-scale{transform:none!important;height:auto!important}
   .a4{box-shadow:none;width:210mm;min-height:0;height:296.5mm;overflow:hidden}
+  .a4+.a4{margin-top:0;break-before:page;page-break-before:always}
   .print-only{display:block!important}
   .hero,.panel{background:#fff!important;color:#1B1530!important;box-shadow:none!important}
   .no-print{display:none!important}
@@ -430,7 +462,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '3.0';
+const VERSION = '3.1';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -1669,17 +1701,72 @@ function renderReport(id){
         <div><h5>الختم والتوقيع</h5><div class="stamp"><i>ختم المدرسة</i></div></div>
       </div>
       <div class="rbox" style="display:flex;gap:6mm;font-size:8pt;padding:1.5mm 2.8mm"><span>اطّلع عليه المعلم:</span><span style="flex:1;border-bottom:.2mm dotted #A99CC6"></span><span>التاريخ:</span><span style="width:28mm;border-bottom:.2mm dotted #A99CC6"></span></div>
-    </div></div></div>`;
+    </div>${reportPage2(v, t, items, scores, c, secs)}</div></div>`;
   const fit = () => {
     const a4 = $('#a4'), s = $('#rpS'), st = $('#rpStage'); if (!a4) return;
     const k = Math.min(1, (innerWidth - 24) / a4.offsetWidth);
     s.style.transform = `scale(${k})`;
-    st.style.height = (a4.offsetHeight * k + 50) + 'px';
+    st.style.height = (s.offsetHeight * k + 50) + 'px';
     st.style.overflow = 'hidden';
   };
   fit(); window.onresize = () => { if (route().r === 'report') fit(); };
   S.printTitle = `تقرير ${tName(t)} - الزيارة ${v.number}`;
   window.scrollTo(0, 0);
+}
+/** الصفحة الثانية: المحاور بالأعمدة، البنود للمراجعة الذاتية، نقاط التميّز */
+function reportPage2(v, t, items, scores, c, secs){
+  const cfg = B().cfg;
+  // الزيارة السابقة للمقارنة
+  const prev = visitsOf(t.id).find(x => x.number === v.number - 1 && x.status === 'مكتملة');
+  let pc = null;
+  if (prev){ const ps = {}; items.forEach(it => { const x = valueOf(prev.id, it.id); if (x !== undefined) ps[it.id] = x; }); pc = computeScore(items, ps); }
+
+  // نسب الأقسام
+  const secTiles = secs.map(sec => {
+    const vals = sec.axes.flatMap(a => a.its.filter(it => it.kind === 'علامة' && scores[it.id] !== undefined).map(it => scores[it.id]));
+    if (!vals.length) return '';
+    const p = pct100(vals.reduce((a, b) => a + b, 0) / vals.length);
+    return `<div><b style="color:${scoreColor(p)}">${p}%</b><span>${esc(sec.name)}</span></div>`;
+  }).join('');
+
+  // أعمدة المحاور مرتبة من الأعلى
+  const rows = cfg.axes.filter(ax => ax.coef > 0 && c.perAxis[ax.id] !== undefined)
+    .map(ax => ({ ax, p: pct100(c.perAxis[ax.id]), pp: pc && pc.perAxis[ax.id] !== undefined ? pct100(pc.perAxis[ax.id]) : null }))
+    .sort((a, b) => b.p - a.p);
+  const chart = `<div class="axc">${rows.map((r, i) => {
+    const delta = r.pp === null ? '' : r.p - r.pp;
+    const dTxt = delta === '' ? '' : delta > 0 ? `<span style="color:#0E9F6E">▲ ${delta}</span>` : delta < 0 ? `<span style="color:#D9443A">▼ ${-delta}</span>` : '<span style="color:#A99CC6">＝</span>';
+    return `<span class="l">${i < 3 ? '<i>★ </i>' : ''}${esc(r.ax.name)}</span>
+      <div class="tr"><span class="grid50" style="inset-inline-start:50%"></span><div class="now" style="width:${Math.max(8, r.p)}%;background:${scoreColor(r.p)}">${r.p}%</div>${r.pp !== null ? `<div class="prev" style="width:${r.pp}%"></div>` : ''}</div>
+      <span class="d">${dTxt}</span>`;
+  }).join('')}</div>
+  <div class="rlegend" style="justify-content:flex-start;margin-top:2mm"><span><i style="background:#E69138"></i>★ أعلى ثلاثة محاور</span>${pc ? `<span><i style="background:#4C1D95;opacity:.45;border-radius:1px;height:1.3mm"></i>الزيارة ${ORD[prev.number - 1] || prev.number} (${prev.score})</span><span>▲▼ الفرق بالنقاط</span>` : ''}</div>`;
+
+  // بنود المراجعة الذاتية: 3 فأقل، وإن قلّت نكمل بأضعف العلامات 4
+  const order = it => cfg.axes.findIndex(a => a.id === it.axis) * 100 + it.order;
+  const scored = items.filter(it => it.kind === 'علامة' && scores[it.id] !== undefined).sort((a, b) => scores[a.id] - scores[b.id] || order(a) - order(b));
+  const threshold = cfg.min + Math.round((cfg.max - cfg.min) / 2);
+  let weak = scored.filter(it => scores[it.id] <= threshold);
+  const onlyFour = !weak.length;
+  if (weak.length < 4) weak = weak.concat(scored.filter(it => scores[it.id] > threshold && scores[it.id] < cfg.max).slice(0, 4 - weak.length));
+  weak = weak.slice(0, 11);
+  const strong = scored.filter(it => scores[it.id] === cfg.max).sort((a, b) => order(a) - order(b));
+
+  const review = weak.length ? `<table class="rv ${weak.length <= 6 ? 'tall' : ''}"><thead><tr><th></th><th>البند</th><th>المحور</th><th>العلامة</th><th>ما سأعمل عليه</th></tr></thead><tbody>
+    ${weak.map((it, i) => `<tr><td class="n">${i + 1}</td><td>${esc(it.text)}</td><td class="ax">${esc(axisOf(it.axis).name)}</td>
+      <td><span class="s" style="display:inline-grid;place-items:center;width:5mm;height:5mm;border-radius:50%;color:#fff;font-family:Changa;font-weight:700;background:${sHex(scores[it.id])}">${scores[it.id]}</span></td><td class="w"></td></tr>`).join('')}</tbody></table>`
+    : '<div style="padding:3mm;background:#DDF6EC;border-radius:2mm;color:#0B7A55;font-family:Changa">كل البنود نالت العلامة الكاملة — أداء متميز</div>';
+
+  return `<div class="a4">
+    <div class="p2h"><div><h2>تحليل نتائج الزيارة ${ORD[v.number - 1] || v.number}<small>${esc(tName(t))} · ${esc(B().school.name)} · ${esc(cfg.season)}</small></h2></div>
+      <div class="badge"><small style="font-size:7pt;color:#6E6488">النقطة</small><b style="color:${scoreColor(v.score)}">${v.score ?? '—'}</b><span style="font-size:8.5pt;color:${scoreColor(v.score)}">${esc(v.grade || '')}</span></div></div>
+    <div class="p2secs">${secTiles}</div>
+    <div class="p2t">المحاور من الأعلى إلى الأدنى<small>النسبة من 100${pc ? ' · مقارنة بالزيارة السابقة' : ''}</small></div>
+    ${chart}
+    <div class="p2t">بنود يُراجع فيها المعلم نفسه<small>${onlyFour ? 'لا توجد علامات ضعيفة؛ هذه أدنى البنود للتحسين' : `العلامات ${threshold} فأقل، من الأضعف`}</small></div>
+    ${review}
+    ${strong.length ? `<div class="p2t">نقاط التميّز<small>البنود التي نالت ${cfg.max} من ${cfg.max}</small></div><div class="strong">${strong.slice(0, 16).map(it => `<span>${esc(it.text)}</span>`).join('')}${strong.length > 16 ? `<span>+${strong.length - 16}</span>` : ''}</div>` : ''}
+  </div>`;
 }
 addEventListener('beforeprint', () => { S.oldTitle = document.title; if (route().r === 'report' && S.printTitle) document.title = S.printTitle; const s = $('#rpS'); if (s) s.style.transform = 'none'; });
 addEventListener('afterprint', () => { if (S.oldTitle) document.title = S.oldTitle; if (route().r === 'report') render(); });
