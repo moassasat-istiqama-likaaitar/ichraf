@@ -473,7 +473,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.1';
+const VERSION = '4.1.1';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -2430,7 +2430,13 @@ document.addEventListener('click', async e => {
   });
 })();
 
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:'){
+  const hadSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+  // عند وصول نسخة جديدة: إعادة تحميل مرة واحدة تلقائيًا (إن لم يكن هناك حفظ جارٍ)
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadSW || reloaded || Q.jobs.length) return; reloaded = true; location.reload(); });
+}
 boot();
 </script>
 </body>

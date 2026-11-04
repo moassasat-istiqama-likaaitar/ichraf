@@ -1,5 +1,5 @@
 // يحفظ واجهة التطبيق على الجهاز ليفتح فورًا، ولا يتدخل في طلبات البيانات
-const CACHE = 'ishraf-v7';
+const CACHE = 'ishraf-v8';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
@@ -10,6 +10,7 @@ self.addEventListener('fetch', e => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== location.origin) return;
   // الشبكة أولًا للصفحة (لتصل التحديثات)، والذاكرة عند انقطاع الإنترنت
-  e.respondWith(fetch(e.request).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
+  // no-cache: يتحقق من الخادم في كل مرة بدل نسخة المتصفح (GitHub يحفظ الصفحة 10 دقائق)
+  e.respondWith(fetch(u.href, { cache: 'no-cache', credentials: 'same-origin' }).then(r => { const c = r.clone(); caches.open(CACHE).then(x => x.put(e.request, c)); return r; })
     .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html'))));
 });
