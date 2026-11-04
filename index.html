@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#5B21B6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>الإشراف التربوي</title>
+<title>برنامج الزيارات</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -326,6 +326,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .ptr{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;z-index:90;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#fff;box-shadow:var(--sh-lg);display:grid;place-items:center;color:var(--v700);transform:translateY(-70px);transition:transform .2s}
 .ptr.go svg{animation:sp .7s linear infinite}
 .trs{display:flex;flex-wrap:wrap;gap:8px}
+.glass-chip{background:rgba(255,255,255,.16)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)!important}
+.card.miss{border:1.5px solid var(--bad)!important}
 .trs button{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:8px 12px;font-size:14px;display:inline-flex;gap:6px;align-items:center;transition:all .15s}
 .trs button.on{border-color:var(--clay);background:var(--clay-l);color:var(--clay)}
 
@@ -462,7 +464,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '3.2';
+const VERSION = '4.0';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -620,6 +622,12 @@ function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.
 /* ============================== البيانات ============================== */
 const B = () => S.B;
 const isDir = () => S.auth && S.auth.role === 'مدير';
+const ASST = 'مساعد بيداغوجي';
+const isAsst = u => u && (u.role === ASST || u.role === 'مشرف');
+/** المساعد الرئيسي: يضيف المعلمين ويُسندهم ويضيف المساعدين (المدير للاطلاع فقط) */
+const isMain = () => !!(S.B && S.B.me && S.B.me.main);
+const seeAll = () => isDir() || isMain();
+const assts = () => B().users.filter(isAsst);
 const tName = t => t ? `${t.last} ${t.first}` : '—';
 const allTeachers = () => B().teachers.concat(B().extraTeachers || []);
 const teacher = id => allTeachers().find(t => t.id === id);
@@ -628,14 +636,17 @@ const userName = id => (user(id) || {}).name || '—';
 const visitsOf = tid => B().visits.filter(v => v.teacher === tid).sort((a, b) => a.number - b.number);
 const sessionsOf = vid => B().sessions.filter(s => s.visit === vid).sort((a, b) => a.number - b.number);
 const resultsOf = vid => (B().results[vid] = B().results[vid] || {});
-/** البنود الخاصة بمعلم في زيارة: الوظيفة ↔ المحور · نوع القسم ↔ البند · رقم الزيارة ↔ البند */
-const itemsFor = (t, n) => {
-  const cfg = B().cfg, role = (t && t.role) || 'الكل', type = t && t.type;
-  const axOk = new Set(cfg.axes.filter(a => (a.role || 'الكل') === 'الكل' || role === 'الكل' || a.role === role).map(a => a.id));
+/** منصب المعلم: قرآن / مادة / قسم («الكل» القديمة = قسم) */
+const post = r => !r || r === 'الكل' ? 'قسم' : r;
+/** البنود الخاصة بزيارة: المنصب ↔ المحور · نوع الحصة (تلقين/منافسة) ↔ البند · رقم الزيارة ↔ البند */
+const itemsFor = (role, type, n) => {
+  const cfg = B().cfg; role = post(role);
+  const axOk = new Set(cfg.axes.filter(a => (a.role || 'الكل') === 'الكل' || role === 'قسم' || a.role === role).map(a => a.id));
   const vn = String(Math.min(Number(n) || 1, cfg.maxVisit || 1));
   return cfg.items.filter(it => axOk.has(it.axis) && (it.scope === 'الكل' || it.scope === type) && (!it.visits || it.visits.includes('الكل') || it.visits.includes(vn)));
 };
-const ROLE_LABEL = { 'قرآن': 'معلم قرآن', 'مادة': 'معلم مادة', 'الكل': 'قرآن ومادة' };
+const visitItems = v => { const t = teacher(v.teacher); return itemsFor(t && t.role, v.type || (t && t.type), v.number); };
+const ROLE_LABEL = { 'قرآن': 'معلم قرآن', 'مادة': 'معلم مادة', 'قسم': 'معلم قسم', 'الكل': 'معلم قسم' };
 const axisOf = id => B().cfg.axes.find(a => a.id === id);
 const visitById = id => B().visits.find(v => v.id === id);
 const draftKey = vid => 'ishraf.draft.' + S.auth.school + '.' + vid;
@@ -649,8 +660,7 @@ function initials(name){ const p = String(name || '').trim().split(/\s+/); retur
 function avGrad(name){ const c = hue(name); return `background:linear-gradient(140deg,${c},${c}CC)`; }
 
 function progress(v){
-  const t = teacher(v.teacher);
-  const items = itemsFor(t, v.number);
+  const items = visitItems(v);
   const done = items.filter(it => valueOf(v.id, it.id) !== undefined).length;
   return { done, total: items.length, pct: items.length ? Math.round(done * 100 / items.length) : 0 };
 }
@@ -666,7 +676,7 @@ function computeScore(items, scores, role){
     if (ax.coef > 0){ secSum[ax.section] = (secSum[ax.section] || 0) + perAxis[ax.id] * ax.coef; secW[ax.section] = (secW[ax.section] || 0) + ax.coef; }
   });
   const perSection = {}; Object.keys(secW).forEach(k => perSection[k] = secSum[k] / secW[k]);
-  const weights = (cfg.sectionWeights || {})[role || 'الكل'];
+  const weights = (cfg.sectionWeights || {})[post(role)];
   let tot = 0, tw = 0;
   if (weights) Object.keys(perSection).forEach(k => { const w = weights[k] || 0; if (w > 0){ tot += perSection[k] * w; tw += w; } });
   if (!tw) Object.keys(secW).forEach(k => { tot += secSum[k]; tw += secW[k]; });
@@ -718,7 +728,7 @@ function animateGauges(){
 }
 function emptyBox(text){ return `<div class="card empty">${IC.empty}<div>${text}</div></div>`; }
 function skeleton(){
-  return `<div class="hero"><div class="wrap"><div class="topbar"><div class="mark">${IC.book}</div><div class="tb-t"><b>الإشراف التربوي</b><small>جارٍ التحميل…</small></div></div>
+  return `<div class="hero"><div class="wrap"><div class="topbar"><div class="mark">${IC.book}</div><div class="tb-t"><b>برنامج الزيارات</b><small>جارٍ التحميل…</small></div></div>
     <div class="sk" style="height:30px;width:55%;margin-top:22px;opacity:.35"></div>
     <div class="kpis">${'<div class="sk" style="height:74px;opacity:.3"></div>'.repeat(3)}</div></div></div>
     <div class="panel"><div class="wrap stack">${'<div class="sk" style="height:84px"></div>'.repeat(5)}</div></div>`;
@@ -783,6 +793,7 @@ function render(keep){
   else if (r === 'close') v = viewClose(id);
   else if (r === 'me') v = viewMe();
   else if (isDir()) v = viewDirector(['sup', 'tea', 'vis'].includes(r) ? r : 'sup');
+  else if (isMain() && ['sup', 'tea', 'vis'].includes(r)) v = viewDirector(r);
   else v = r === 'visits' ? viewMyVisits() : viewSupervisor();
   const noNav = r === 'fill';
   $('#app').innerHTML = `<div class="hero"><div class="wrap">${topbar()}${v.hero || ''}</div></div>
@@ -794,14 +805,17 @@ function render(keep){
 }
 function topbar(){
   return `<div class="topbar"><div class="mark">${IC.book}</div>
-    <div class="tb-t"><b>${esc(B().school.name || 'الإشراف التربوي')}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role)}</small></div>
+    <div class="tb-t"><b>${esc(B().school.name || 'برنامج الزيارات')}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
   const items = isDir()
-    ? [['#/sup', 'sup', 'المشرفون', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
+    ? [['#/sup', 'sup', 'المساعدون', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
+    : isMain()
+    ? [['#/', '', 'معلميّ', IC.users], ['#/tea', 'team', 'الفريق', IC.shield], ['#/visits', 'visits', 'زياراتي', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
     : [['#/', '', 'معلميّ', IC.users], ['#/visits', 'visits', 'الزيارات', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]];
-  const cur = ['t', 'v', 'close'].includes(r) ? (isDir() ? 'tea' : '') : (isDir() && r === '' ? 'sup' : r);
+  let cur = ['t', 'v', 'close'].includes(r) ? (isDir() ? 'tea' : '') : (isDir() && r === '' ? 'sup' : r);
+  if (isMain() && ['sup', 'tea', 'vis'].includes(r)) cur = 'team';
   return `<nav class="bnav">${items.map(([h, k, l, i]) => `<a href="${h}" class="${k === cur ? 'on' : ''}">${i}<span>${l}</span></a>`).join('')}</nav>`;
 }
 
@@ -908,7 +922,7 @@ async function renderLogin(){
   }
 }
 function loginFrame(body){
-  return `<div class="login"><div class="brandbig"><div class="mark">${IC.bookBig}</div><h1>الإشراف التربوي</h1></div>
+  return `<div class="login"><div class="brandbig"><div class="mark">${IC.bookBig}</div><h1>برنامج الزيارات</h1></div>
     <div class="lcard enter-f">${body}</div></div>`;
 }
 function finishLogin(boot){
@@ -931,8 +945,8 @@ function teacherCard(t){
   const chip = { open: '<span class="chip warn">زيارة مفتوحة</span>', done: '<span class="chip ok">اكتملت</span>', progress: `<span class="chip v">${done}/${t.planned}</span>`, none: '<span class="chip">لم تبدأ</span>' }[st];
   return `<div class="card tcard" data-go="#/t/${esc(t.id)}">${avatar(tName(t), t.planned ? done / t.planned : 0, color)}
     <div class="b"><h3>${esc(tName(t))}</h3>
-      <div class="small muted">${esc(ROLE_LABEL[t.role] || '')} · ${esc(t.level || '—')}${t.type ? ' · ' + esc(t.type) : ''}${t.experience === 0 ? ' · <span class="chip clay" style="padding:0 8px">جديد</span>' : ''}</div>
-      <div class="row" style="margin-top:4px;gap:6px">${chip}${isDir() ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
+      <div class="small muted">${esc(ROLE_LABEL[t.role] || '')} · ${esc(t.level || '—')}${t.experience === 0 ? ' · <span class="chip clay" style="padding:0 8px">جديد</span>' : ''}</div>
+      <div class="row" style="margin-top:4px;gap:6px">${chip}${seeAll() && t.supervisor !== S.auth.user ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
     ${last ? `<span class="score-pill" style="background:${scoreColor(last.score)}22;color:${scoreColor(last.score)}">${last.score}</span>` : ''}</div>`;
 }
 function filterTeachers(list){
@@ -941,7 +955,7 @@ function filterTeachers(list){
     (S.filter === 'all' || teacherState(t) === S.filter || (S.filter === 'none' && teacherState(t) === 'progress')));
 }
 function viewSupervisor(){
-  const ts = B().teachers.filter(t => t.active);
+  const ts = B().teachers.filter(t => t.active && t.supervisor === S.auth.user);
   const planned = ts.reduce((a, t) => a + t.planned, 0);
   const mine = B().visits.filter(v => v.supervisor === S.auth.user);
   const done = mine.filter(v => v.status === 'مكتملة').length;
@@ -957,10 +971,10 @@ function viewSupervisor(){
         <div class="kpi glass accent"><div class="n">${open}</div><div class="l">مفتوحة الآن</div></div></div>`,
     body: `<div class="stack">
       <div class="spread"><div class="sec-t" style="margin:0">معلميّ</div>
-        <div class="row"><button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div></div>
+        ${isMain() ? `<div class="row"><button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div>` : ''}</div>
       <div class="search">${IC.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>
       <div class="tabs">${f('all', 'الكل')}${f('none', 'لم تكتمل')}${f('open', 'مفتوحة')}${f('done', 'مكتملة')}</div>
-      ${list.length ? `<div class="grid g2">${list.map(teacherCard).join('')}</div>` : emptyBox(ts.length ? 'لا نتائج مطابقة' : 'لا يوجد معلمون مسندون إليك بعد.<br>أضف معلمًا أو استورد قائمة من إكسل، أو اطلب من المدير إسنادهم إليك.')}
+      ${list.length ? `<div class="grid g2">${list.map(teacherCard).join('')}</div>` : emptyBox(ts.length ? 'لا نتائج مطابقة' : isMain() ? 'لا يوجد معلمون مسندون إليك بعد.<br>أضف معلمًا أو استورد قائمة من إكسل، أو أسندهم من صفحة «الفريق».' : 'لا يوجد معلمون مسندون إليك بعد.<br>اطلب من المساعد البيداغوجي الرئيسي إسنادهم إليك.')}
       ${extra.length ? `<div class="sec-t" style="margin-top:22px">زيارات سابقة لمعلمين نُقلوا</div><div class="grid g2">${extra.map(teacherCard).join('')}</div>` : ''}
     </div>`,
     mount: bindSearch
@@ -1026,6 +1040,7 @@ function viewTeacher(id){
   if (!t) return { body: emptyBox('المعلم غير موجود') };
   const vs = visitsOf(id);
   const mine = !isDir() && t.supervisor === S.auth.user;
+  const lv = t.levels || (t.level ? [t.level] : []);
   const hasOpen = vs.some(v => v.status === 'مفتوحة');
   const done = vs.filter(v => v.status === 'مكتملة').length;
   const n = Math.max(t.planned, vs.length);
@@ -1036,14 +1051,14 @@ function viewTeacher(id){
     return `<div class="slot"><div class="n">${i + 1}</div><div class="b"><b class="d">الزيارة ${i + 1}</b><div class="small muted">لم تبدأ</div></div>
       ${canStart ? `<button class="btn btn-p" data-act="startVisit" data-id="${esc(id)}">${IC.plus} بدء</button>` : ''}</div>`;
   }).join('');
-  const info = [['الوظيفة', ROLE_LABEL[t.role]], ['المستوى المدرَّس', t.level], ['نوع القسم', t.type], ['المستوى التعليمي', t.edu], ['الخبرة', t.experience === '' ? 'غير محددة' : t.experience + ' سنة'], ['الجنس', t.gender], ['المشرف', t.supervisor ? userName(t.supervisor) : 'غير مسند']];
-  const back = isDir() ? '#/tea' : '#/';
+  const info = [['المنصب', ROLE_LABEL[t.role]], [lv.length > 1 ? 'المستويات المدرَّسة' : 'المستوى المدرَّس', lv.join('، ')], ['المستوى التعليمي', t.edu], ['الخبرة', t.experience === '' ? 'غير محددة' : t.experience === 0 ? 'جديد (0 سنة)' : t.experience + ' سنة'], ['الجنس', t.gender], ['المساعد البيداغوجي', t.supervisor ? userName(t.supervisor) : 'غير مسند']];
+  const back = isDir() || (isMain() && !mine) ? '#/tea' : '#/';
   return {
     hero: `<div class="row" style="margin-top:14px"><button class="back" data-go="${back}">${IC.back} رجوع</button></div>
       <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
         <div class="av" style="width:68px;height:68px">${ring(t.planned ? done / t.planned : 0, '#fff', 68, 4)}<div class="in" style="${avGrad(tName(t))};font-size:20px">${esc(initials(tName(t)))}</div></div>
         <div style="flex:1;min-width:0"><h1 style="margin:0;font-size:23px">${esc(tName(t))}</h1><div class="sub">${done} من ${t.planned} زيارات · ${esc(t.level || '')}</div></div>
-        ${(mine || isDir()) ? `<button class="back" data-act="editTeacher" data-id="${esc(id)}">${IC.edit}</button>` : ''}</div>`,
+        ${isMain() ? `<button class="back" data-act="editTeacher" data-id="${esc(id)}">${IC.edit}</button>` : ''}</div>`,
     body: `<div class="stack">
       ${!t.active ? '<div class="banner">هذا المعلم موقوف</div>' : ''}
       <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
@@ -1072,11 +1087,11 @@ function viewVisit(id){
   const ss = sessionsOf(id);
   const editable = !isDir() && v.supervisor === S.auth.user && v.status === 'مفتوحة';
   const p = progress(v);
-  const items = itemsFor(t, v.number);
+  const items = visitItems(v);
   const scores = {}; items.forEach(it => { const x = valueOf(id, it.id); if (x !== undefined) scores[it.id] = x; });
   const sess = ss.length ? `<div class="timeline">${ss.map(s => `<div class="tl"><div class="slot">
       <div class="b"><b class="d">ح${s.number} · ${esc(s.subject || 'حصة')}</b>${s.title ? `<div class="small">${esc(s.title)}</div>` : ''}
-      <div class="small muted">${esc(fmtDate(s.date))}${s.from ? ' · ' + esc(s.from) + (s.to ? ' – ' + esc(s.to) : '') : ''}${(s.boys !== '' || s.girls !== '') ? ` · ذ ${esc(s.boys || 0)} · إ ${esc(s.girls || 0)}` : ''}</div></div>
+      <div class="small muted">${esc(fmtDate(s.date))}${s.from ? ' · ' + esc(s.from) + (s.to ? ' – ' + esc(s.to) : '') : ''}</div></div>
       ${editable ? `<button class="ibtn" data-act="editSession" data-v="${esc(id)}" data-id="${esc(s.id)}">${IC.edit}</button>` : ''}</div></div>`).join('')}</div>`
     : emptyBox('لا توجد حصص مسجلة بعد');
   let main;
@@ -1085,8 +1100,8 @@ function viewVisit(id){
     const tr = B().cfg.trainings.filter(x => v.trainings.includes(x.id));
     main = `<div class="card" style="padding-top:22px">${gauge(v.score, v.grade)}<div class="small muted" style="text-align:center;margin-top:6px">أُغلقت في ${esc((v.closed || '').slice(0, 10))}</div></div>
       ${axisTable(items, scores, c)}
-      ${v.notes ? `<div class="card"><b class="d">ملاحظات المشرف</b><div style="white-space:pre-wrap;margin-top:6px">${esc(v.notes)}</div></div>` : ''}
-      ${tr.length ? `<div class="card"><b class="d">التكوينات المقترحة</b><div class="row" style="margin-top:8px">${tr.map(x => `<span class="chip clay">${esc(x.name)}</span>`).join('')}</div></div>` : ''}
+      ${v.notes ? `<div class="card"><b class="d">ملاحظات المساعد البيداغوجي</b><div style="white-space:pre-wrap;margin-top:6px">${esc(v.notes)}</div></div>` : ''}
+      ${tr.length ? `<div class="card"><b class="d">التكوينات التي حضرها المعلم</b><div class="row" style="margin-top:8px">${tr.map(x => `<span class="chip clay">${esc(x.name)}</span>`).join('')}</div></div>` : ''}
       <button class="btn btn-p btn-block" style="min-height:52px" data-go="#/report/${esc(id)}">${IC.print} التقرير المطبوع (A4)</button>`;
   } else {
     main = `<div class="card"><div style="display:flex;align-items:center;gap:16px">
@@ -1095,11 +1110,12 @@ function viewVisit(id){
       ${editable ? `<div class="row" style="margin-top:14px"><button class="btn btn-p" style="flex:1" data-go="#/fill/${esc(id)}" ${ss.length ? '' : 'disabled'}>${IC.target} ملء البنود</button>
         <button class="btn btn-ok" style="flex:1" data-go="#/close/${esc(id)}" ${p.done === p.total && ss.length ? '' : 'disabled'}>${IC.check} إغلاق</button></div>
         ${ss.length ? '' : '<div class="small muted" style="margin-top:8px">سجّل حصة ميدانية أولًا، ثم املأ البنود.</div>'}`
-        : `<div class="small muted" style="margin-top:10px">${isDir() ? 'عرض فقط · المشرف: ' + esc(userName(v.supervisor)) : 'هذه الزيارة لمشرف آخر'}</div>`}</div>`;
+        : `<div class="small muted" style="margin-top:10px">${isDir() ? 'عرض فقط · المساعد: ' + esc(userName(v.supervisor)) : 'هذه الزيارة لمساعد آخر'}</div>`}</div>`;
   }
   return {
     hero: `<div class="row" style="margin-top:14px"><button class="back" data-go="#/t/${esc(v.teacher)}">${IC.back} ${esc(tName(t))}</button></div>
-      <h1>الزيارة ${v.number}</h1><div class="sub">${esc(tName(t))} · ${v.status === 'مكتملة' ? 'مكتملة' : 'مفتوحة'}${isDir() ? ' · ' + esc(userName(v.supervisor)) : ''}</div>`,
+      <h1>الزيارة ${v.number}</h1><div class="sub">${esc(tName(t))} · ${v.status === 'مكتملة' ? 'مكتملة' : 'مفتوحة'}${seeAll() && v.supervisor !== S.auth.user ? ' · ' + esc(userName(v.supervisor)) : ''}</div>
+      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
     body: `<div class="stack">${main}
       <div class="spread" style="margin-top:14px"><div class="sec-t" style="margin:0">الحصص الميدانية</div>${editable ? `<button class="btn btn-a" data-act="addSession" data-v="${esc(id)}">${IC.plus} حصة</button>` : ''}</div>
       ${sess}</div>`
@@ -1143,7 +1159,7 @@ function setScore(vid, id, n){
   setDraft(vid, d);
   scheduleSave(vid);
 }
-function fillItems(vid){ const v = visitById(vid); return itemsFor(teacher(v.teacher), v.number); }
+function fillItems(vid){ return visitItems(visitById(vid)); }
 function scaleClass(n){ const c = B().cfg; return 'v' + Math.min(5, Math.max(1, Math.round((n - c.min) * 4 / (c.max - c.min)) + 1)); }
 
 function viewFill(id){
@@ -1254,7 +1270,7 @@ function viewClose(id){
   const v = visitById(id);
   if (!v || v.status !== 'مفتوحة' || v.supervisor !== S.auth.user) return { body: emptyBox('لا يمكن إغلاق هذه الزيارة') };
   const t = teacher(v.teacher);
-  const items = itemsFor(t, v.number);
+  const items = visitItems(v);
   const scores = {}; items.forEach(it => { const x = valueOf(id, it.id); if (x !== undefined) scores[it.id] = x; });
   const missing = items.filter(it => scores[it.id] === undefined).length;
   const c = computeScore(items, scores, t.role);
@@ -1267,8 +1283,8 @@ function viewClose(id){
       ${missing ? `<div class="banner">بقيت ${missing} بنود غير مملوءة، لا يمكن الإغلاق بعد.</div>` : ''}
       <div class="card" style="padding-top:22px">${gauge(c.score, c.grade)}<div class="small muted" style="text-align:center;margin-top:6px">النقطة المتوقعة — تُحسب نهائيًا عند الإغلاق</div></div>
       ${axisTable(items, scores, c)}
-      <div class="card stack"><label class="field"><span>ملاحظات المشرف</span><textarea id="notes" placeholder="الملاحظات والتوجيهات التي ستظهر في التقرير">${esc(nd.notes)}</textarea></label></div>
-      <div class="card stack"><b class="d">التكوينات المقترحة للمعلم</b>
+      <div class="card stack"><label class="field"><span>ملاحظات المساعد البيداغوجي <b style="color:var(--bad)">*</b></span><textarea id="notes" placeholder="الملاحظات والتوجيهات التي ستظهر في التقرير — إجبارية">${esc(nd.notes)}</textarea></label></div>
+      <div class="card stack"><b class="d">التكوينات التي حضرها المعلم</b><div class="small muted" style="margin-top:-6px">اختر كل تكوين حضره المعلم</div>
         ${cats.map(cat => `<div><div class="small muted d" style="margin-bottom:8px">${esc(cat)}</div><div class="trs">
           ${B().cfg.trainings.filter(x => x.category === cat).map(x => `<button data-tr="${esc(x.id)}" class="${nd.trainings.includes(x.id) ? 'on' : ''}">${esc(x.name)}</button>`).join('')}</div></div>`).join('')}</div>
       <button class="btn btn-ok btn-block" style="min-height:54px;font-size:16.5px" data-act="closeVisit" data-v="${esc(id)}" ${missing ? 'disabled' : ''}>${IC.check} إغلاق الزيارة نهائيًا</button>
@@ -1284,17 +1300,21 @@ function viewClose(id){
 
 /* ============================== المدير ============================== */
 function viewDirector(tab){
-  const sups = B().users.filter(u => u.role === 'مشرف');
+  const sups = assts();
+  const ro = isDir();   // المدير للاطلاع فقط
   const ts = B().teachers;
   const done = B().visits.filter(v => v.status === 'مكتملة').length;
   const planned = ts.filter(x => x.active).reduce((a, x) => a + x.planned, 0);
-  const hero = `<h1>${{ sup: 'المشرفون', tea: 'المعلمون', vis: 'زيارات المشرفين' }[tab]}</h1><div class="sub">مرحبًا ${esc(S.auth.name.split(' ')[0])} · ${esc(B().school.name)}</div>
-    <div class="kpis"><div class="kpi glass"><div class="n">${sups.filter(u => u.active).length}</div><div class="l">مشرف</div></div>
+  const tabs = isMain() ? `<div class="seg" style="margin-top:14px">${[['sup', 'المساعدون'], ['tea', 'الإسناد'], ['vis', 'كل الزيارات']].map(([k, l]) => `<button data-go="#/${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>` : '';
+  const hero = `<h1>${{ sup: 'المساعدون البيداغوجيون', tea: 'المعلمون', vis: 'زيارات المساعدين' }[tab]}</h1><div class="sub">مرحبًا ${esc(S.auth.name.split(' ')[0])} · ${esc(B().school.name)}${ro ? ' · للاطلاع فقط' : ''}</div>${tabs}
+    <div class="kpis"><div class="kpi glass"><div class="n">${sups.filter(u => u.active).length}</div><div class="l">مساعد</div></div>
       <div class="kpi glass"><div class="n">${ts.filter(x => x.active).length}</div><div class="l">معلم</div></div>
       <div class="kpi glass accent"><div class="n">${done}<small> / ${planned}</small></div><div class="l">زيارة مكتملة</div></div></div>`;
   let body = '', mount;
   if (tab === 'sup'){
-    body = `<div class="spread"><div class="sec-t" style="margin:0">فريق الإشراف</div><button class="btn btn-p" data-act="addSup">${IC.plus} مشرف</button></div>
+    const noMain = sups.filter(u => u.active).length > 1 && !sups.some(u => u.main && u.active);
+    body = `<div class="spread"><div class="sec-t" style="margin:0">المساعدون البيداغوجيون</div>${ro ? '' : `<button class="btn btn-p" data-act="addSup">${IC.plus} مساعد</button>`}</div>
+      ${noMain ? '<div class="banner" style="margin-top:12px">لم تحدد الإدارة العامة المساعد الرئيسي لهذه المدرسة (عمود «رئيسي» في ورقة المستخدمين).</div>' : ''}
       ${sups.length ? `<div class="grid g2" style="margin-top:12px">${sups.map(u => {
         const myT = ts.filter(x => x.supervisor === u.id && x.active);
         const pl = myT.reduce((a, x) => a + x.planned, 0);
@@ -1302,36 +1322,36 @@ function viewDirector(tab){
         const op = B().visits.filter(v => v.supervisor === u.id && v.status === 'مفتوحة').length;
         return `<div class="card stack" style="${u.active ? '' : 'opacity:.6'}">
           <div style="display:flex;gap:12px;align-items:center">${avatar(u.name, pl ? dn / pl : 0, 'var(--v600)')}
-            <div style="flex:1;min-width:0"><b class="d" style="font-size:16px">${esc(u.name)}</b>
+            <div style="flex:1;min-width:0"><b class="d" style="font-size:16px">${esc(u.name)}</b>${u.main ? ' <span class="chip v" style="padding:0 8px">رئيسي</span>' : ''}
               <div class="small muted">${myT.length} معلم · ${dn}/${pl} زيارة${op ? ` · <span style="color:var(--warn)">${op} مفتوحة</span>` : ''}</div>
               ${u.phone ? `<a class="small" href="tel:${esc(u.phone)}" style="color:var(--v600);text-decoration:none">${esc(u.phone)}</a>` : ''}</div>
-            <button class="switch ${u.active ? 'on' : ''}" data-act="supActive" data-id="${esc(u.id)}" aria-label="تفعيل"></button></div>
+            ${ro || u.id === S.auth.user ? '' : `<button class="switch ${u.active ? 'on' : ''}" data-act="supActive" data-id="${esc(u.id)}" aria-label="تفعيل"></button>`}</div>
           ${u.tempCode ? `<div class="ticket"><div><div class="small d" style="color:var(--warn)">رمز التفعيل — لم يدخل بعد</div><b>${esc(u.tempCode)}</b></div><button class="btn btn-g" data-act="copy" data-t="${esc(u.tempCode)}" style="min-height:38px">نسخ</button></div>` : ''}
-        </div>`; }).join('')}</div>` : emptyBox('لا يوجد مشرفون بعد. أضف أول مشرف.')}`;
+        </div>`; }).join('')}</div>` : emptyBox(ro ? 'لا يوجد مساعدون بيداغوجيون بعد. تضيفهم الإدارة العامة.' : 'لا يوجد مساعدون بعد.')}`;
   } else if (tab === 'tea'){
     const q = S.q.trim();
     const list = ts.filter(x => !q || tName(x).includes(q) || (x.level || '').includes(q));
     const unassigned = ts.filter(x => !x.supervisor && x.active).length;
     const wide = matchMedia('(min-width:900px)').matches;
-    const useK = wide && S.kanban;
-    body = `<div class="spread"><div class="sec-t" style="margin:0">الإسناد</div>
-        <div class="row">${wide ? `<button class="btn btn-g" data-act="toggleKanban">${useK ? IC.list + ' قائمة' : IC.cols + ' أعمدة'}</button>` : ''}
-          <button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div></div>
-      ${unassigned ? `<div class="banner" style="margin-top:12px">${unassigned} معلمين غير مسندين — ${useK ? 'اسحبهم إلى عمود المشرف' : 'اضغط على «إسناد» بجانب كل معلم'}</div>` : ''}
+    const useK = wide && S.kanban && !ro;
+    body = `<div class="spread"><div class="sec-t" style="margin:0">${ro ? 'المعلمون والمساعدون' : 'الإسناد'}</div>
+        ${ro ? '' : `<div class="row">${wide ? `<button class="btn btn-g" data-act="toggleKanban">${useK ? IC.list + ' قائمة' : IC.cols + ' أعمدة'}</button>` : ''}
+          <button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div>`}</div>
+      ${unassigned && !ro ? `<div class="banner" style="margin-top:12px">${unassigned} معلمين غير مسندين — ${useK ? 'اسحبهم إلى عمود المساعد' : 'اضغط على «إسناد» بجانب كل معلم'}</div>` : ''}
       <div class="search" style="margin:12px 0">${IC.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>`;
     if (useK){
       const cols = [{ id: '', name: 'غير مسند' }].concat(sups.filter(u => u.active));
       body += `<div class="kanban">${cols.map(c => {
         const its = list.filter(x => (x.supervisor || '') === c.id);
         return `<div class="col" data-col="${esc(c.id)}"><h4><span>${esc(c.name)}</span><span class="chip v">${its.length}</span></h4>
-          ${its.map(x => `<div class="kc" draggable="true" data-tid="${esc(x.id)}" style="${x.active ? '' : 'opacity:.5'}"><b>${esc(tName(x))}</b><small>${esc(x.level || '—')} · ${esc(x.type || '')}</small></div>`).join('') || '<div class="small muted" style="text-align:center;padding:16px 0">أفلت المعلم هنا</div>'}</div>`;
+          ${its.map(x => `<div class="kc" draggable="true" data-tid="${esc(x.id)}" style="${x.active ? '' : 'opacity:.5'}"><b>${esc(tName(x))}</b><small>${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</small></div>`).join('') || '<div class="small muted" style="text-align:center;padding:16px 0">أفلت المعلم هنا</div>'}</div>`;
       }).join('')}</div>`;
       mount = () => { bindSearch(); bindKanban(); };
     } else {
       body += `<div class="stack">${list.map(x => `<div class="slot" style="${x.active ? '' : 'opacity:.55'}">
           ${avatar(tName(x), x.planned ? visitsOf(x.id).filter(v => v.status === 'مكتملة').length / x.planned : 0, 'var(--v600)')}
-          <div class="b" data-go="#/t/${esc(x.id)}" style="cursor:pointer"><b class="d">${esc(tName(x))}</b><div class="small muted">${esc(x.level || '—')} · ${esc(x.type || '')}</div></div>
-          <button class="chip ${x.supervisor ? 'v' : 'warn'}" style="border:0;padding:6px 12px;font-size:13px" data-act="assignSheet" data-id="${esc(x.id)}">${esc(x.supervisor ? userName(x.supervisor) : 'إسناد')} ▾</button></div>`).join('') || emptyBox('لا يوجد معلمون')}</div>`;
+          <div class="b" data-go="#/t/${esc(x.id)}" style="cursor:pointer"><b class="d">${esc(tName(x))}</b><div class="small muted">${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</div></div>
+          ${ro ? `<span class="chip ${x.supervisor ? 'v' : 'warn'}">${esc(x.supervisor ? userName(x.supervisor) : 'غير مسند')}</span>` : `<button class="chip ${x.supervisor ? 'v' : 'warn'}" style="border:0;padding:6px 12px;font-size:13px" data-act="assignSheet" data-id="${esc(x.id)}">${esc(x.supervisor ? userName(x.supervisor) : 'إسناد')} ▾</button>`}</div>`).join('') || emptyBox('لا يوجد معلمون')}</div>`;
       mount = bindSearch;
     }
   } else {
@@ -1371,39 +1391,41 @@ function bindSegs(m){ m.querySelectorAll('[data-seg]').forEach(s => s.onclick = 
 const segVal = (m, name) => { const b = m.querySelector(`[data-seg="${name}"] .on`); return b ? b.dataset.val : ''; };
 
 function teacherSheet(t){
-  const L = B().cfg.lists, cfg = B().cfg;
-  const sups = B().users.filter(u => u.role === 'مشرف' && (u.active || u.id === t.supervisor));
+  const L = B().cfg.lists;
+  const sups = assts().filter(u => u.active || u.id === t.supervisor);
+  const lv = t.levels || (t.level ? String(t.level).split(/\s*[،,]\s*/).filter(Boolean) : []);
+  const allLv = (L['المستويات المدرَّسة'] || []).concat(lv.filter(x => !(L['المستويات المدرَّسة'] || []).includes(x)));
+  const posts = L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قرآن', 'مادة', 'قسم'];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
     <div class="stack">
       <div class="grid" style="grid-template-columns:1fr 1fr"><label class="field"><span>اللقب *</span><input id="tLast" value="${esc(t.last)}"></label><label class="field"><span>الاسم *</span><input id="tFirst" value="${esc(t.first)}"></label></div>
       <label class="field"><span>اسم الأب</span><input id="tFather" value="${esc(t.father)}"></label>
-      <div class="field"><span>الوظيفة *</span>${chips('role', L['الوظيفة'] || ['قرآن', 'مادة', 'الكل'], t.role || 'الكل')}</div>
-      <div class="field"><span>نوع القسم <small class="muted">(مطلوب لمعلم القرآن)</small></span>${chips('type', L['نوع القسم'], t.type)}</div>
+      <div class="field"><span>المنصب *</span><div class="seg" data-seg="role">${posts.map(x => `<button type="button" data-val="${esc(x)}" class="${x === post(t.role) ? 'on' : ''}">${esc(ROLE_LABEL[x] || x)}</button>`).join('')}</div></div>
       <div class="field"><span>الجنس</span>${chips('gender', L['الجنس'], t.gender)}</div>
-      <div class="field"><span>المستوى المدرَّس</span>${chips('level', L['المستويات المدرَّسة'], t.level)}</div>
+      <div class="field"><span>المستويات المدرَّسة <small class="muted">(يمكن اختيار أكثر من مستوى)</small></span><div class="trs" id="tLv">${allLv.map(x => `<button type="button" data-lv="${esc(x)}" class="${lv.includes(x) ? 'on' : ''}">${esc(x)}</button>`).join('')}</div></div>
       <div class="field"><span>المستوى التعليمي</span>${chips('edu', L['المستوى التعليمي'], t.edu)}</div>
-      <div class="field"><span>سنة بداية العمل</span><div class="stepper"><span class="lb" id="yLbl">${t.startYear ? `الخبرة: ${cfg.seasonYear - t.startYear} سنة` : 'غير محددة'}</span><button type="button" data-y="-1">−</button><input id="tYear" type="number" inputmode="numeric" value="${esc(t.startYear)}" placeholder="—" style="width:76px"><button type="button" data-y="1">+</button></div></div>
+      <div class="field"><span>سنوات الخبرة <small class="muted">(0 = معلم جديد)</small></span><div class="stepper"><span class="lb">بالسنوات</span><button type="button" data-y="-1">−</button><input id="tExp" type="number" min="0" max="60" inputmode="numeric" value="${esc(t.experience ?? '')}" placeholder="—" style="width:76px"><button type="button" data-y="1">+</button></div></div>
       <div class="field"><span>عدد الزيارات</span>${chips('vo', ['تلقائي', '1', '2', '3', '4'], t.visitsOverride ? String(t.visitsOverride) : 'تلقائي')}</div>
-      ${isDir() ? `<div class="field"><span>المشرف</span>${chips('sup', ['غير مسند'].concat(sups.map(u => u.name)), t.supervisor ? userName(t.supervisor) : 'غير مسند')}</div>` : ''}
+      ${sups.length > 1 ? `<div class="field"><span>المساعد البيداغوجي</span>${chips('sup', ['غير مسند'].concat(sups.map(u => u.name)), t.supervisor ? userName(t.supervisor) : 'غير مسند')}</div>` : ''}
       ${t.id ? `<div class="spread card" style="box-shadow:none"><b class="d">المعلم مفعّل</b><button type="button" class="switch ${t.active !== false ? 'on' : ''}" id="tAct"></button></div>` : ''}
     </div>
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svT">حفظ</button></div>`,
   (m, close) => {
     bindSegs(m);
     ['role', 'vo', 'sup'].forEach(n => { const s = m.querySelector(`[data-seg="${n}"]`); if (s) s.dataset.req = 1; });
-    const yi = m.querySelector('#tYear'), yl = m.querySelector('#yLbl');
-    const upY = () => { const y = Number(yi.value); yl.textContent = y ? `الخبرة: ${Math.max(0, cfg.seasonYear - y)} سنة` : 'غير محددة'; };
-    m.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { const y = Number(yi.value) || cfg.seasonYear + (b.dataset.y > 0 ? 0 : 1); yi.value = Math.min(cfg.seasonYear, y + Number(b.dataset.y)); upY(); buzz(5); });
-    yi.oninput = upY;
+    m.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { b.classList.toggle('on'); buzz(5); });
+    const yi = m.querySelector('#tExp');
+    m.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { yi.value = Math.max(0, Math.min(60, (yi.value === '' ? (b.dataset.y > 0 ? -1 : 1) : Number(yi.value)) + Number(b.dataset.y))); buzz(5); });
     const act = m.querySelector('#tAct'); if (act) act.onclick = () => act.classList.toggle('on');
     m.querySelector('#svT').onclick = () => {
+      const levels = [...m.querySelectorAll('[data-lv].on')].map(b => b.dataset.lv);
       const o = { id: t.id, last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(),
-        role: segVal(m, 'role') || 'الكل', type: segVal(m, 'type'), gender: segVal(m, 'gender'), level: segVal(m, 'level'), edu: segVal(m, 'edu'),
-        startYear: yi.value.trim(), visitsOverride: segVal(m, 'vo') === 'تلقائي' ? '' : segVal(m, 'vo') };
+        role: segVal(m, 'role') || 'قسم', gender: segVal(m, 'gender'), levels, level: levels.join('، '), edu: segVal(m, 'edu'),
+        experience: yi.value.trim() === '' ? '' : Number(yi.value), visitsOverride: segVal(m, 'vo') === 'تلقائي' ? '' : segVal(m, 'vo') };
       if (!o.last || !o.first) return toast('اللقب والاسم مطلوبان', true);
-      if (o.role !== 'مادة' && !o.type) return toast('نوع القسم مطلوب لمعلم القرآن', true);
-      if (o.startYear && !(/^\d{4}$/.test(o.startYear) && Number(o.startYear) <= cfg.seasonYear)) return toast('سنة البداية غير صحيحة', true);
-      if (isDir()){ const sn = segVal(m, 'sup'); const su = sups.find(u => u.name === sn); o.supervisor = su ? su.id : ''; } else o.supervisor = t.supervisor || S.auth.user;
+      if (o.experience !== '' && !(o.experience >= 0 && o.experience <= 60)) return toast('سنوات الخبرة غير صحيحة', true);
+      if (sups.length > 1){ const sn = segVal(m, 'sup'); const su = sups.find(u => u.name === sn); o.supervisor = su ? su.id : ''; }
+      else o.supervisor = t.supervisor || (sups[0] ? sups[0].id : '');
       if (act) o.active = act.classList.contains('on');
       close(); saveTeacherOptimistic(o, t);
     };
@@ -1411,14 +1433,14 @@ function teacherSheet(t){
 }
 function localTeacher(o){
   const cfg = B().cfg;
-  const t = Object.assign({ gender: '', level: '', edu: '', father: '', active: true, role: 'الكل' }, o);
-  t.experience = Number(t.startYear) ? cfg.seasonYear - Number(t.startYear) : '';
+  const t = Object.assign({ gender: '', level: '', levels: [], edu: '', father: '', active: true, role: 'قسم', experience: '' }, o);
+  t.role = post(t.role);
   const ov = Number(t.visitsOverride);
-  t.planned = ov > 0 ? ov : !Number(t.startYear) ? cfg.visitsNormal : (cfg.seasonYear - Number(t.startYear) <= 0 ? cfg.visitsNew : cfg.visitsNormal);
+  t.planned = ov > 0 ? ov : t.experience === '' ? cfg.visitsNormal : (Number(t.experience) <= 0 ? cfg.visitsNew : cfg.visitsNormal);
   return t;
 }
 function saveTeacherOptimistic(o, before){
-  const visible = x => isDir() || x.supervisor === S.auth.user;
+  const visible = x => seeAll() || x.supervisor === S.auth.user;
   if (o.id){
     const i = B().teachers.findIndex(x => x.id === o.id);
     const prev = Object.assign({}, B().teachers[i]);
@@ -1439,19 +1461,66 @@ function saveTeacherOptimistic(o, before){
 }
 function assignSheet(tid){
   const t = teacher(tid);
-  const sups = B().users.filter(u => u.role === 'مشرف' && u.active);
+  const sups = assts().filter(u => u.active);
   sheet(`<h3>إسناد ${esc(tName(t))}</h3><div class="names">
     ${[{ id: '', name: 'غير مسند' }].concat(sups).map(u => `<button data-s="${esc(u.id)}" style="${(t.supervisor || '') === u.id ? 'border-color:var(--v600);background:var(--v50)' : ''}"><span class="ini" style="${u.id ? avGrad(u.name) : 'background:var(--line)'}">${u.id ? esc(initials(u.name)) : '—'}</span><span>${esc(u.name)}</span><span class="role">${u.id ? ts_count(u.id) + ' معلم' : ''}</span></button>`).join('')}</div>`,
   (m, close) => m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { close(); assign(tid, b.dataset.s); }));
 }
 const ts_count = sid => B().teachers.filter(x => x.supervisor === sid && x.active).length;
 
+/* ============================== ورقة بدء الزيارة ============================== */
+/** المستوى المزور + نوع الحصة (لمعلم القرآن والقسم) + عدد التلاميذ مرة واحدة لكل مستوى في الموسم */
+function startVisitSheet(t){
+  const cfg = B().cfg;
+  const lv = t.levels && t.levels.length ? t.levels : (t.level ? [t.level] : cfg.lists['المستويات المدرَّسة'] || []);
+  const needType = post(t.role) !== 'مادة' && (cfg.lists['نوع القسم'] || []).length;
+  const n = visitsOf(t.id).length + 1;
+  const known = level => visitsOf(t.id).find(v => v.level === level && v.boys !== '' && v.boys !== undefined);
+  sheet(`<h3>بدء الزيارة ${ORD[n - 1] || n}</h3><div class="small muted" style="margin:-6px 0 12px">${esc(tName(t))} · ${esc(ROLE_LABEL[t.role] || '')}</div>
+    <div class="stack">
+      <div class="field"><span>المستوى الذي تزوره *</span>${chips('lv', lv, lv.length === 1 ? lv[0] : '')}</div>
+      ${needType ? `<div class="field"><span>نوع الحصة *</span>${chips('ty', cfg.lists['نوع القسم'], '')}<div class="small muted">تتغير بنود القرآن حسب هذا الاختيار، ولا يمكن تغييره بعد بدء الزيارة.</div></div>` : ''}
+      <div id="pup"></div>
+    </div>
+    <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svV">${IC.plus} بدء الزيارة</button></div>`,
+  (m, close) => {
+    bindSegs(m);
+    ['lv', 'ty'].forEach(k => { const x = m.querySelector(`[data-seg="${k}"]`); if (x) x.dataset.req = 1; });
+    const drawPup = () => {
+      const level = segVal(m, 'lv'), k = level && known(level), box = m.querySelector('#pup');
+      if (!level){ box.innerHTML = ''; return; }
+      box.innerHTML = k ? `<div class="banner v">عدد التلاميذ في ${esc(level)} مسجّل في الزيارة ${k.number}: ذكور ${esc(k.boys)} · إناث ${esc(k.girls || 0)}</div>`
+        : `<div class="field"><span>عدد التلاميذ في ${esc(level)} * <small class="muted">(مرة واحدة في الموسم)</small></span><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
+          <div class="stepper"><span class="ic" style="background:#DBEAFE;color:#2563EB">${IC.boy}</span><span class="lb">ذكور</span><button type="button" data-st="vBoys" data-d="-1">−</button><input id="vBoys" type="number" min="0" inputmode="numeric" placeholder="0"><button type="button" data-st="vBoys" data-d="1">+</button></div>
+          <div class="stepper"><span class="ic" style="background:#FCE7F3;color:#DB2777">${IC.girl}</span><span class="lb">إناث</span><button type="button" data-st="vGirls" data-d="-1">−</button><input id="vGirls" type="number" min="0" inputmode="numeric" placeholder="0"><button type="button" data-st="vGirls" data-d="1">+</button></div></div></div>`;
+      box.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const i = m.querySelector('#' + b.dataset.st); i.value = Math.max(0, (Number(i.value) || 0) + Number(b.dataset.d)); buzz(5); });
+    };
+    m.querySelector('[data-seg="lv"]').addEventListener('click', () => setTimeout(drawPup, 0));
+    drawPup();
+    m.querySelector('#svV').onclick = async e => {
+      const level = segVal(m, 'lv'), type = needType ? segVal(m, 'ty') : '';
+      if (!level) return toast('اختر المستوى الذي تزوره', true);
+      if (needType && !type) return toast('اختر نوع الحصة', true);
+      const p = { teacherId: t.id, level, type };
+      if (!known(level)){
+        p.boys = (m.querySelector('#vBoys').value || '').trim(); p.girls = (m.querySelector('#vGirls').value || '').trim();
+        if (!/^\d+$/.test(p.boys) || !/^\d+$/.test(p.girls)) return toast('اكتب عدد الذكور والإناث (0 إن لم يوجد)', true);
+      }
+      try{
+        const v = await busy(e.currentTarget, () => api('createVisit', p));
+        B().visits.push(v); persist(); buzz(15); close();
+        go('#/v/' + v.id);
+        setTimeout(() => sessionSheet(v.id), 120);
+      } catch(err){ toast(err.message, true); }
+    };
+  });
+}
+
 /* ============================== الأوراق: الحصة (الساعة وشريط الأيام) ============================== */
-const SUBJECTS = ['القرآن الكريم', 'اللغة العربية', 'التربية الإسلامية', 'الرياضيات', 'التربية العلمية', 'التاريخ والجغرافيا'];
 function sessionSheet(vid, s){
-  s = Object.assign({ date: isoDate(new Date()), from: '', to: '', subject: '', title: '', boys: '', girls: '' }, s || {});
-  const used = [...new Set(B().sessions.map(x => x.subject).filter(Boolean))];
-  const subjects = [...new Set(used.concat(SUBJECTS))].slice(0, 10);
+  s = Object.assign({ date: isoDate(new Date()), from: '', to: '', subject: '', title: '' }, s || {});
+  // المواد من ورقة «المواد» في شيت الإعدادات
+  const subjects = B().cfg.subjects || [];
   const today = new Date(); today.setHours(12);
   const days = range(-21, 7).map(k => { const d = new Date(today); d.setDate(d.getDate() + k); return d; });
   sheet(`<h3>${s.id ? 'تعديل الحصة ح' + s.number : 'حصة ميدانية جديدة'}</h3>
@@ -1461,12 +1530,8 @@ function sessionSheet(vid, s){
       <div class="field"><span>التوقيت</span><div class="timepair">
         <button type="button" class="timetile" id="tFrom"><small>من</small><b class="${s.from ? '' : 'empty'}">${esc(s.from || 'اختر الوقت')}</b></button>
         <button type="button" class="timetile" id="tTo"><small>إلى</small><b class="${s.to ? '' : 'empty'}">${esc(s.to || 'اختر الوقت')}</b></button></div></div>
-      <div class="field"><span>المادة</span>${chips('subj', subjects, s.subject)}<input id="sSubj" placeholder="أو اكتب مادة أخرى" value="${esc(subjects.includes(s.subject) ? '' : s.subject)}" style="margin-top:8px"></div>
+      <div class="field"><span>المادة</span>${subjects.length ? chips('subj', subjects, s.subject) : ''}${subjects.length && !(s.subject && !subjects.includes(s.subject)) ? '' : `<input id="sSubj" placeholder="اكتب المادة" value="${esc(subjects.includes(s.subject) ? '' : s.subject)}" style="margin-top:8px">`}</div>
       <label class="field"><span>عنوان الدرس</span><input id="sTitle" value="${esc(s.title)}" placeholder="مثال: سورة النبأ، الجملة الفعلية…"></label>
-      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
-        <div class="stepper"><span class="ic" style="background:#DBEAFE;color:#2563EB">${IC.boy}</span><span class="lb">ذكور</span><button type="button" data-st="sBoys" data-d="-1">−</button><input id="sBoys" type="number" min="0" inputmode="numeric" value="${esc(s.boys)}" placeholder="0"><button type="button" data-st="sBoys" data-d="1">+</button></div>
-        <div class="stepper"><span class="ic" style="background:#FCE7F3;color:#DB2777">${IC.girl}</span><span class="lb">إناث</span><button type="button" data-st="sGirls" data-d="-1">−</button><input id="sGirls" type="number" min="0" inputmode="numeric" value="${esc(s.girls)}" placeholder="0"><button type="button" data-st="sGirls" data-d="1">+</button></div>
-      </div>
     </div>
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svS">حفظ الحصة</button></div>`,
   (m, close) => {
@@ -1478,10 +1543,10 @@ function sessionSheet(vid, s){
     const setT = (el, v) => { const b = el.querySelector('b'); b.textContent = v || 'اختر الوقت'; b.classList.toggle('empty', !v); };
     m.querySelector('#tFrom').onclick = async () => { const v = await clockPicker(from || nowHM(), 'بداية الحصة'); if (v){ from = v; setT(m.querySelector('#tFrom'), v); if (!to || to <= v){ to = addMin(v, 60); setT(m.querySelector('#tTo'), to); } } };
     m.querySelector('#tTo').onclick = async () => { const v = await clockPicker(to || (from ? addMin(from, 60) : nowHM()), 'نهاية الحصة'); if (v){ to = v; setT(m.querySelector('#tTo'), v); } };
-    m.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const i = m.querySelector('#' + b.dataset.st); i.value = Math.max(0, (Number(i.value) || 0) + Number(b.dataset.d)); buzz(5); });
-    m.querySelector('#sSubj').oninput = () => m.querySelectorAll('[data-seg="subj"] button').forEach(x => x.classList.remove('on'));
+    const sj = m.querySelector('#sSubj');
+    if (sj) sj.oninput = () => m.querySelectorAll('[data-seg="subj"] button').forEach(x => x.classList.remove('on'));
     m.querySelector('#svS').onclick = async e => {
-      const payload = { id: s.id, date, from, to, subject: segVal(m, 'subj') || m.querySelector('#sSubj').value.trim(), title: m.querySelector('#sTitle').value.trim(), boys: m.querySelector('#sBoys').value.trim(), girls: m.querySelector('#sGirls').value.trim() };
+      const payload = { id: s.id, date, from, to, subject: segVal(m, 'subj') || (sj ? sj.value.trim() : ''), title: m.querySelector('#sTitle').value.trim() };
       if (s.id){
         const i = B().sessions.findIndex(x => x.id === s.id); const prev = B().sessions[i];
         B().sessions[i] = Object.assign({}, prev, payload);
@@ -1564,7 +1629,7 @@ function clockPicker(value, title){
 }
 
 /* ============================== الاستيراد من إكسل ============================== */
-const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المستوى المدرَّس', 'level'], ['المستوى التعليمي', 'edu'], ['نوع القسم', 'type'], ['سنة بداية العمل', 'startYear'], ['الوظيفة', 'role']];
+const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المستويات المدرَّسة', 'level'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience'], ['المنصب', 'role']];
 function loadXLSX(){
   if (window.XLSX) return Promise.resolve();
   return new Promise((ok, no) => {
@@ -1578,7 +1643,7 @@ const normHeader = h => String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, 
 function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
-      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${isDir() ? ' يمكنك إضافة عمود «المشرف» باسمه كما في التطبيق.' : ''}</div>
+      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} إن كان المعلم يدرّس عدة مستويات افصل بينها بفاصلة.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
         ${IC.xls}<b class="d">اختر ملف إكسل</b><span class="small muted" id="fname">xlsx · xls · csv</span>
@@ -1591,8 +1656,8 @@ function openImport(){
       try{
         await loadXLSX();
         const L = B().cfg.lists;
-        const head = IMPORT_COLS.map(c => c[0]).concat(isDir() ? ['المشرف'] : []);
-        const ex = ['بن أحمد', 'محمد', 'عمر', 'ذكر', (L['المستويات المدرَّسة'] || [''])[1] || '', (L['المستوى التعليمي'] || [''])[0] || '', (L['نوع القسم'] || [''])[0] || '', 2020, 'الكل'];
+        const head = IMPORT_COLS.map(c => c[0]).concat(assts().length > 1 ? ['المساعد'] : []);
+        const ex = ['بن أحمد', 'محمد', 'عمر', 'ذكر', (L['المستويات المدرَّسة'] || []).slice(1, 3).join('، '), (L['المستوى التعليمي'] || [''])[0] || '', 3, 'قرآن'];
         const ws = XLSX.utils.aoa_to_sheet([head, ex]);
         ws['!cols'] = head.map(() => ({ wch: 18 }));
         const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
@@ -1607,22 +1672,21 @@ function openImport(){
         await loadXLSX();
         const wb = XLSX.read(await f.arrayBuffer());
         const raw = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-        const sups = B().users.filter(u => u.role === 'مشرف');
+        const sups = assts();
         rows = raw.map(r => {
           const o = {}, keys = {};
           Object.keys(r).forEach(k => keys[normHeader(k)] = r[k]);
-          IMPORT_COLS.forEach(([h, k]) => o[k] = String(keys[normHeader(h)] ?? '').trim());
-          if (isDir()){ const su = sups.find(u => u.name === String(keys['المشرف'] ?? '').trim()); o.supervisor = su ? su.id : ''; }
+          IMPORT_COLS.forEach(([h, k]) => o[k] = String(keys[normHeader(h)] ?? keys[normHeader(h === 'المستويات المدرَّسة' ? 'المستوى المدرَّس' : h)] ?? '').trim());
+          const su = sups.find(u => u.name === String(keys['المساعد'] ?? '').trim()); o.supervisor = su ? su.id : '';
           return o;
         }).filter(o => o.last || o.first);
-        const types = B().cfg.lists['نوع القسم'] || [];
-        const roles = B().cfg.lists['الوظيفة'] || ['قرآن', 'مادة', 'الكل'];
-        rows.forEach(o => { o.role = o.role || 'الكل'; });
-        const badRow = o => !o.last || !o.first || !roles.includes(o.role) || (o.role !== 'مادة' && types.length && !types.includes(o.type));
+        const roles = B().cfg.lists['المنصب'] && B().cfg.lists['المنصب'].length ? B().cfg.lists['المنصب'] : ['قرآن', 'مادة', 'قسم'];
+        rows.forEach(o => { o.role = post(o.role); });
+        const badRow = o => !o.last || !o.first || !roles.includes(o.role) || (o.experience !== '' && !/^\d{1,2}$/.test(o.experience));
         const bad = rows.filter(badRow).length;
         m.querySelector('#prev').innerHTML = rows.length ? `<div class="banner v">${rows.length} معلمًا في الملف${bad ? ` · <span style="color:var(--bad)">${bad} سطرًا ناقص</span>` : ''}</div>
           <div class="tbl-wrap" style="max-height:200px;overflow:auto;margin-top:8px"><table class="tbl"><tbody>
-          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}</td><td class="small" style="${badRow(o) ? 'color:var(--bad)' : ''}">${esc(ROLE_LABEL[o.role] || o.role)}${o.type ? ' · ' + esc(o.type) : ''}</td></tr>`).join('')}</tbody></table></div>`
+          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}</td><td class="small" style="${badRow(o) ? 'color:var(--bad)' : ''}">${esc(ROLE_LABEL[o.role] || o.role)}${o.experience !== '' ? ' · ' + esc(o.experience) + ' س' : ''}</td></tr>`).join('')}</tbody></table></div>`
           : '<div class="banner">لم أجد معلمين في الملف. تأكد من عناوين الأعمدة.</div>';
         m.querySelector('#doImp').disabled = !rows.length;
       } catch(err){ toast('تعذّرت قراءة الملف: ' + err.message, true); }
@@ -1630,7 +1694,7 @@ function openImport(){
     m.querySelector('#doImp').onclick = async e => {
       try{
         const r = await busy(e.currentTarget, () => api('importTeachers', { rows }));
-        r.added.forEach(t => { if (isDir() || t.supervisor === S.auth.user) B().teachers.push(t); });
+        r.added.forEach(t => B().teachers.push(t));
         persist(); close(); render(true);
         const msg = `أُضيف ${r.added.length} معلمًا` + (r.skipped.length ? ` · ${r.skipped.length} مكرر` : '') + (r.errors.length ? ` · ${r.errors.length} أخطاء` : '');
         if (r.errors.length) sheet(`<h3>نتيجة الاستيراد</h3><p>${esc(msg)}</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>السطر</th><th>الخطأ</th></tr></thead><tbody>${r.errors.map(x => `<tr><td>${x.line}</td><td>${esc(x.error)}</td></tr>`).join('')}</tbody></table></div><div class="acts"><button class="btn btn-p" data-close>حسنًا</button></div>`);
@@ -1649,7 +1713,7 @@ const pct100 = avg => { const c = B().cfg; return Math.round((avg - c.min) / (c.
 function renderReport(id){
   const v = visitById(id);
   if (!v || v.status !== 'مكتملة'){ $('#app').innerHTML = `<div class="rp-bar"><button class="back" data-go="#/">${IC.back} رجوع</button></div><div class="wrap">${emptyBox('التقرير متاح للزيارات المكتملة فقط')}</div>`; return; }
-  const t = teacher(v.teacher), cfg = B().cfg, items = itemsFor(t, v.number), ss = sessionsOf(id);
+  const t = teacher(v.teacher), cfg = B().cfg, items = visitItems(v), ss = sessionsOf(id);
   const scores = {}; items.forEach(it => { const x = valueOf(id, it.id); if (x !== undefined) scores[it.id] = x; });
   const c = computeScore(items, scores, t.role);
   const score = v.score ?? c.score, grade = v.grade || c.grade;
@@ -1657,7 +1721,7 @@ function renderReport(id){
   const dates = uniq(ss.map(s => fmtDate(s.date))).join(' · ');
   const times = ss.filter(s => s.from).map(s => `ح${s.number}: ${s.from}${s.to ? '–' + s.to : ''}`).join(' · ');
   const lessons = ss.map(s => `ح${s.number}: ${[s.subject, s.title].filter(Boolean).join(' — ') || '—'}`).join(' · ');
-  const pupils = ss.filter(s => s.boys !== '' || s.girls !== '').map(s => `ح${s.number}: ذ ${s.boys || 0} / إ ${s.girls || 0}`).join(' · ');
+  const pupils = v.boys !== '' && v.boys !== undefined ? `ذكور ${v.boys} · إناث ${v.girls || 0} · المجموع ${Number(v.boys) + Number(v.girls || 0)}` : '';
 
   // الأقسام والمحاور والبنود
   const secs = [];
@@ -1692,14 +1756,14 @@ function renderReport(id){
       <div class="rh">
         <div class="org"><b>${esc(B().school.name)}</b>الموسم الدراسي ${esc(cfg.season)}</div>
         <h1>تقرير الزيارة التربوية ${ORD[v.number - 1] || v.number}<small>${esc(tName(t))}</small></h1>
-        <div class="lg"><span>الإشراف التربوي · ${esc(id)}<br>أُغلقت ${esc(fmtDate((v.closed || '').slice(0, 10)))}<br>طُبع ${esc(fmtDate(today))}</span><i>${IC.book}</i></div>
+        <div class="lg"><span>برنامج الزيارات · ${esc(id)}<br>أُغلقت ${esc(fmtDate((v.closed || '').slice(0, 10)))}<br>طُبع ${esc(fmtDate(today))}</span><i>${IC.book}</i></div>
       </div>
       <div class="rinfo">
         <table><tr><td>المعلم</td><td>${esc(tName(t))}${t.father ? ' بن ' + esc(t.father) : ''}</td></tr>
-          <tr><td>الوظيفة والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(t.level || '—')}${t.type ? ' · ' + esc(t.type) : ''}</td></tr>
+          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
           <tr><td>المستوى التعليمي</td><td>${esc(t.edu || '—')}</td></tr>
           <tr><td>سنوات الخبرة</td><td>${t.experience === '' ? '—' : t.experience}</td></tr>
-          <tr><td>المشرف التربوي</td><td>${esc(sup)}</td></tr></table>
+          <tr><td>المساعد البيداغوجي</td><td>${esc(sup)}</td></tr></table>
         <table><tr><td>تاريخ الزيارة</td><td>${esc(dates || '—')}</td></tr>
           <tr><td>التوقيت</td><td>${esc(times || '—')}</td></tr>
           <tr><td>المادة والدرس</td><td>${esc(lessons || '—')}</td></tr>
@@ -1709,10 +1773,10 @@ function renderReport(id){
       </div>
       <div class="rlegend">${range(cfg.min, cfg.max).map(n => `<span><i style="background:${sHex(n)}"></i>${n}</span>`).join('')}<span>· سلّم التقييم من ${cfg.min} إلى ${cfg.max}</span></div>
       <div class="rsecs">${secHtml}</div>
-      <div class="rbox"><h5>ملاحظات المشرف التربوي</h5><div style="white-space:pre-wrap;min-height:7mm">${esc(v.notes) || '<span style="color:#A99CC6">—</span>'}</div></div>
-      <div class="rbox"><h5>التكوينات المقترحة</h5>${trHtml}</div>
+      <div class="rbox"><h5>ملاحظات المساعد البيداغوجي</h5><div style="white-space:pre-wrap;min-height:7mm">${esc(v.notes) || '<span style="color:#A99CC6">—</span>'}</div></div>
+      <div class="rbox"><h5>التكوينات التي حضرها المعلم</h5>${trHtml}</div>
       <div class="rsign">
-        <div><h5>المشرف التربوي</h5><div style="font-weight:600">${esc(sup)}</div><div class="small" style="color:#6E6488;font-size:7.5pt">التوقيع:</div><div class="lines"></div></div>
+        <div><h5>المساعد البيداغوجي</h5><div style="font-weight:600">${esc(sup)}</div><div class="small" style="color:#6E6488;font-size:7.5pt">التوقيع:</div><div class="lines"></div></div>
         <div><h5>ملاحظة المدير</h5><div class="lines"></div></div>
         <div><h5>الختم والتوقيع</h5><div class="stamp"><i>ختم المدرسة</i></div></div>
       </div>
@@ -1737,7 +1801,7 @@ function reportPage2(v, t, items, scores, c, secs){
   let pc = null;
   let differs = false;
   if (prev){
-    const pItems = itemsFor(t, prev.number);
+    const pItems = visitItems(prev);
     const ps = {}; pItems.forEach(it => { const x = valueOf(prev.id, it.id); if (x !== undefined) ps[it.id] = x; });
     pc = computeScore(pItems, ps, t.role);
     differs = pItems.map(i => i.id).join() !== items.map(i => i.id).join();
@@ -1747,8 +1811,9 @@ function reportPage2(v, t, items, scores, c, secs){
   const secTiles = secs.map(sec => {
     if (c.perSection[sec.name] === undefined) return '';
     const p = pct100(c.perSection[sec.name]);
-    const w = ((B().cfg.sectionWeights || {})[t.role || 'الكل'] || {})[sec.name];
-    return `<div><b style="color:${scoreColor(p)}">${p}%</b><span>${esc(sec.name)}${w ? ` · وزنه ${w}%` : ''}</span></div>`;
+    const w = ((B().cfg.sectionWeights || {})[post(t.role)] || {})[sec.name];
+    const wp = w && w <= 1 ? Math.round(w * 100) : w;   // الوزن قد يُكتب 70 أو 70%
+    return `<div><b style="color:${scoreColor(p)}">${p}%</b><span>${esc(sec.name)}${w ? ` · وزنه ${wp}%` : ''}</span></div>`;
   }).join('');
 
   // أعمدة المحاور مرتبة من الأعلى
@@ -1816,10 +1881,10 @@ const VCOL = ['#C4B5FD', '#7C3AED', '#E69138', '#0E9F6E', '#DB2777', '#2563EB'];
 function viewStats(){
   const cfg = B().cfg, dir = isDir();
   const rf = S.statRole || 'all';
-  const roleOk = t => rf === 'all' || (t.role || 'الكل') === 'الكل' || t.role === rf;
+  const roleOk = t => rf === 'all' || post(t.role) === rf;
   const ts = B().teachers.filter(t => t.active && roleOk(t));
   const tIds = new Set(ts.map(t => t.id));
-  const vs = B().visits.filter(v => tIds.has(v.teacher) || (rf === 'all' && !dir && v.supervisor === S.auth.user));
+  const vs = B().visits.filter(v => tIds.has(v.teacher) || (rf === 'all' && !seeAll() && v.supervisor === S.auth.user));
   const maxN = Math.max(1, ...vs.map(v => v.number), ...ts.map(t => t.planned));
   const vf = S.statVisit || 'all';
   const done = vs.filter(v => v.status === 'مكتملة');
@@ -1830,7 +1895,7 @@ function viewStats(){
   const newT = ts.filter(t => t.experience === 0).length;
   const avgExp = withY.length ? Math.round(withY.reduce((a, t) => a + t.experience, 0) / withY.length * 10) / 10 : null;
   const avgScore = doneF.length ? Math.round(doneF.reduce((a, v) => a + (v.score || 0), 0) / doneF.length * 10) / 10 : null;
-  const scoresOf = v => { const t = teacher(v.teacher); const o = {}; itemsFor(t, v.number).forEach(it => { const x = valueOf(v.id, it.id); if (x !== undefined) o[it.id] = x; }); return o; };
+  const scoresOf = v => { const o = {}; visitItems(v).forEach(it => { const x = valueOf(v.id, it.id); if (x !== undefined) o[it.id] = x; }); return o; };
 
   // التقديرات
   const grades = cfg.scale.slice().reverse();
@@ -1844,7 +1909,7 @@ function viewStats(){
   // المحاور
   const axAgg = {};
   doneF.forEach(v => {
-    const t = teacher(v.teacher); const c = computeScore(itemsFor(t, v.number), scoresOf(v), t && t.role);
+    const t = teacher(v.teacher); const c = computeScore(visitItems(v), scoresOf(v), t && t.role);
     Object.entries(c.perAxis).forEach(([k, a]) => { (axAgg[k] = axAgg[k] || []).push(a); });
   });
   const axRows = cfg.axes.filter(ax => ax.coef > 0 && axAgg[ax.id]).map(ax => {
@@ -1864,7 +1929,7 @@ function viewStats(){
   const eduRows = countBy(ts, 'edu', cfg.lists['المستوى التعليمي']).map(r => Object.assign(r, { color: 'var(--v500)' }));
   const male = ts.filter(t => t.gender === 'ذكر').length, female = ts.filter(t => t.gender === 'أنثى').length, unk = ts.length - male - female;
   const lvl = {};
-  withY.forEach(t => { const k = t.level || 'غير محدد'; (lvl[k] = lvl[k] || []).push(t.experience); });
+  withY.forEach(t => { const ks = (t.levels && t.levels.length) ? t.levels : [t.level || 'غير محدد']; ks.forEach(k => (lvl[k] = lvl[k] || []).push(t.experience)); });
   const expRows = (cfg.lists['المستويات المدرَّسة'] || []).concat(Object.keys(lvl)).filter((k, i, a) => lvl[k] && a.indexOf(k) === i)
     .map(k => { const a = Math.round(lvl[k].reduce((x, y) => x + y, 0) / lvl[k].length * 10) / 10; return { label: k, value: a, text: a, color: 'var(--amber)' }; });
 
@@ -1880,7 +1945,7 @@ function viewStats(){
   const trRows = cfg.trainings.filter(x => trCount[x.id]).map(x => ({ label: x.name, value: trCount[x.id], color: 'var(--clay)' })).sort((a, b) => b.value - a.value);
 
   const remaining = Math.max(0, planned - done.length - open);
-  const rseg = `<div class="seg no-print">${[['all', 'كل المعلمين'], ['مادة', 'معلمو المواد'], ['قرآن', 'معلمو القرآن']].map(([k, l]) => `<button data-sr="${k}" class="${rf === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  const rseg = `<div class="seg no-print">${[['all', 'كل المعلمين'], ['مادة', 'معلمو المواد'], ['قرآن', 'معلمو القرآن'], ['قسم', 'معلمو الأقسام']].map(([k, l]) => `<button data-sr="${k}" class="${rf === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   const seg = `<div class="seg no-print">${[['all', 'كل الزيارات']].concat(range(1, maxN).map(n => [String(n), 'الزيارة ' + (ORD[n - 1] || n)])).map(([k, l]) => `<button data-sv="${k}" class="${String(vf) === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   const noData = '<div class="muted small">لا توجد زيارات مكتملة بعد</div>';
 
@@ -1895,9 +1960,9 @@ function viewStats(){
     `<div class="dcard wide"><h4>أداء المعلمين <small>النقطة من 100 في كل زيارة</small></h4>${perf.length ? `<div class="gb">${perf.map(({ t, vs }) => `<div class="r"><span class="lab" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(tName(t))}</span><div class="bars">${vs.map(v => `<div><i style="width:${Math.max(2, v.score || 0)}%;background:${VCOL[v.number - 1] || '#999'}"></i><span>${v.score ?? '—'}</span></div>`).join('')}</div></div>`).join('')}</div>
       <div class="leg">${range(1, Math.max(...perf.map(p => p.vs.length))).map(n => `<span><i style="background:${VCOL[n - 1]}"></i>الزيارة ${ORD[n - 1] || n}</span>`).join('')}</div>` : noData}</div>`,
     `<div class="dcard"><h4>المحاور <small>من الأضعف إلى الأقوى (%)</small></h4>${axRows.length ? hbars(axRows) : noData}</div>`,
-    `<div class="dcard"><h4>التكوينات الأكثر اقتراحًا</h4>${trRows.length ? hbars(trRows) : '<div class="muted small">لم تُقترح تكوينات بعد</div>'}</div>`,
+    `<div class="dcard"><h4>التكوينات التي حضرها المعلمون <small>عدد الزيارات المسجّلة</small></h4>${trRows.length ? hbars(trRows) : '<div class="muted small">لم تُسجَّل تكوينات بعد</div>'}</div>`,
     `<div class="dcard"><h4>المعلمون حسب المستوى التعليمي</h4>${hbars(eduRows)}</div>`,
-    `<div class="dcard"><h4>متوسط الخبرة حسب المستوى المدرَّس <small>بالسنوات</small></h4>${expRows.length ? hbars(expRows) : '<div class="muted small">أضف سنة بداية العمل للمعلمين لتظهر الخبرة</div>'}</div>`,
+    `<div class="dcard"><h4>متوسط الخبرة حسب المستوى المدرَّس <small>بالسنوات</small></h4>${expRows.length ? hbars(expRows) : '<div class="muted small">أضف سنوات الخبرة للمعلمين لتظهر هنا</div>'}</div>`,
     `<div class="dcard"><h4>الجنس</h4><div class="stackbar"><i style="width:${ts.length ? male / ts.length * 100 : 0}%;background:#2563EB"></i><i style="width:${ts.length ? female / ts.length * 100 : 0}%;background:#DB2777"></i></div>
       <div class="leg"><span><i style="background:#2563EB"></i>ذكور · ${male}</span><span><i style="background:#DB2777"></i>إناث · ${female}</span>${unk ? `<span><i style="background:var(--soft);border:1px solid var(--line)"></i>غير محدد · ${unk}</span>` : ''}</div></div>`,
     `<div class="dcard"><h4>المواعيد</h4><div class="facts">
@@ -1906,14 +1971,14 @@ function viewStats(){
       <div class="fact"><b>${span ?? '—'}${span !== null ? ' يوم' : ''}</b><span>مدة الزيارات</span></div>
       <div class="fact"><b>${avgMin ?? '—'}${avgMin !== null ? ' د' : ''}</b><span>متوسط زمن الحصة</span></div></div></div>`
   ];
-  if (dir){
-    const sups = B().users.filter(u => u.role === 'مشرف' && u.active);
+  if (seeAll()){
+    const sups = assts().filter(u => u.active);
     const rows = sups.map(u => { const pl = ts.filter(t => t.supervisor === u.id).reduce((a, t) => a + t.planned, 0); const dn = done.filter(v => v.supervisor === u.id).length; return { label: u.name, value: dn, max: Math.max(pl, 1), text: `${dn}/${pl}`, color: 'var(--v600)' }; });
-    cards.splice(1, 0, `<div class="dcard wide"><h4>تقدم المشرفين <small>زيارات مكتملة من المقررة</small></h4>${hbars(rows)}</div>`);
+    cards.splice(1, 0, `<div class="dcard wide"><h4>تقدم المساعدين <small>زيارات مكتملة من المقررة</small></h4>${hbars(rows)}</div>`);
   }
   return {
     hero: `<div class="spread" style="margin-top:18px"><h1 style="margin:0">الإحصاءات</h1><button class="back no-print" data-act="print">${IC.print} طباعة</button></div>
-      <div class="sub">${esc(B().school.name)} · ${esc(cfg.season)}${dir ? '' : ' · زياراتي ومعلميّ'}</div>
+      <div class="sub">${esc(B().school.name)} · ${esc(cfg.season)}${seeAll() ? '' : ' · زياراتي ومعلميّ'}</div>
       <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(100px,1fr))">
         <div class="kpi glass"><div class="n">${ts.length}</div><div class="l">معلم</div></div>
         <div class="kpi glass"><div class="n">${ts.length ? Math.round(newT / ts.length * 100) : 0}<small>%</small></div><div class="l">معلمون جدد (${newT})</div></div>
@@ -1939,13 +2004,7 @@ const ACT = {
   import: () => openImport(),
   assignSheet: el => assignSheet(el.dataset.id),
 
-  startVisit: async el => {
-    const t = teacher(el.dataset.id);
-    const v = await busy(el, () => api('createVisit', { teacherId: t.id }));
-    B().visits.push(v); persist(); buzz(15);
-    go('#/v/' + v.id);
-    setTimeout(() => sessionSheet(v.id), 80);
-  },
+  startVisit: el => startVisitSheet(teacher(el.dataset.id)),
   addSession: el => sessionSheet(el.dataset.v),
   editSession: el => sessionSheet(el.dataset.v, B().sessions.find(x => x.id === el.dataset.id)),
   pickSessSheet: el => {
@@ -2003,23 +2062,26 @@ const ACT = {
       await busy(el, drain);
       if (Object.keys(getDraft(vid)).length) return toast('لم يكتمل حفظ العلامات، تحقق من الاتصال', true);
     }
+    if (String(($('#notes') || {}).value || '').trim().length < 5){ const n = $('#notes'); if (n){ n.focus(); n.closest('.card').classList.add('miss'); } return toast('اكتب ملاحظات المساعد البيداغوجي قبل الإغلاق', true); }
     if (!await confirmBox('إغلاق الزيارة', 'بعد الإغلاق تُحسب النقطة النهائية ولا يمكن تعديل العلامات. هل تؤكد؟', 'إغلاق نهائي', 'btn-ok')) return;
     const nd = LS.get('ishraf.close.' + vid) || {};
+    const notes = String(($('#notes') || {}).value ?? nd.notes ?? '').trim();
+    if (notes.length < 5){ const n = $('#notes'); if (n){ n.focus(); n.closest('.card').classList.add('miss'); } return toast('اكتب ملاحظات المساعد البيداغوجي قبل الإغلاق', true); }
     try{
-      const v = await busy(el, () => api('closeVisit', { visitId: vid, notes: ($('#notes') || {}).value ?? nd.notes ?? '', trainings: $$('[data-tr].on').map(x => x.dataset.tr) }));
+      const v = await busy(el, () => api('closeVisit', { visitId: vid, notes, trainings: $$('[data-tr].on').map(x => x.dataset.tr) }));
       const i = B().visits.findIndex(x => x.id === vid); B().visits[i] = v;
       LS.del('ishraf.close.' + vid); persist(); buzz([15, 60, 15]);
       go('#/v/' + vid);
     } catch(e){ toast(e.message, true); }
   },
 
-  addSup: () => sheet(`<h3>مشرف جديد</h3><div class="stack">
+  addSup: () => sheet(`<h3>مساعد بيداغوجي جديد</h3><div class="stack">
       <label class="field"><span>الاسم واللقب *</span><input id="uName" autocomplete="off"></label>
       <label class="field"><span>الهاتف</span><input id="uPhone" inputmode="tel" dir="ltr" style="text-align:right"></label></div>
       <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svU">إضافة</button></div>`,
     (m, close) => m.querySelector('#svU').onclick = async e => {
       const name = m.querySelector('#uName').value.trim();
-      if (name.length < 3) return toast('اكتب اسم المشرف ولقبه', true);
+      if (name.length < 3) return toast('اكتب اسم المساعد ولقبه', true);
       try{
         const u = await busy(e.currentTarget, () => api('addSupervisor', { name, phone: m.querySelector('#uPhone').value.trim() }));
         B().users.push(u); persist(); close(); render(true); buzz(15);
@@ -2031,7 +2093,7 @@ const ACT = {
     }),
   supActive: async el => {
     const u = user(el.dataset.id), on = !u.active;
-    if (!on && !await confirmBox('إيقاف المشرف', `إيقاف ${esc(u.name)}؟ لن يستطيع الدخول، وتبقى زياراته محفوظة.`, 'إيقاف')) return;
+    if (!on && !await confirmBox('إيقاف المساعد', `إيقاف ${esc(u.name)}؟ لن يستطيع الدخول، وتبقى زياراته محفوظة.`, 'إيقاف')) return;
     u.active = on; render(true); persist();
     enqueue({ action: 'setUserActive', payload: { userId: u.id, active: on }, onFail: () => { u.active = !on; render(true); } });
   }
