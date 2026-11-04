@@ -1517,6 +1517,13 @@ function startVisitSheet(t){
 }
 
 /* ============================== الأوراق: الحصة (الساعة وشريط الأيام) ============================== */
+/** خانة «عنوان الدرس» تتغير حسب المادة ونوع الحصة */
+function titleHint(subject, type){
+  const sj = String(subject || '');
+  if (/قرآن|القرآن/.test(sj) && type === 'تلقين') return ['القسط الملقَّن', 'مثال: من الطارق 01 إلى الطارق 07'];
+  if (/نشاط/.test(sj)) return ['نوع النشاط', 'مثال: مسابقة، رحلة، ورشة…'];
+  return ['اسم الدرس', 'مثال: الجملة الفعلية'];
+}
 function sessionSheet(vid, s){
   s = Object.assign({ date: isoDate(new Date()), from: '', to: '', subject: '', title: '' }, s || {});
   // المواد من ورقة «المواد» في شيت الإعدادات
@@ -1531,7 +1538,7 @@ function sessionSheet(vid, s){
         <button type="button" class="timetile" id="tFrom"><small>من</small><b class="${s.from ? '' : 'empty'}">${esc(s.from || 'اختر الوقت')}</b></button>
         <button type="button" class="timetile" id="tTo"><small>إلى</small><b class="${s.to ? '' : 'empty'}">${esc(s.to || 'اختر الوقت')}</b></button></div></div>
       <div class="field"><span>المادة</span>${subjects.length ? chips('subj', subjects, s.subject) : ''}${subjects.length && !(s.subject && !subjects.includes(s.subject)) ? '' : `<input id="sSubj" placeholder="اكتب المادة" value="${esc(subjects.includes(s.subject) ? '' : s.subject)}" style="margin-top:8px">`}</div>
-      <label class="field"><span>عنوان الدرس</span><input id="sTitle" value="${esc(s.title)}" placeholder="مثال: سورة النبأ، الجملة الفعلية…"></label>
+      <label class="field"><span id="sTitleL">${titleHint(s.subject, (visitById(vid) || {}).type)[0]}</span><input id="sTitle" value="${esc(s.title)}" placeholder="${titleHint(s.subject, (visitById(vid) || {}).type)[1]}"></label>
     </div>
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svS">حفظ الحصة</button></div>`,
   (m, close) => {
@@ -1544,7 +1551,10 @@ function sessionSheet(vid, s){
     m.querySelector('#tFrom').onclick = async () => { const v = await clockPicker(from || nowHM(), 'بداية الحصة'); if (v){ from = v; setT(m.querySelector('#tFrom'), v); if (!to || to <= v){ to = addMin(v, 60); setT(m.querySelector('#tTo'), to); } } };
     m.querySelector('#tTo').onclick = async () => { const v = await clockPicker(to || (from ? addMin(from, 60) : nowHM()), 'نهاية الحصة'); if (v){ to = v; setT(m.querySelector('#tTo'), v); } };
     const sj = m.querySelector('#sSubj');
-    if (sj) sj.oninput = () => m.querySelectorAll('[data-seg="subj"] button').forEach(x => x.classList.remove('on'));
+    const vType = (visitById(vid) || {}).type;
+    const upHint = () => { const [l, ph] = titleHint(segVal(m, 'subj') || (sj ? sj.value : ''), vType); m.querySelector('#sTitleL').textContent = l; m.querySelector('#sTitle').placeholder = ph; };
+    if (sj) sj.oninput = () => { m.querySelectorAll('[data-seg="subj"] button').forEach(x => x.classList.remove('on')); upHint(); };
+    const sg = m.querySelector('[data-seg="subj"]'); if (sg) sg.addEventListener('click', () => setTimeout(upHint, 0));
     m.querySelector('#svS').onclick = async e => {
       const payload = { id: s.id, date, from, to, subject: segVal(m, 'subj') || (sj ? sj.value.trim() : ''), title: m.querySelector('#sTitle').value.trim() };
       if (s.id){
