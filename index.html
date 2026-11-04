@@ -326,6 +326,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .ptr{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;z-index:90;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#fff;box-shadow:var(--sh-lg);display:grid;place-items:center;color:var(--v700);transform:translateY(-70px);transition:transform .2s}
 .ptr.go svg{animation:sp .7s linear infinite}
 .trs{display:flex;flex-wrap:wrap;gap:8px}
+.notif{display:flex;gap:10px;align-items:center;background:#FDECEC;color:#B42318;border-radius:14px;padding:12px 14px;font-weight:600}
+.notif .dot{width:24px;height:24px;border-radius:50%;background:#E5484D;color:#fff;display:grid;place-items:center;font-size:14px;flex:none;box-shadow:0 0 0 4px #E5484D33}
+.lsn{display:flex;gap:12px;align-items:center;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
+.lsn.click{cursor:pointer}.lsn.click:active{transform:scale(.99)}
+.lsn .ck{width:32px;height:32px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-family:Changa;font-weight:700;color:var(--muted);flex:none;font-size:13px}
+.lsn.on{border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}.lsn.on .ck{background:var(--ok);border-color:var(--ok);color:#fff}.lsn.on .ck svg{stroke:#fff;width:16px;height:16px}
+.lsn.due{border-inline-start:4px solid var(--bad)}
+.lsn .b{flex:1;min-width:0}
+.bnav .badge{position:absolute;top:2px;inset-inline-end:calc(50% - 22px);min-width:18px;height:18px;border-radius:9px;background:#E5484D;color:#fff;font-size:11px;display:grid;place-items:center;padding:0 5px}
 .glass-chip{background:rgba(255,255,255,.16)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)!important}
 .card.miss,.timetile.miss,input.miss{border:1.5px solid var(--bad)!important}
 .trs button{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:8px 12px;font-size:14px;display:inline-flex;gap:6px;align-items:center;transition:all .15s}
@@ -464,7 +473,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.0';
+const VERSION = '4.1';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -478,6 +487,7 @@ const LS = {
   del(k){ try{ localStorage.removeItem(k); }catch(e){} }
 };
 const IC = {
+  book2:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M9 8h6M9 12h4"/></svg>',
   book:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M9 8h6M9 12h4"/></svg>',
   bookBig:'<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h12v16H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M9 8h6M9 12h4"/></svg>',
   back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
@@ -498,6 +508,7 @@ const IC = {
   list:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>',
   target:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>',
   cols:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>',
+  road:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h11a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h11"/><circle cx="4" cy="6" r="1.6"/><circle cx="20" cy="18" r="1.6"/></svg>',
   chart:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   print:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg>',
   empty:'<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
@@ -622,6 +633,7 @@ function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.
 /* ============================== البيانات ============================== */
 const B = () => S.B;
 const isDir = () => S.auth && S.auth.role === 'مدير';
+const isTeacher = () => S.auth && S.auth.role === 'معلم';
 const ASST = 'مساعد بيداغوجي';
 const isAsst = u => u && (u.role === ASST || u.role === 'مشرف');
 /** المساعد الرئيسي: يضيف المعلمين ويُسندهم ويضيف المساعدين (المدير للاطلاع فقط) */
@@ -735,7 +747,7 @@ function skeleton(){
 }
 
 /* ============================== التوجيه ============================== */
-const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, stats: 0, me: 0, t: 1, v: 2, fill: 3, close: 3, report: 3 };
+const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3 };
 function go(h){ if (location.hash === h) render(); else location.hash = h; }
 window.addEventListener('hashchange', () => render());
 
@@ -786,7 +798,10 @@ function render(keep){
   const y = scrollY;
   if (r === 'report') return renderReport(id);
   let v;
-  if (r === 'stats') v = viewStats();
+  if (isTeacher()) v = r === 'me' ? viewMe() : r === 'cls' ? viewLessons(id) : viewTeacherHome();
+  else if (r === 'prog') v = viewProgress();
+  else if (r === 'cls') v = viewLessons(id);
+  else if (r === 'stats') v = viewStats();
   else if (r === 't') v = viewTeacher(id);
   else if (r === 'v') v = viewVisit(id);
   else if (r === 'fill') v = viewFill(id);
@@ -809,14 +824,37 @@ function topbar(){
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
-  const items = isDir()
-    ? [['#/sup', 'sup', 'المساعدون', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
+  const items = isTeacher() ? [['#/', '', 'دروسي', IC.book2], ['#/me', 'me', 'حسابي', IC.me]]
+    : isDir()
+    ? [['#/sup', 'sup', 'المساعدون', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
     : isMain()
-    ? [['#/', '', 'معلميّ', IC.users], ['#/tea', 'team', 'الفريق', IC.shield], ['#/visits', 'visits', 'زياراتي', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
-    : [['#/', '', 'معلميّ', IC.users], ['#/visits', 'visits', 'الزيارات', IC.clip], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]];
+    ? [['#/', '', 'معلميّ', IC.users], ['#/tea', 'team', 'الفريق', IC.shield], ['#/visits', 'visits', 'زياراتي', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
+    : [['#/', '', 'معلميّ', IC.users], ['#/visits', 'visits', 'الزيارات', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]];
   let cur = ['t', 'v', 'close'].includes(r) ? (isDir() ? 'tea' : '') : (isDir() && r === '' ? 'sup' : r);
   if (isMain() && ['sup', 'tea', 'vis'].includes(r)) cur = 'team';
-  return `<nav class="bnav">${items.map(([h, k, l, i]) => `<a href="${h}" class="${k === cur ? 'on' : ''}">${i}<span>${l}</span></a>`).join('')}</nav>`;
+  if (r === 'cls') cur = isTeacher() ? '' : 'prog';
+  const bd = navBadges();
+  return `<nav class="bnav">${items.map(([h, k, l, i]) => `<a href="${h}" class="${k === cur ? 'on' : ''}" style="position:relative">${i}<span>${l}</span>${bd[k] ? `<b class="badge">${bd[k]}</b>` : ''}</a>`).join('')}</nav>`;
+}
+
+/** الشارات الحمراء: للمعلم (لم يسجّل هذا الأسبوع + متأخر)، وللمساعد والمدير (مواد متأخرة) */
+function navBadges(){
+  const out = {};
+  try{
+    if (!PROG || PROG.ver !== B().progVer) return out;
+    const map = logMap(), list = B().assignments || [];
+    if (isTeacher()){
+      const weekAgo = isoDate(new Date(Date.now() - 6 * 864e5));
+      let n = list.length && !(B().lessonLog || []).some(x => x[4] === S.auth.user && x[3] >= weekAgo) ? 1 : 0;
+      if (list.some(a => progressOf(a.level, a.group, a.subject, map).st === 'late')) n++;
+      out[''] = n;
+    } else {
+      out.prog = list.filter(a => progressOf(a.level, a.group, a.subject, map).st === 'late').length;
+    }
+    const total = Object.values(out).reduce((x, y) => x + y, 0);
+    if (navigator.setAppBadge) (total ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(() => {});
+  } catch(e){}
+  return out;
 }
 
 /* ============================== الدخول ============================== */
@@ -848,7 +886,8 @@ async function renderLogin(){
       <div class="search">${IC.search}<input id="ss" placeholder="ابحث عن مدرستك…" autocomplete="off"></div>
       <div class="school-list" id="sl"></div>`;
   } else if (L.step === 'name'){
-    const users = L.dir.users.filter(u => u.school === L.school).sort((a, b) => a.role === b.role ? a.name.localeCompare(b.name, 'ar') : a.role === 'مدير' ? -1 : 1);
+    const rank = u => u.role === 'مدير' ? 0 : u.role === 'معلم' ? 2 : 1;
+    const users = L.dir.users.filter(u => u.school === L.school).sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'ar'));
     body = `<div class="lstep-h"><h2>من أنت؟</h2><button class="chip v" id="chSch" style="border:0">${esc(school ? school.name : '')} · تغيير</button></div>
       ${users.length ? `<div class="names">${users.map(u => `<button data-u="${esc(u.id)}"><span class="ini" style="${avGrad(u.name)}">${esc(initials(u.name))}</span><span>${esc(u.name)}</span><span class="role">${esc(u.role)}</span></button>`).join('')}</div>`
         : `<div class="banner">لا يوجد مستخدمون في هذه المدرسة بعد. اتصل بالإدارة العامة.</div>`}`;
@@ -1063,6 +1102,7 @@ function viewTeacher(id){
       ${!t.active ? '<div class="banner">هذا المعلم موقوف</div>' : ''}
       <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
         ${info.map(([k, v]) => `<div><div class="small muted d">${k}</div><div style="font-weight:500">${esc(v || '—')}</div></div>`).join('')}</div></div>
+      ${teachingCard(t)}
       <div class="sec-t" style="margin-top:18px">الزيارات</div>
       <div class="stack">${slots}</div></div>`
   };
@@ -2009,6 +2049,245 @@ function viewStats(){
   };
 }
 
+/* ============================== سيرورة الدروس ============================== */
+const GROUPS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و'];
+const SEQ = [9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8];          // أشهر الموسم بالترتيب
+const MONTHS_AR = ['', 'جانفي', 'فيفري', 'مارس', 'أفريل', 'ماي', 'جوان', 'جويلية', 'أوت', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+let PROG = LS.get('ishraf.prog');
+/** البرنامج الدراسي: يُحمَّل مرة ويُحفظ على الجهاز، ويُعاد تحميله فقط إذا تغيّر في الشيت */
+function program(){
+  const v = B().progVer || '';
+  if (PROG && PROG.ver === v) return PROG.data;
+  if (!S.progLoading){
+    S.progLoading = true;
+    api('program').then(d => { PROG = { ver: v, data: d }; try { LS.set('ishraf.prog', PROG); } catch(e){} S.progLoading = false; render(true); })
+      .catch(e => { S.progLoading = false; toast(e.message, true); });
+  }
+  return PROG ? PROG.data : null;
+}
+const clsKey = (lv, g, sj) => encodeURIComponent([lv, g, sj].join('|'));
+const logKey = (id, lv, g) => id + '|' + lv + '|' + g;
+function logMap(){
+  const m = new Map();
+  (B().lessonLog || []).forEach(x => m.set(logKey(x[0], x[1], x[2]), x));
+  return m;
+}
+const curMonthIdx = () => SEQ.indexOf(new Date().getMonth() + 1);
+/** التقدم مقارنة بالتوزيع الشهري: متأخر إن أنجز أقل من دروس الأشهر الماضية، متقدم إن تجاوز دروس الشهر الحالي */
+function progressOf(lv, g, sj, map){
+  const P = program(); map = map || logMap();
+  const ls = (P && P.levels[lv] && P.levels[lv][sj]) || [];
+  const ci = curMonthIdx();
+  let done = 0, prev = 0, cur = 0;
+  ls.forEach(l => {
+    if (map.has(logKey(l[0], lv, g))) done++;
+    if (!l[3]) return;
+    const i = SEQ.indexOf(l[3]);
+    if (i < ci) prev++;
+    if (i <= ci) cur++;
+  });
+  const st = done < prev ? 'late' : done > cur ? 'ahead' : 'ok';
+  return { total: ls.length, done, prev, cur, st, n: st === 'late' ? prev - done : st === 'ahead' ? done - cur : 0 };
+}
+function progChip(p){
+  if (!p.total) return '<span class="chip">لا دروس</span>';
+  if (p.done >= p.total) return '<span class="chip ok">اكتمل البرنامج</span>';
+  return p.st === 'late' ? `<span class="chip bad">متأخر بـ ${p.n}</span>` : p.st === 'ahead' ? `<span class="chip ok">متقدم بـ ${p.n}</span>` : '<span class="chip v">في الموعد</span>';
+}
+/** الأقسام (مستوى + فوج) ومواد كل قسم، مرتبة حسب ترتيب المستويات في البرنامج */
+function classesOf(list){
+  const P = program() || { levels: {} };
+  const order = Object.keys(P.levels);
+  const m = new Map();
+  list.forEach(a => { const k = a.level + '|' + a.group; if (!m.has(k)) m.set(k, { level: a.level, group: a.group, subs: [] }); m.get(k).subs.push(a); });
+  return [...m.values()].sort((a, b) => order.indexOf(a.level) - order.indexOf(b.level) || a.group.localeCompare(b.group, 'ar'));
+}
+function subjectRow(a, map, showTeacher){
+  const p = progressOf(a.level, a.group, a.subject, map);
+  const t = showTeacher ? teacher(a.teacher) : null;
+  return `<div class="slot click" data-go="#/cls/${clsKey(a.level, a.group, a.subject)}">${miniRing(p.done, p.total)}
+    <div class="b"><b class="d">${esc(a.subject)}</b><div class="small muted">${p.done} من ${p.total} درس${t ? ' · ' + esc(tName(t)) : ''}</div></div>${progChip(p)}</div>`;
+}
+const progSkeleton = () => ({ body: `<div class="stack">${'<div class="sk" style="height:84px"></div>'.repeat(4)}</div>` });
+
+/* ---------- واجهة المعلم ---------- */
+function viewTeacherHome(){
+  const P = program();
+  const first = S.auth.name.split(' ').slice(-1)[0];
+  if (!P) return Object.assign({ hero: `<h1>مرحبًا، ${esc(first)}</h1><div class="sub">جارٍ تحميل البرنامج الدراسي…</div>` }, progSkeleton());
+  const mine = B().assignments || [];
+  const map = logMap();
+  const cls = classesOf(mine);
+  let done = 0, total = 0, late = 0;
+  mine.forEach(a => { const p = progressOf(a.level, a.group, a.subject, map); done += p.done; total += p.total; if (p.st === 'late') late += p.n; });
+  const weekAgo = isoDate(new Date(Date.now() - 6 * 864e5));
+  const thisWeek = (B().lessonLog || []).filter(x => x[4] === S.auth.user && x[3] >= weekAgo).length;
+  const alerts = [];
+  if (mine.length && !thisWeek) alerts.push('لم تسجّل أي درس هذا الأسبوع');
+  if (late) alerts.push(`أنت متأخر بـ ${late} ${late > 10 ? 'درسًا' : 'دروس'} عن التوزيع الشهري`);
+  return {
+    hero: `<h1>مرحبًا، ${esc(first)}</h1><div class="sub">${esc(B().school.name)} · ${esc(B().cfg.season)}</div>
+      <div class="kpis"><div class="kpi glass"><div class="n">${done}<small> / ${total}</small></div><div class="l">درس مُنجز</div></div>
+        <div class="kpi glass"><div class="n">${thisWeek}</div><div class="l">هذا الأسبوع</div></div>
+        <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">دروس متأخرة</div></div></div>`,
+    body: `<div class="stack">
+      ${alerts.map(a => `<div class="notif"><span class="dot">!</span>${esc(a)}</div>`).join('')}
+      ${cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:10px">${esc(c.level)} — فوج ${esc(c.group)}</div>
+        <div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
+        : emptyBox('لم يُسند إليك أي قسم بعد.<br>اتصل بالمساعد البيداغوجي.')}</div>`
+  };
+}
+function viewLessons(id){
+  const [lv, g, sj] = decodeURIComponent(id || '').split('|');
+  const P = program();
+  const back = isTeacher() ? '#/' : '#/prog';
+  const head = `<div class="row" style="margin-top:14px"><button class="back" data-go="${back}">${IC.back} رجوع</button></div>`;
+  if (!P) return Object.assign({ hero: head + `<h1>${esc(sj || '')}</h1>` }, progSkeleton());
+  const ls = (P.levels[lv] && P.levels[lv][sj]) || [];
+  const map = logMap();
+  const p = progressOf(lv, g, sj, map);
+  const a = (B().assignments || []).find(x => x.level === lv && x.group === g && x.subject === sj);
+  const t = a && !isTeacher() ? teacher(a.teacher) : null;
+  const ro = !isTeacher();
+  const ci = curMonthIdx();
+  let lastAx = -1, n = 0;
+  const rows = ls.map(l => {
+    const rec = map.get(logKey(l[0], lv, g));
+    const overdue = !rec && l[3] && SEQ.indexOf(l[3]) < ci;
+    const ax = l[1] !== lastAx ? `<div class="sec-t" style="margin-top:14px;font-size:14px">${esc(P.axes[l[1]] || '')}</div>` : '';
+    lastAx = l[1]; n++;
+    return ax + `<div class="lsn ${rec ? 'on' : ''} ${overdue ? 'due' : ''} ${ro ? '' : 'click'}" ${ro ? '' : `data-act="lsn" data-l="${esc(l[0])}" data-k="${esc(id)}"`}>
+      <span class="ck">${rec ? IC.check : n}</span>
+      <div class="b"><div>${esc(l[2])}</div><div class="small muted">${l[3] ? 'مقرر في ' + MONTHS_AR[l[3]] : 'بلا شهر'}${overdue ? ' · <b style="color:var(--bad)">متأخر</b>' : ''}</div></div>
+      ${rec ? `<span class="chip ok" style="white-space:nowrap">${esc(fmtDate(rec[3]))}</span>` : ''}</div>`;
+  }).join('');
+  return {
+    hero: head + `<h1>${esc(sj)}</h1><div class="sub">${esc(lv)} — فوج ${esc(g)}${t ? ' · ' + esc(tName(t)) : ''}</div>
+      <div style="margin-top:14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff"><div class="spread"><b>${p.done} من ${p.total} درس</b>${progChip(p)}</div>
+        <div class="bar" style="margin-top:10px;background:rgba(255,255,255,.25)"><i style="width:${p.total ? p.done / p.total * 100 : 0}%;background:#5EE0A8"></i></div>
+        <div class="small" style="margin-top:6px;opacity:.85">المقرر حتى الآن حسب التوزيع: ${p.prev}–${p.cur} درس</div></div>`,
+    body: `<div class="stack">${ro ? '' : '<div class="small muted">اضغط على الدرس عند تدريسه لتسجيله مع التاريخ.</div>'}${rows || emptyBox('لا توجد دروس لهذه المادة في البرنامج')}</div>`
+  };
+}
+/** ورقة تسجيل درس: شريط الأيام (اليوم افتراضيًا) */
+function lessonSheet(lid, key){
+  const [lv, g, sj] = decodeURIComponent(key).split('|');
+  const P = program(); const l = P.levels[lv][sj].find(x => x[0] === lid);
+  const k = logKey(lid, lv, g);
+  const rec = logMap().get(k);
+  const today = new Date(); today.setHours(12);
+  const days = range(-30, 0).map(d => { const x = new Date(today); x.setDate(x.getDate() + d); return x; });
+  let date = rec ? rec[3] : isoDate(today);
+  sheet(`<h3>${esc(l[2])}</h3><div class="small muted" style="margin:-6px 0 12px">${esc(sj)} · ${esc(lv)} — فوج ${esc(g)}</div>
+    <div class="field"><span>تاريخ التدريس</span><div class="days" id="days">${days.map(d => { const iso = isoDate(d); return `<button type="button" class="day ${iso === isoDate(today) ? 'today' : ''} ${iso === date ? 'on' : ''}" data-d="${iso}"><small>${AR_DAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${AR_MONTHS[d.getMonth()]}</small></button>`; }).join('')}</div>
+      <div class="small muted" id="dLbl">${esc(fmtDate(date))}</div></div>
+    <div class="acts">${rec ? '<button class="btn btn-g" id="unL" style="color:var(--bad)">إلغاء التسجيل</button>' : '<button class="btn btn-g" data-close>إلغاء</button>'}<button class="btn btn-ok" id="svL">${IC.check} ${rec ? 'حفظ التاريخ' : 'تمّ تدريسه'}</button></div>`,
+  (m, close) => {
+    const dEl = m.querySelector('#days');
+    setTimeout(() => { const on = dEl.querySelector('.on'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' }); }, 30);
+    dEl.onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; dEl.querySelectorAll('.day').forEach(x => x.classList.remove('on')); b.classList.add('on'); date = b.dataset.d; m.querySelector('#dLbl').textContent = fmtDate(date); buzz(5); };
+    const log = () => B().lessonLog = B().lessonLog || [];
+    m.querySelector('#svL').onclick = () => {
+      const before = log().slice();
+      const row = [lid, lv, g, date, S.auth.user];
+      const i = log().findIndex(x => logKey(x[0], x[1], x[2]) === k);
+      if (i >= 0) log()[i] = row; else log().push(row);
+      close(); buzz(15); render(true); persist();
+      enqueue({ action: 'markLesson', payload: { lessonId: lid, level: lv, group: g, date }, onFail: () => { B().lessonLog = before; render(true); } });
+    };
+    const un = m.querySelector('#unL');
+    if (un) un.onclick = () => {
+      const before = log().slice();
+      B().lessonLog = log().filter(x => logKey(x[0], x[1], x[2]) !== k);
+      close(); render(true); persist();
+      enqueue({ action: 'unmarkLesson', payload: { lessonId: lid, level: lv, group: g }, onFail: () => { B().lessonLog = before; render(true); } });
+    };
+  });
+}
+
+/* ---------- متابعة السيرورة: المساعد والمدير ---------- */
+function viewProgress(){
+  const P = program();
+  const hero0 = `<h1>سيرورة الدروس</h1><div class="sub">${esc(B().school.name)} · ${esc(B().cfg.season)}</div>`;
+  if (!P) return Object.assign({ hero: hero0 }, progSkeleton());
+  const list = B().assignments || [];
+  const map = logMap();
+  const f = S.progFilter || 'all';
+  let late = 0, done = 0, total = 0;
+  const ps = new Map();
+  list.forEach(a => { const p = progressOf(a.level, a.group, a.subject, map); ps.set(a, p); done += p.done; total += p.total; if (p.st === 'late') late++; });
+  const cls = classesOf(list.filter(a => f === 'all' || ps.get(a).st === 'late'));
+  const noAcc = B().teachers.filter(t => t.active && list.some(a => a.teacher === t.id) && !user(t.id)).length;
+  return {
+    hero: hero0 + `<div class="kpis"><div class="kpi glass"><div class="n">${classesOf(list).length}</div><div class="l">فوج</div></div>
+        <div class="kpi glass"><div class="n">${total ? Math.round(done / total * 100) : 0}<small>%</small></div><div class="l">نسبة الإنجاز</div></div>
+        <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">مادة متأخرة</div></div></div>`,
+    body: `<div class="stack">
+      ${isMain() && noAcc ? `<div class="banner">${noAcc} معلمين لهم أقسام ولم يُفعَّل حسابهم بعد — فعّله من صفحة المعلم.</div>` : ''}
+      <div class="seg">${[['all', 'كل الأفواج'], ['late', 'المتأخرة فقط']].map(([k, l]) => `<button data-pf="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} — فوج ${esc(c.group)}</div>
+        <div class="stack">${c.subs.map(a => subjectRow(a, map, true)).join('')}</div>`).join('') : emptyBox('لا توجد مواد متأخرة 👏'))
+        : emptyBox(isMain() ? 'لم تُحدَّد بعد ما يدرّسه كل معلم.<br>افتح صفحة المعلم واضغط «تعديل ما يدرّسه».' : 'لم يحدد المساعد الرئيسي ما يدرّسه المعلمون بعد.')}</div>`,
+    mount(){ $$('[data-pf]').forEach(b => b.onclick = () => { S.progFilter = b.dataset.pf; render(true); }); }
+  };
+}
+/** بطاقة «ما يدرّسه» في صفحة المعلم */
+function teachingCard(t){
+  const P = program();
+  const list = (B().assignments || []).filter(a => a.teacher === t.id);
+  const map = logMap();
+  const acc = user(t.id);
+  const account = !isMain() ? '' : acc
+    ? (acc.tempCode ? `<div class="ticket" style="margin-top:10px"><div><div class="small d" style="color:var(--warn)">رمز تفعيل المعلم — لم يدخل بعد</div><b>${esc(acc.tempCode)}</b></div><button class="btn btn-g" data-act="copy" data-t="${esc(acc.tempCode)}" style="min-height:38px">نسخ</button></div>`
+      : `<div class="spread" style="margin-top:10px"><span class="small muted">حساب المعلم مفعّل</span><button class="btn btn-g" data-act="activateT" data-id="${esc(t.id)}" style="min-height:38px">رمز جديد</button></div>`)
+    : `<button class="btn btn-a" data-act="activateT" data-id="${esc(t.id)}" style="margin-top:10px">${IC.plus} تفعيل حساب المعلم</button>`;
+  return `<div class="card stack"><div class="spread"><b class="d">ما يدرّسه</b>${isMain() ? `<button class="btn btn-g" data-act="editAssign" data-id="${esc(t.id)}" style="min-height:38px">${IC.edit} تعديل</button>` : ''}</div>
+    ${!P ? '<div class="sk" style="height:60px"></div>' : list.length ? classesOf(list).map(c => `<div class="small muted d">${esc(c.level)} — فوج ${esc(c.group)}</div><div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
+      : '<div class="small muted">لم يُحدَّد بعد.</div>'}
+    ${account}</div>`;
+}
+/** محرر ما يدرّسه المعلم (للمساعد الرئيسي) */
+function assignEditor(tid){
+  const P = program(); if (!P) return toast('جارٍ تحميل البرنامج، أعد المحاولة بعد لحظة');
+  const t = teacher(tid);
+  let rows = (B().assignments || []).filter(a => a.teacher === tid).map(a => ({ level: a.level, group: a.group, subject: a.subject }));
+  const levels = Object.keys(P.levels);
+  let lv = '', g = 'أ';
+  const draw = m => {
+    const cls = classesOf(rows);
+    m.querySelector('#asCur').innerHTML = cls.length ? cls.map(c => `<div class="card" style="box-shadow:none;padding:10px 12px"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}</b>
+      <div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap">${c.subs.map(a => `<button class="chip v" data-rm="${esc(a.level + '|' + a.group + '|' + a.subject)}" style="border:0">${esc(a.subject)} ✕</button>`).join('')}</div></div>`).join('')
+      : '<div class="small muted">لا شيء بعد. اختر المستوى والفوج والمواد ثم «إضافة».</div>';
+    m.querySelector('#asSub').innerHTML = lv ? `<span>المواد في ${esc(lv)}</span><div class="trs">${Object.keys(P.levels[lv]).map(s => `<button type="button" data-sj="${esc(s)}" class="${rows.some(a => a.level === lv && a.group === g && a.subject === s) ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>` : '';
+    m.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { rows = rows.filter(a => a.level + '|' + a.group + '|' + a.subject !== b.dataset.rm); draw(m); });
+    m.querySelectorAll('[data-sj]').forEach(b => b.onclick = () => {
+      const s = b.dataset.sj, has = rows.some(a => a.level === lv && a.group === g && a.subject === s);
+      rows = has ? rows.filter(a => !(a.level === lv && a.group === g && a.subject === s)) : rows.concat([{ level: lv, group: g, subject: s }]);
+      buzz(5); draw(m);
+    });
+  };
+  sheet(`<h3>ما يدرّسه ${esc(tName(t))}</h3>
+    <div class="stack"><div id="asCur" class="stack"></div>
+      <div class="field"><span>المستوى</span><div class="seg" data-seg="alv" style="flex-wrap:wrap">${levels.map(x => `<button type="button" data-val="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
+      <div class="field"><span>الفوج</span>${chips('ag', GROUPS, 'أ')}</div>
+      <div class="field" id="asSub"></div></div>
+    <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svA">حفظ</button></div>`,
+  (m, close) => {
+    bindSegs(m);
+    m.querySelector('[data-seg="ag"]').dataset.req = 1;
+    m.querySelector('[data-seg="alv"]').addEventListener('click', () => setTimeout(() => { lv = segVal(m, 'alv'); draw(m); }, 0));
+    m.querySelector('[data-seg="ag"]').addEventListener('click', () => setTimeout(() => { g = segVal(m, 'ag') || 'أ'; draw(m); }, 0));
+    draw(m);
+    m.querySelector('#svA').onclick = async e => {
+      try{
+        const r = await busy(e.currentTarget, () => api('saveAssignments', { teacherId: tid, rows }));
+        B().assignments = (B().assignments || []).filter(a => a.teacher !== tid).concat(r);
+        persist(); close(); render(true); toast('تم الحفظ');
+      } catch(err){ toast(err.message, true); }
+    };
+  });
+}
+
 /* ============================== الإجراءات ============================== */
 const ACT = {
   print: () => { buzz(); window.print(); },
@@ -2020,6 +2299,19 @@ const ACT = {
   toggleKanban: () => { S.kanban = !S.kanban; LS.set('ishraf.kanban', S.kanban); render(true); },
   addTeacher: () => teacherSheet({ supervisor: '' }),
   editTeacher: el => teacherSheet(Object.assign({}, teacher(el.dataset.id))),
+  lsn: el => lessonSheet(el.dataset.l, el.dataset.k),
+  editAssign: el => assignEditor(el.dataset.id),
+  activateT: async el => {
+    const t = teacher(el.dataset.id), acc = user(t.id);
+    if (acc && !await confirmBox('رمز جديد', `سيتوقف الرمز الحالي لـ ${esc(tName(t))}، ويدخل بالرمز الجديد ثم يختار رمزه.`, 'رمز جديد')) return;
+    const r = await busy(el, () => api('activateTeacher', { teacherId: t.id }));
+    const u = { id: t.id, name: tName(t), role: 'معلم', active: true, codeStatus: 'مؤقت', tempCode: r.tempCode };
+    const i = B().users.findIndex(x => x.id === t.id); if (i >= 0) B().users[i] = u; else B().users.push(u);
+    persist(); render(true); buzz(15);
+    sheet(`<div style="text-align:center"><h3 style="margin:10px 0 4px">رمز تفعيل ${esc(tName(t))}</h3><p class="muted small" style="margin:0 0 14px">يدخل به المعلم أول مرة (المدرسة ← اسمه ← الرمز) ثم يختار رمزه الشخصي.</p>
+      <div class="code-big">${esc(r.tempCode)}</div></div>
+      <div class="acts"><button class="btn btn-g" data-act="copy" data-t="${esc(r.tempCode)}" onclick="ACT.copy(this)">نسخ</button><button class="btn btn-p" data-close>تم</button></div>`);
+  },
   import: () => openImport(),
   assignSheet: el => assignSheet(el.dataset.id),
 
