@@ -327,7 +327,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .ptr.go svg{animation:sp .7s linear infinite}
 .trs{display:flex;flex-wrap:wrap;gap:8px}
 .glass-chip{background:rgba(255,255,255,.16)!important;color:#fff!important;border:1px solid rgba(255,255,255,.28)!important}
-.card.miss{border:1.5px solid var(--bad)!important}
+.card.miss,.timetile.miss,input.miss{border:1.5px solid var(--bad)!important}
 .trs button{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:8px 12px;font-size:14px;display:inline-flex;gap:6px;align-items:center;transition:all .15s}
 .trs button.on{border-color:var(--clay);background:var(--clay-l);color:var(--clay)}
 
@@ -1534,11 +1534,11 @@ function sessionSheet(vid, s){
     <div class="stack">
       <div class="field"><span>اليوم</span><div class="days" id="days">${days.map(d => { const iso = isoDate(d); return `<button type="button" class="day ${iso === isoDate(today) ? 'today' : ''} ${iso === s.date ? 'on' : ''}" data-d="${iso}"><small>${AR_DAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${AR_MONTHS[d.getMonth()]}</small></button>`; }).join('')}</div>
         <div class="small muted" id="dLbl">${esc(fmtDate(s.date))}</div></div>
-      <div class="field"><span>التوقيت</span><div class="timepair">
+      <div class="field"><span>التوقيت *</span><div class="timepair">
         <button type="button" class="timetile" id="tFrom"><small>من</small><b class="${s.from ? '' : 'empty'}">${esc(s.from || 'اختر الوقت')}</b></button>
         <button type="button" class="timetile" id="tTo"><small>إلى</small><b class="${s.to ? '' : 'empty'}">${esc(s.to || 'اختر الوقت')}</b></button></div></div>
       <div class="field"><span>المادة</span>${subjects.length ? chips('subj', subjects, s.subject) : ''}${subjects.length && !(s.subject && !subjects.includes(s.subject)) ? '' : `<input id="sSubj" placeholder="اكتب المادة" value="${esc(subjects.includes(s.subject) ? '' : s.subject)}" style="margin-top:8px">`}</div>
-      <label class="field"><span id="sTitleL">${titleHint(s.subject, (visitById(vid) || {}).type)[0]}</span><input id="sTitle" value="${esc(s.title)}" placeholder="${titleHint(s.subject, (visitById(vid) || {}).type)[1]}"></label>
+      <label class="field"><span><span id="sTitleL">${titleHint(s.subject, (visitById(vid) || {}).type)[0]}</span> *</span><input id="sTitle" oninput="this.classList.remove('miss')" value="${esc(s.title)}" placeholder="${titleHint(s.subject, (visitById(vid) || {}).type)[1]}"></label>
     </div>
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svS">حفظ الحصة</button></div>`,
   (m, close) => {
@@ -1548,8 +1548,9 @@ function sessionSheet(vid, s){
     const on = dEl.querySelector('.on'); if (on) setTimeout(() => on.scrollIntoView({ inline: 'center', block: 'nearest' }), 30);
     dEl.onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; dEl.querySelectorAll('.day').forEach(x => x.classList.remove('on')); b.classList.add('on'); date = b.dataset.d; m.querySelector('#dLbl').textContent = fmtDate(date); buzz(5); };
     const setT = (el, v) => { const b = el.querySelector('b'); b.textContent = v || 'اختر الوقت'; b.classList.toggle('empty', !v); };
-    m.querySelector('#tFrom').onclick = async () => { const v = await clockPicker(from || nowHM(), 'بداية الحصة'); if (v){ from = v; setT(m.querySelector('#tFrom'), v); if (!to || to <= v){ to = addMin(v, 60); setT(m.querySelector('#tTo'), to); } } };
-    m.querySelector('#tTo').onclick = async () => { const v = await clockPicker(to || (from ? addMin(from, 60) : nowHM()), 'نهاية الحصة'); if (v){ to = v; setT(m.querySelector('#tTo'), v); } };
+    // التوقيت الافتراضي: من 18:30 إلى 20:30
+    m.querySelector('#tFrom').onclick = async () => { const v = await clockPicker(from || '18:30', 'بداية الحصة'); if (v){ from = v; setT(m.querySelector('#tFrom'), v); if (!to || to <= v){ to = v === '18:30' ? '20:30' : addMin(v, 120); setT(m.querySelector('#tTo'), to); } m.querySelector('#tFrom').classList.remove('miss'); } };
+    m.querySelector('#tTo').onclick = async () => { const v = await clockPicker(to || (from ? addMin(from, 120) : '20:30'), 'نهاية الحصة'); if (v){ to = v; setT(m.querySelector('#tTo'), v); m.querySelector('#tTo').classList.remove('miss'); } };
     const sj = m.querySelector('#sSubj');
     const vType = (visitById(vid) || {}).type;
     const upHint = () => { const [l, ph] = titleHint(segVal(m, 'subj') || (sj ? sj.value : ''), vType); m.querySelector('#sTitleL').textContent = l; m.querySelector('#sTitle').placeholder = ph; };
@@ -1557,6 +1558,14 @@ function sessionSheet(vid, s){
     const sg = m.querySelector('[data-seg="subj"]'); if (sg) sg.addEventListener('click', () => setTimeout(upHint, 0));
     m.querySelector('#svS').onclick = async e => {
       const payload = { id: s.id, date, from, to, subject: segVal(m, 'subj') || (sj ? sj.value.trim() : ''), title: m.querySelector('#sTitle').value.trim() };
+      // لا تُحفظ الحصة دون التاريخ والتوقيت وعنوان الدرس
+      const miss = [];
+      if (!date) miss.push('التاريخ');
+      if (!from){ miss.push('بداية الحصة'); m.querySelector('#tFrom').classList.add('miss'); }
+      if (!to){ miss.push('نهاية الحصة'); m.querySelector('#tTo').classList.add('miss'); }
+      if (!payload.title){ miss.push(m.querySelector('#sTitleL').textContent); m.querySelector('#sTitle').classList.add('miss'); }
+      if (miss.length) return toast('أكمل: ' + miss.join('، '), true);
+      if (to <= from) return toast('نهاية الحصة يجب أن تكون بعد بدايتها', true);
       if (s.id){
         const i = B().sessions.findIndex(x => x.id === s.id); const prev = B().sessions[i];
         B().sessions[i] = Object.assign({}, prev, payload);
