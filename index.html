@@ -326,6 +326,14 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .ptr{position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;z-index:90;width:40px;height:40px;margin-left:-20px;border-radius:50%;background:#fff;box-shadow:var(--sh-lg);display:grid;place-items:center;color:var(--v700);transform:translateY(-70px);transition:transform .2s}
 .ptr.go svg{animation:sp .7s linear infinite}
 .trs{display:flex;flex-wrap:wrap;gap:8px}
+.a4.codes{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(4,1fr);gap:0;padding:8mm}
+.ccard{border:.3mm dashed #A99CC6;padding:4mm 5mm;display:flex;flex-direction:column;gap:1.4mm;font-size:8.5pt;color:#1B1530;overflow:hidden}
+.ccard .ch{display:flex;justify-content:space-between;gap:2mm;font-size:7.5pt;color:#6E6488}.ccard .ch b{color:#4B2A8C;font-family:Changa}
+.ccard .cn{font-family:Changa;font-weight:700;font-size:13pt;margin-top:1mm}
+.ccard .cc{color:#6E6488;font-size:8pt}
+.ccard .ck{display:flex;align-items:center;justify-content:space-between;background:#F3EEFF;border-radius:2.5mm;padding:2mm 4mm;margin:1mm 0}
+.ccard .ck b{font-family:Changa;font-size:22pt;letter-spacing:3mm;color:#4B2A8C}
+.ccard ol{margin:0;padding-inline-start:5mm;font-size:7.5pt;line-height:1.55}
 .notif{display:flex;gap:10px;align-items:center;background:#FDECEC;color:#B42318;border-radius:14px;padding:12px 14px;font-weight:600}
 .notif .dot{width:24px;height:24px;border-radius:50%;background:#E5484D;color:#fff;display:grid;place-items:center;font-size:14px;flex:none;box-shadow:0 0 0 4px #E5484D33}
 .lsn{display:flex;gap:12px;align-items:center;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
@@ -473,7 +481,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.2';
+const VERSION = '4.2.1';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -747,7 +755,7 @@ function skeleton(){
 }
 
 /* ============================== التوجيه ============================== */
-const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3 };
+const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3, codes: 3 };
 function go(h){ if (location.hash === h) render(); else location.hash = h; }
 window.addEventListener('hashchange', () => render());
 
@@ -798,6 +806,7 @@ function render(keep){
   S.lastRoute = location.hash; S.lastDepth = depth;
   const y = scrollY;
   if (r === 'report') return renderReport(id);
+  if (r === 'codes') return renderCodes();
   let v;
   if (isTeacher()) v = r === 'me' ? viewMe() : r === 'cls' ? viewLessons(id) : viewTeacherHome();
   else if (r === 'prog') v = viewProgress();
@@ -1356,6 +1365,7 @@ function viewDirector(tab){
     const noMain = sups.filter(u => u.active).length > 1 && !sups.some(u => u.main && u.active);
     body = `<div class="spread"><div class="sec-t" style="margin:0">المساعدون البيداغوجيون</div>${ro ? '' : `<button class="btn btn-p" data-act="addSup">${IC.plus} مساعد</button>`}</div>
       ${noMain ? '<div class="banner" style="margin-top:12px">لم تحدد الإدارة العامة المساعد الرئيسي لهذه المدرسة (عمود «رئيسي» في ورقة المستخدمين).</div>' : ''}
+      <div style="margin-top:12px">${codesBar()}</div>
       ${sups.length ? `<div class="grid g2" style="margin-top:12px">${sups.map(u => {
         const myT = ts.filter(x => x.supervisor === u.id && x.active);
         const pl = myT.reduce((a, x) => a + x.planned, 0);
@@ -1962,7 +1972,7 @@ function reportPage2(v, t, items, scores, c, secs){
     ${strong.length ? `<div class="p2t">نقاط التميّز<small>البنود التي نالت ${cfg.max} من ${cfg.max}</small></div><div class="strong">${strong.slice(0, 16).map(it => `<span>${esc(it.text)}</span>`).join('')}${strong.length > 16 ? `<span>+${strong.length - 16}</span>` : ''}</div>` : ''}
   </div>`;
 }
-addEventListener('beforeprint', () => { S.oldTitle = document.title; if (route().r === 'report' && S.printTitle) document.title = S.printTitle; const s = $('#rpS'); if (s) s.style.transform = 'none'; });
+addEventListener('beforeprint', () => { S.oldTitle = document.title; if (['report', 'codes'].includes(route().r) && S.printTitle) document.title = S.printTitle; const s = $('#rpS'); if (s) s.style.transform = 'none'; });
 addEventListener('afterprint', () => { if (S.oldTitle) document.title = S.oldTitle; if (route().r === 'report') render(); });
 
 /* ============================== لوحة الإحصاءات ============================== */
@@ -2253,6 +2263,42 @@ function lessonSheet(lid, key){
   });
 }
 
+/* ---------- رموز تفعيل المعلمين ---------- */
+const tempTeachers = () => B().teachers.filter(t => t.active && user(t.id) && user(t.id).tempCode);
+/** شريط المساعد الرئيسي: تفعيل الكل + طباعة الرموز التي لم تُستعمل بعد */
+function codesBar(){
+  if (!isMain()) return '';
+  const none = B().teachers.filter(t => t.active && !user(t.id)).length, temp = tempTeachers().length;
+  if (!none && !temp) return '';
+  return `<div class="card stack" style="box-shadow:none"><b class="d">حسابات المعلمين</b>
+    <div class="small muted">${none ? `${none} معلمًا لم يُفعَّل حسابهم بعد. ` : ''}${temp ? `${temp} معلمًا لم يدخلوا بعد برمزهم المؤقت.` : ''}</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap">${none ? `<button class="btn btn-a" data-act="activateAll">${IC.plus} تفعيل كل المعلمين وطباعة الرموز</button>` : ''}
+      ${temp ? `<button class="btn btn-g" data-go="#/codes">${IC.print} طباعة الرموز (${temp})</button>` : ''}</div></div>`;
+}
+/** ورقة A4 للطباعة: بطاقة لكل معلم فيها اسمه وأقسامه ورمزه المؤقت وخطوات الدخول، تُقص وتوزّع */
+function renderCodes(){
+  const back = '#/prog';
+  const list = tempTeachers().sort((a, b) => tName(a).localeCompare(tName(b), 'ar'));
+  if (!list.length){ $('#app').innerHTML = `<div class="rp-bar"><button class="back" data-go="${back}">${IC.back} رجوع</button></div><div class="wrap">${emptyBox('لا توجد رموز مؤقتة. كل المعلمين المفعّلين دخلوا واختاروا رموزهم.')}</div>`; return; }
+  const link = location.origin + location.pathname;
+  const card = t => {
+    const cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => c.level + ' ' + c.group).join('، ');
+    return `<div class="ccard"><div class="ch"><b>${esc(B().school.name)}</b><span>برنامج الزيارات · ${esc(B().cfg.season)}</span></div>
+      <div class="cn">${esc(tName(t))}</div><div class="cc">${esc(cls || ROLE_LABEL[t.role] || '')}</div>
+      <div class="ck"><small>رمز الدخول الأول</small><b dir="ltr">${esc(user(t.id).tempCode)}</b></div>
+      <ol><li>افتح الرابط: <span dir="ltr">${esc(link)}</span></li><li>اختر المدرسة، ثم اسمك</li><li>اكتب هذا الرمز، ثم اختر رمزك الشخصي واحفظه</li></ol></div>`;
+  };
+  const pages = []; for (let i = 0; i < list.length; i += 8) pages.push(list.slice(i, i + 8));
+  $('#app').innerHTML = `<div class="rp-bar no-print"><button class="back" data-go="${back}">${IC.back} رجوع</button><span class="t">رموز تفعيل المعلمين (${list.length})</span>
+      <button class="btn btn-w" data-act="print">${IC.print} طباعة / PDF</button></div>
+    <div class="rp-stage" id="rpStage"><div class="rp-scale" id="rpS">${pages.map(p => `<div class="a4 codes">${p.map(card).join('')}</div>`).join('')}</div></div>`;
+  const fit = () => { const a4 = $('.a4'), s = $('#rpS'), st = $('#rpStage'); if (!a4) return;
+    const k = Math.min(1, (innerWidth - 24) / a4.offsetWidth); s.style.transform = `scale(${k})`; st.style.height = (s.offsetHeight * k + 50) + 'px'; st.style.overflow = 'hidden'; };
+  fit(); window.onresize = () => { if (route().r === 'codes') fit(); };
+  S.printTitle = 'رموز تفعيل المعلمين - ' + B().school.name;
+  window.scrollTo(0, 0);
+}
+
 /* ---------- متابعة السيرورة: المساعد والمدير ---------- */
 function viewProgress(){
   const P = program();
@@ -2271,7 +2317,7 @@ function viewProgress(){
         <div class="kpi glass"><div class="n">${total ? Math.round(done / total * 100) : 0}<small>%</small></div><div class="l">نسبة الإنجاز</div></div>
         <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">مادة متأخرة</div></div></div>`,
     body: `<div class="stack">
-      ${isMain() && noAcc ? `<div class="banner">${noAcc} معلمين لهم أقسام ولم يُفعَّل حسابهم بعد — فعّله من صفحة المعلم.</div>` : ''}
+      ${codesBar()}
       <div class="seg">${[['all', 'كل الأفواج'], ['late', 'المتأخرة فقط']].map(([k, l]) => `<button data-pf="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} — فوج ${esc(c.group)}</div>
         <div class="stack">${c.subs.map(a => subjectRow(a, map, true)).join('')}</div>`).join('') : emptyBox('لا توجد مواد متأخرة 👏'))
@@ -2349,6 +2395,14 @@ const ACT = {
   editTeacher: el => teacherSheet(Object.assign({}, teacher(el.dataset.id))),
   lsn: el => lessonSheet(el.dataset.l, el.dataset.k),
   editAssign: el => assignEditor(el.dataset.id),
+  activateAll: async el => {
+    const n = B().teachers.filter(t => t.active && !user(t.id)).length;
+    if (!await confirmBox('تفعيل كل المعلمين', `سيُعطى ${n} معلمًا رمز دخول مؤقتًا، ثم تُفتح ورقة للطباعة فيها اسم كل معلم ورمزه ليقصّها ويوزّعها.`, 'تفعيل وطباعة')) return;
+    const r = await busy(el, () => api('activateAllTeachers'));
+    r.forEach(x => { const t = teacher(x.teacherId); const u = { id: x.teacherId, name: tName(t), role: 'معلم', active: true, codeStatus: 'مؤقت', tempCode: x.tempCode };
+      const i = B().users.findIndex(y => y.id === x.teacherId); if (i >= 0) B().users[i] = u; else B().users.push(u); });
+    persist(); buzz(15); go('#/codes');
+  },
   activateT: async el => {
     const t = teacher(el.dataset.id), acc = user(t.id);
     if (acc && !await confirmBox('رمز جديد', `سيتوقف الرمز الحالي لـ ${esc(tName(t))}، ويدخل بالرمز الجديد ثم يختار رمزه.`, 'رمز جديد')) return;
