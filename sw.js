@@ -1,5 +1,5 @@
 // يحفظ واجهة التطبيق على الجهاز ليفتح فورًا، ولا يتدخل في طلبات البيانات
-const CACHE = 'ishraf-v8';
+const CACHE = 'ishraf-v9';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => {

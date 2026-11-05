@@ -473,7 +473,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.1.1';
+const VERSION = '4.2';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -790,6 +790,7 @@ function render(keep){
   // أثناء التحميل الأول نعرض الهياكل، ولا نعود لشاشة الدخول إلا إن لم يكن هناك حساب
   if (S.auth && !S.B && !['new1', 'new2'].includes(S.L.step)){ $('#app').innerHTML = skeleton(); return; }
   if (!S.auth || !S.B) return renderLogin();
+  program();   // تحميل البرنامج الدراسي في الخلفية (مرة واحدة)
   const { r, id } = route();
   const depth = ROUTES_DEPTH[r] ?? 0;
   const anim = S.lastRoute === location.hash ? '' : depth >= S.lastDepth ? 'enter-f' : 'enter-b';
@@ -1155,7 +1156,7 @@ function viewVisit(id){
   return {
     hero: `<div class="row" style="margin-top:14px"><button class="back" data-go="#/t/${esc(v.teacher)}">${IC.back} ${esc(tName(t))}</button></div>
       <h1>الزيارة ${v.number}</h1><div class="sub">${esc(tName(t))} · ${v.status === 'مكتملة' ? 'مكتملة' : 'مفتوحة'}${seeAll() && v.supervisor !== S.auth.user ? ' · ' + esc(userName(v.supervisor)) : ''}</div>
-      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
+      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}${v.group ? ' — فوج ' + esc(v.group) : ''}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
     body: `<div class="stack">${main}
       <div class="spread" style="margin-top:14px"><div class="sec-t" style="margin:0">الحصص الميدانية</div>${editable ? `<button class="btn btn-a" data-act="addSession" data-v="${esc(id)}">${IC.plus} حصة</button>` : ''}</div>
       ${sess}</div>`
@@ -1434,7 +1435,11 @@ function teacherSheet(t){
   const L = B().cfg.lists;
   const sups = assts().filter(u => u.active || u.id === t.supervisor);
   const lv = t.levels || (t.level ? String(t.level).split(/\s*[،,]\s*/).filter(Boolean) : []);
-  const allLv = (L['المستويات المدرَّسة'] || []).concat(lv.filter(x => !(L['المستويات المدرَّسة'] || []).includes(x)));
+  const P = program();
+  if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t); return; }
+  // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بالفوج «أ» والمواد الافتراضية
+  let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, subs: c.subs.map(a => a.subject) }));
+  if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: 'أ', subs: defaultSubs(P, x, t.role) }));
   const posts = L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قرآن', 'مادة', 'قسم'];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
     <div class="stack">
@@ -1442,7 +1447,12 @@ function teacherSheet(t){
       <label class="field"><span>اسم الأب</span><input id="tFather" value="${esc(t.father)}"></label>
       <div class="field"><span>المنصب *</span><div class="seg" data-seg="role">${posts.map(x => `<button type="button" data-val="${esc(x)}" class="${x === post(t.role) ? 'on' : ''}">${esc(ROLE_LABEL[x] || x)}</button>`).join('')}</div></div>
       <div class="field"><span>الجنس</span>${chips('gender', L['الجنس'], t.gender)}</div>
-      <div class="field"><span>المستويات المدرَّسة <small class="muted">(يمكن اختيار أكثر من مستوى)</small></span><div class="trs" id="tLv">${allLv.map(x => `<button type="button" data-lv="${esc(x)}" class="${lv.includes(x) ? 'on' : ''}">${esc(x)}</button>`).join('')}</div></div>
+      <div class="field"><span>ما يدرّسه <small class="muted">(القسم = المستوى + الفوج، والمواد تُملأ حسب المنصب ويمكن حذف ما لا يدرّسه)</small></span>
+        <div id="tCls" class="stack"></div>
+        <div class="card stack" style="box-shadow:none;padding:12px;border-style:dashed" id="tAdd">
+          <div class="seg" data-seg="nlv" style="flex-wrap:wrap">${P ? Object.keys(P.levels).map(x => `<button type="button" data-val="${esc(x)}">${esc(x)}</button>`).join('') : ''}</div>
+          <div class="spread"><div class="seg" data-seg="ngr">${GROUPS.map(x => `<button type="button" data-val="${x}" class="${x === 'أ' ? 'on' : ''}">فوج ${x}</button>`).join('')}</div>
+          <button type="button" class="btn btn-a" id="tAddB" style="min-height:40px">${IC.plus} قسم</button></div></div></div>
       <div class="field"><span>المستوى التعليمي</span>${chips('edu', L['المستوى التعليمي'], t.edu)}</div>
       <div class="field"><span>سنوات الخبرة <small class="muted">(0 = معلم جديد)</small></span><div class="stepper"><span class="lb">بالسنوات</span><button type="button" data-y="-1">−</button><input id="tExp" type="number" min="0" max="60" inputmode="numeric" value="${esc(t.experience ?? '')}" placeholder="—" style="width:76px"><button type="button" data-y="1">+</button></div></div>
       <div class="field"><span>عدد الزيارات</span>${chips('vo', ['تلقائي', '1', '2', '3', '4'], t.visitsOverride ? String(t.visitsOverride) : 'تلقائي')}</div>
@@ -1453,13 +1463,34 @@ function teacherSheet(t){
   (m, close) => {
     bindSegs(m);
     ['role', 'vo', 'sup'].forEach(n => { const s = m.querySelector(`[data-seg="${n}"]`); if (s) s.dataset.req = 1; });
-    m.querySelectorAll('[data-lv]').forEach(b => b.onclick = () => { b.classList.toggle('on'); buzz(5); });
+    m.querySelector('[data-seg="ngr"]').dataset.req = 1;
+    const drawCls = () => {
+      m.querySelector('#tCls').innerHTML = cls.length ? cls.map((c, i) => `<div class="card" style="box-shadow:none;padding:10px 12px">
+        <div class="spread"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}</b><button type="button" class="chip bad" data-rmc="${i}" style="border:0">حذف القسم ✕</button></div>
+        <div class="trs" style="margin-top:8px">${Object.keys(P.levels[c.level] || {}).map(sj => `<button type="button" data-ci="${i}" data-sj="${esc(sj)}" class="${c.subs.includes(sj) ? 'on' : ''}">${esc(sj)}</button>`).join('')}</div></div>`).join('')
+        : '<div class="small muted">لم يُضف أي قسم بعد.</div>';
+      m.querySelectorAll('[data-rmc]').forEach(b => b.onclick = () => { cls.splice(Number(b.dataset.rmc), 1); drawCls(); });
+      m.querySelectorAll('[data-sj]').forEach(b => b.onclick = () => { const c = cls[Number(b.dataset.ci)], sj = b.dataset.sj; c.subs = c.subs.includes(sj) ? c.subs.filter(x => x !== sj) : c.subs.concat([sj]); buzz(5); drawCls(); });
+    };
+    drawCls();
+    m.querySelector('#tAddB').onclick = () => {
+      const lvl = segVal(m, 'nlv'), g = segVal(m, 'ngr') || 'أ';
+      if (!lvl) return toast('اختر المستوى أولًا', true);
+      if (cls.some(c => c.level === lvl && c.group === g)) return toast('هذا القسم مضاف', true);
+      cls.push({ level: lvl, group: g, subs: defaultSubs(P, lvl, segVal(m, 'role') || t.role) });
+      m.querySelectorAll('[data-seg="nlv"] button').forEach(b => b.classList.remove('on'));
+      buzz(10); drawCls();
+    };
     const yi = m.querySelector('#tExp');
     m.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { yi.value = Math.max(0, Math.min(60, (yi.value === '' ? (b.dataset.y > 0 ? -1 : 1) : Number(yi.value)) + Number(b.dataset.y))); buzz(5); });
     const act = m.querySelector('#tAct'); if (act) act.onclick = () => act.classList.toggle('on');
     m.querySelector('#svT').onclick = () => {
-      const levels = [...m.querySelectorAll('[data-lv].on')].map(b => b.dataset.lv);
-      const o = { id: t.id, last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(),
+      const teaching = [].concat(...cls.map(c => c.subs.map(sj => ({ level: c.level, group: c.group, subject: sj }))));
+      if (cls.some(c => !c.subs.length)) return toast('كل قسم يحتاج مادة واحدة على الأقل، أو احذف القسم', true);
+      const taken = (B().assignments || []).find(a => a.teacher !== t.id && teaching.some(x => x.level === a.level && x.group === a.group && x.subject === a.subject));
+      if (taken){ const ot = teacher(taken.teacher); return toast(`${taken.subject} في ${taken.level} فوج ${taken.group} مسندة إلى ${ot ? tName(ot) : 'معلم آخر'}`, true); }
+      const levels = [...new Set(cls.map(c => c.level))];
+      const o = { id: t.id, teaching, last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(),
         role: segVal(m, 'role') || 'قسم', gender: segVal(m, 'gender'), levels, level: levels.join('، '), edu: segVal(m, 'edu'),
         experience: yi.value.trim() === '' ? '' : Number(yi.value), visitsOverride: segVal(m, 'vo') === 'تلقائي' ? '' : segVal(m, 'vo') };
       if (!o.last || !o.first) return toast('اللقب والاسم مطلوبان', true);
@@ -1470,6 +1501,11 @@ function teacherSheet(t){
       close(); saveTeacherOptimistic(o, t);
     };
   });
+}
+/** المواد الافتراضية حسب المنصب: القسم كل المواد، القرآن القرآن فقط، المادة كل المواد ما عدا القرآن */
+function defaultSubs(P, level, role){
+  const all = Object.keys(P.levels[level] || {}); role = post(role);
+  return role === 'قرآن' ? all.filter(s => s === 'القرآن الكريم') : role === 'مادة' ? all.filter(s => s !== 'القرآن الكريم') : all;
 }
 function localTeacher(o){
   const cfg = B().cfg;
@@ -1486,17 +1522,23 @@ function saveTeacherOptimistic(o, before){
     const prev = Object.assign({}, B().teachers[i]);
     const nt = localTeacher(Object.assign({}, prev, o));
     if (visible(nt)) B().teachers[i] = nt; else B().teachers.splice(i, 1);
+    const prevA = (B().assignments || []).slice();
+    if (o.teaching) B().assignments = prevA.filter(a => a.teacher !== o.id).concat(o.teaching.map(a => Object.assign({ teacher: o.id }, a)));
     render(true); persist(); toast('تم الحفظ');
     enqueue({ action: 'saveTeacher', payload: { teacher: o },
       onOk: r => { const j = B().teachers.findIndex(x => x.id === r.id); if (j >= 0) B().teachers[j] = r; },
-      onFail: () => { const j = B().teachers.findIndex(x => x.id === o.id); if (j >= 0) B().teachers[j] = prev; else B().teachers.push(prev); render(true); } });
+      onFail: () => { const j = B().teachers.findIndex(x => x.id === o.id); if (j >= 0) B().teachers[j] = prev; else B().teachers.push(prev); B().assignments = prevA; render(true); } });
   } else {
     const tmp = 'tmp' + Date.now();
     const nt = localTeacher(Object.assign({}, o, { id: tmp }));
-    B().teachers.push(nt); render(true); persist(); toast('أُضيف ' + tName(nt));
+    B().teachers.push(nt);
+    B().assignments = (B().assignments || []).concat((o.teaching || []).map(a => Object.assign({ teacher: tmp }, a)));
+    render(true); persist(); toast('أُضيف ' + tName(nt));
     enqueue({ action: 'saveTeacher', payload: { teacher: Object.assign({}, o, { id: undefined }) },
-      onOk: r => { const j = B().teachers.findIndex(x => x.id === tmp); if (j >= 0) B().teachers[j] = r; if (location.hash === '#/t/' + tmp) location.replace('#/t/' + r.id); else render(true); },
-      onFail: () => { B().teachers = B().teachers.filter(x => x.id !== tmp); render(true); } });
+      onOk: r => { const j = B().teachers.findIndex(x => x.id === tmp); if (j >= 0) B().teachers[j] = r;
+        B().assignments = B().assignments.filter(a => a.teacher !== tmp).concat(r.teaching || []);
+        if (location.hash === '#/t/' + tmp) location.replace('#/t/' + r.id); else render(true); },
+      onFail: () => { B().teachers = B().teachers.filter(x => x.id !== tmp); B().assignments = B().assignments.filter(a => a.teacher !== tmp); render(true); } });
   }
 }
 function assignSheet(tid){
@@ -1509,16 +1551,21 @@ function assignSheet(tid){
 const ts_count = sid => B().teachers.filter(x => x.supervisor === sid && x.active).length;
 
 /* ============================== ورقة بدء الزيارة ============================== */
-/** المستوى المزور + نوع الحصة (لمعلم القرآن والقسم) + عدد التلاميذ مرة واحدة لكل مستوى في الموسم */
+/** القسم المزور (مستوى + فوج) + نوع الحصة (لمعلم القرآن والقسم) + عدد التلاميذ مرة واحدة لكل قسم في الموسم */
 function startVisitSheet(t){
   const cfg = B().cfg;
-  const lv = t.levels && t.levels.length ? t.levels : (t.level ? [t.level] : cfg.lists['المستويات المدرَّسة'] || []);
+  const asg = classesOf((B().assignments || []).filter(a => a.teacher === t.id));
+  const lv0 = t.levels && t.levels.length ? t.levels : (t.level ? [t.level] : cfg.lists['المستويات المدرَّسة'] || []);
+  const opts = asg.length ? asg.map(c => ({ level: c.level, group: c.group })) : lv0.map(x => ({ level: x, group: 'أ' }));
+  const lab = o => opts.some(x => x.level === o.level && x.group !== o.group) || asg.length ? `${o.level} — فوج ${o.group}` : o.level;
+  const lv = opts.map(lab);
+  const pick = v => opts.find(o => lab(o) === v);
   const needType = post(t.role) !== 'مادة' && (cfg.lists['نوع القسم'] || []).length;
   const n = visitsOf(t.id).length + 1;
-  const known = level => visitsOf(t.id).find(v => v.level === level && v.boys !== '' && v.boys !== undefined);
+  const known = o => o && visitsOf(t.id).find(v => v.level === o.level && (v.group || 'أ') === o.group && v.boys !== '' && v.boys !== undefined);
   sheet(`<h3>بدء الزيارة ${ORD[n - 1] || n}</h3><div class="small muted" style="margin:-6px 0 12px">${esc(tName(t))} · ${esc(ROLE_LABEL[t.role] || '')}</div>
     <div class="stack">
-      <div class="field"><span>المستوى الذي تزوره *</span>${chips('lv', lv, lv.length === 1 ? lv[0] : '')}</div>
+      <div class="field"><span>القسم الذي تزوره *</span>${chips('lv', lv, lv.length === 1 ? lv[0] : '')}</div>
       ${needType ? `<div class="field"><span>نوع الحصة *</span>${chips('ty', cfg.lists['نوع القسم'], '')}<div class="small muted">تتغير بنود القرآن حسب هذا الاختيار، ولا يمكن تغييره بعد بدء الزيارة.</div></div>` : ''}
       <div id="pup"></div>
     </div>
@@ -1527,7 +1574,7 @@ function startVisitSheet(t){
     bindSegs(m);
     ['lv', 'ty'].forEach(k => { const x = m.querySelector(`[data-seg="${k}"]`); if (x) x.dataset.req = 1; });
     const drawPup = () => {
-      const level = segVal(m, 'lv'), k = level && known(level), box = m.querySelector('#pup');
+      const level = segVal(m, 'lv'), k = known(pick(level)), box = m.querySelector('#pup');
       if (!level){ box.innerHTML = ''; return; }
       box.innerHTML = k ? `<div class="banner v">عدد التلاميذ في ${esc(level)} مسجّل في الزيارة ${k.number}: ذكور ${esc(k.boys)} · إناث ${esc(k.girls || 0)}</div>`
         : `<div class="field"><span>عدد التلاميذ في ${esc(level)} * <small class="muted">(مرة واحدة في الموسم)</small></span><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
@@ -1538,11 +1585,11 @@ function startVisitSheet(t){
     m.querySelector('[data-seg="lv"]').addEventListener('click', () => setTimeout(drawPup, 0));
     drawPup();
     m.querySelector('#svV').onclick = async e => {
-      const level = segVal(m, 'lv'), type = needType ? segVal(m, 'ty') : '';
-      if (!level) return toast('اختر المستوى الذي تزوره', true);
+      const o = pick(segVal(m, 'lv')), type = needType ? segVal(m, 'ty') : '';
+      if (!o) return toast('اختر القسم الذي تزوره', true);
       if (needType && !type) return toast('اختر نوع الحصة', true);
-      const p = { teacherId: t.id, level, type };
-      if (!known(level)){
+      const p = { teacherId: t.id, level: o.level, group: o.group, type };
+      if (!known(o)){
         p.boys = (m.querySelector('#vBoys').value || '').trim(); p.girls = (m.querySelector('#vGirls').value || '').trim();
         if (!/^\d+$/.test(p.boys) || !/^\d+$/.test(p.girls)) return toast('اكتب عدد الذكور والإناث (0 إن لم يوجد)', true);
       }
@@ -1753,7 +1800,7 @@ function openImport(){
     m.querySelector('#doImp').onclick = async e => {
       try{
         const r = await busy(e.currentTarget, () => api('importTeachers', { rows }));
-        r.added.forEach(t => B().teachers.push(t));
+        r.added.forEach(t => { B().teachers.push(t); B().assignments = (B().assignments || []).concat(t.teaching || []); });
         persist(); close(); render(true);
         const msg = `أُضيف ${r.added.length} معلمًا` + (r.skipped.length ? ` · ${r.skipped.length} مكرر` : '') + (r.errors.length ? ` · ${r.errors.length} أخطاء` : '');
         if (r.errors.length) sheet(`<h3>نتيجة الاستيراد</h3><p>${esc(msg)}</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>السطر</th><th>الخطأ</th></tr></thead><tbody>${r.errors.map(x => `<tr><td>${x.line}</td><td>${esc(x.error)}</td></tr>`).join('')}</tbody></table></div><div class="acts"><button class="btn btn-p" data-close>حسنًا</button></div>`);
@@ -1819,7 +1866,7 @@ function renderReport(id){
       </div>
       <div class="rinfo">
         <table><tr><td>المعلم</td><td>${esc(tName(t))}${t.father ? ' بن ' + esc(t.father) : ''}</td></tr>
-          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
+          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.group ? ' — فوج ' + esc(v.group) : ''}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
           <tr><td>المستوى التعليمي</td><td>${esc(t.edu || '—')}</td></tr>
           <tr><td>سنوات الخبرة</td><td>${t.experience === '' ? '—' : t.experience}</td></tr>
           <tr><td>المساعد البيداغوجي</td><td>${esc(sup)}</td></tr></table>
@@ -2060,7 +2107,8 @@ function program(){
   if (PROG && PROG.ver === v) return PROG.data;
   if (!S.progLoading){
     S.progLoading = true;
-    api('program').then(d => { PROG = { ver: v, data: d }; try { LS.set('ishraf.prog', PROG); } catch(e){} S.progLoading = false; render(true); })
+    api('program').then(d => { PROG = { ver: v, data: d }; try { LS.set('ishraf.prog', PROG); } catch(e){} S.progLoading = false; render(true);
+      const w = S.progWait; S.progWait = null; if (w) w(); })
       .catch(e => { S.progLoading = false; toast(e.message, true); });
   }
   return PROG ? PROG.data : null;
@@ -2241,7 +2289,7 @@ function teachingCard(t){
     ? (acc.tempCode ? `<div class="ticket" style="margin-top:10px"><div><div class="small d" style="color:var(--warn)">رمز تفعيل المعلم — لم يدخل بعد</div><b>${esc(acc.tempCode)}</b></div><button class="btn btn-g" data-act="copy" data-t="${esc(acc.tempCode)}" style="min-height:38px">نسخ</button></div>`
       : `<div class="spread" style="margin-top:10px"><span class="small muted">حساب المعلم مفعّل</span><button class="btn btn-g" data-act="activateT" data-id="${esc(t.id)}" style="min-height:38px">رمز جديد</button></div>`)
     : `<button class="btn btn-a" data-act="activateT" data-id="${esc(t.id)}" style="margin-top:10px">${IC.plus} تفعيل حساب المعلم</button>`;
-  return `<div class="card stack"><div class="spread"><b class="d">ما يدرّسه</b>${isMain() ? `<button class="btn btn-g" data-act="editAssign" data-id="${esc(t.id)}" style="min-height:38px">${IC.edit} تعديل</button>` : ''}</div>
+  return `<div class="card stack"><div class="spread"><b class="d">ما يدرّسه</b>${isMain() ? `<button class="btn btn-g" data-act="editTeacher" data-id="${esc(t.id)}" style="min-height:38px">${IC.edit} تعديل</button>` : ''}</div>
     ${!P ? '<div class="sk" style="height:60px"></div>' : list.length ? classesOf(list).map(c => `<div class="small muted d">${esc(c.level)} — فوج ${esc(c.group)}</div><div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
       : '<div class="small muted">لم يُحدَّد بعد.</div>'}
     ${account}</div>`;
