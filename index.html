@@ -334,6 +334,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .ccard .ck{display:flex;align-items:center;justify-content:space-between;background:#F3EEFF;border-radius:2.5mm;padding:2mm 4mm;margin:1mm 0}
 .ccard .ck b{font-family:Changa;font-size:22pt;letter-spacing:3mm;color:#4B2A8C}
 .ccard ol{margin:0;padding-inline-start:5mm;font-size:7.5pt;line-height:1.55}
+.ccard .cb{display:flex;gap:4mm;align-items:center;margin-top:1mm}
+.ccard .qr{width:30mm;height:30mm;flex:none;background:#fff;padding:1.5mm;border-radius:2mm;border:.2mm solid #E4DDF5}.ccard .qr svg{width:100%;height:100%;display:block}
 .notif{display:flex;gap:10px;align-items:center;background:#FDECEC;color:#B42318;border-radius:14px;padding:12px 14px;font-weight:600}
 .notif .dot{width:24px;height:24px;border-radius:50%;background:#E5484D;color:#fff;display:grid;place-items:center;font-size:14px;flex:none;box-shadow:0 0 0 4px #E5484D33}
 .lsn{display:flex;gap:12px;align-items:center;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px 14px}
@@ -481,7 +483,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.2.1';
+const VERSION = '4.2.2';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -642,6 +644,15 @@ function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.
 const B = () => S.B;
 const isDir = () => S.auth && S.auth.role === 'مدير';
 const isTeacher = () => S.auth && S.auth.role === 'معلم';
+/** اسم التطبيق: «سيرورة الدروس» للمعلم، و«برنامج الزيارات» للمساعد والمدير */
+const appName = () => (S.auth ? isTeacher() : LS.get('ishraf.mode') === 'sira') ? 'سيرورة الدروس' : 'برنامج الزيارات';
+// رابط بطاقة المعلم: ?app=sira&s=رمز المدرسة → يفتح على «سيرورة الدروس» ومدرسته مختارة
+(() => { try{
+  const q = new URLSearchParams(location.search);
+  if (q.get('app') === 'sira') LS.set('ishraf.mode', 'sira');
+  if (q.get('s')){ const l = LS.get('ishraf.last') || {}; l.school = q.get('s'); LS.set('ishraf.last', l); }
+  if (q.has('app') || q.has('s')) history.replaceState(null, '', location.pathname + location.hash);
+} catch(e){} })();
 const ASST = 'مساعد بيداغوجي';
 const isAsst = u => u && (u.role === ASST || u.role === 'مشرف');
 /** المساعد الرئيسي: يضيف المعلمين ويُسندهم ويضيف المساعدين (المدير للاطلاع فقط) */
@@ -799,6 +810,7 @@ function render(keep){
   if (S.auth && !S.B && !['new1', 'new2'].includes(S.L.step)){ $('#app').innerHTML = skeleton(); return; }
   if (!S.auth || !S.B) return renderLogin();
   program();   // تحميل البرنامج الدراسي في الخلفية (مرة واحدة)
+  if (!['report', 'codes'].includes(route().r)) document.title = appName();
   const { r, id } = route();
   const depth = ROUTES_DEPTH[r] ?? 0;
   const anim = S.lastRoute === location.hash ? '' : depth >= S.lastDepth ? 'enter-f' : 'enter-b';
@@ -830,7 +842,7 @@ function render(keep){
 }
 function topbar(){
   return `<div class="topbar"><div class="mark">${IC.book}</div>
-    <div class="tb-t"><b>${esc(B().school.name || 'برنامج الزيارات')}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
+    <div class="tb-t"><b>${esc(B().school.name || appName())}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
@@ -971,7 +983,8 @@ async function renderLogin(){
   }
 }
 function loginFrame(body){
-  return `<div class="login"><div class="brandbig"><div class="mark">${IC.bookBig}</div><h1>برنامج الزيارات</h1></div>
+  document.title = appName();
+  return `<div class="login"><div class="brandbig"><div class="mark">${IC.bookBig}</div><h1>${appName()}</h1></div>
     <div class="lcard enter-f">${body}</div></div>`;
 }
 function finishLogin(boot){
@@ -1746,6 +1759,10 @@ function clockPicker(value, title){
 
 /* ============================== الاستيراد من إكسل ============================== */
 const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المستويات المدرَّسة', 'level'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience'], ['المنصب', 'role']];
+function loadQR(){
+  if (window.qrcode) return Promise.resolve();
+  return new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'qr.js'; s.onload = ok; s.onerror = () => no(new Error('تعذّر تحميل مولّد رمز QR')); document.head.appendChild(s); });
+}
 function loadXLSX(){
   if (window.XLSX) return Promise.resolve();
   return new Promise((ok, no) => {
@@ -2280,13 +2297,17 @@ function renderCodes(){
   const back = '#/prog';
   const list = tempTeachers().sort((a, b) => tName(a).localeCompare(tName(b), 'ar'));
   if (!list.length){ $('#app').innerHTML = `<div class="rp-bar"><button class="back" data-go="${back}">${IC.back} رجوع</button></div><div class="wrap">${emptyBox('لا توجد رموز مؤقتة. كل المعلمين المفعّلين دخلوا واختاروا رموزهم.')}</div>`; return; }
-  const link = location.origin + location.pathname;
+  if (!window.qrcode){ $('#app').innerHTML = skeleton(); loadQR().then(renderCodes).catch(e => toast(e.message, true)); return; }
+  const link = location.origin + location.pathname + '?app=sira&s=' + encodeURIComponent(B().school.code);
+  const q = qrcode(0, 'M'); q.addData(link); q.make();
+  const qr = q.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
   const card = t => {
     const cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => c.level + ' ' + c.group).join('، ');
-    return `<div class="ccard"><div class="ch"><b>${esc(B().school.name)}</b><span>برنامج الزيارات · ${esc(B().cfg.season)}</span></div>
+    return `<div class="ccard"><div class="ch"><b>${esc(B().school.name)}</b><span>سيرورة الدروس · ${esc(B().cfg.season)}</span></div>
       <div class="cn">${esc(tName(t))}</div><div class="cc">${esc(cls || ROLE_LABEL[t.role] || '')}</div>
-      <div class="ck"><small>رمز الدخول الأول</small><b dir="ltr">${esc(user(t.id).tempCode)}</b></div>
-      <ol><li>افتح الرابط: <span dir="ltr">${esc(link)}</span></li><li>اختر المدرسة، ثم اسمك</li><li>اكتب هذا الرمز، ثم اختر رمزك الشخصي واحفظه</li></ol></div>`;
+      <div class="cb"><div class="qr">${qr}</div><div style="flex:1;min-width:0">
+        <div class="ck"><small>رمز الدخول الأول</small><b dir="ltr">${esc(user(t.id).tempCode)}</b></div>
+        <ol><li>امسح المربع بكاميرا هاتفك</li><li>اضغط على اسمك</li><li>اكتب هذا الرمز، ثم اختر رمزك الشخصي واحفظه</li></ol></div></div></div>`;
   };
   const pages = []; for (let i = 0; i < list.length; i += 8) pages.push(list.slice(i, i + 8));
   $('#app').innerHTML = `<div class="rp-bar no-print"><button class="back" data-go="${back}">${IC.back} رجوع</button><span class="t">رموز تفعيل المعلمين (${list.length})</span>
