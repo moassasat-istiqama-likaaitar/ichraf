@@ -493,7 +493,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.4.1';
+const VERSION = '4.4.2';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -640,7 +640,7 @@ async function runQ(){
       setSync('busy');
       const r = await api(j.action, payload);
       Q.jobs.shift();
-      if (j.onOk) j.onOk(r, payload);
+      try { if (j.onOk) j.onOk(r, payload); } catch(err){ console.error(err); }
     } catch(e){
       if (e.net){ setSync('offline'); await wait(4000); continue; }
       Q.jobs.shift();
@@ -806,7 +806,8 @@ function perfLine(){
   const p = LS.get('ishraf.perf'); if (!p) return '';
   const sec = ms => (ms / 1000).toFixed(1).replace('.0', '') + ' ث';
   const err = LS.get('ishraf.lastErr');
-  return ` · آخر تحميل ${sec(p.total)}` + (p.server != null ? ` (الخادم ${sec(p.server)}${p.cache ? '، من الذاكرة' : ''})` : '')
+  const ago = Math.round((Date.now() - (p.at || 0)) / 60000);
+  return ` · آخر تحميل ${sec(p.total)}` + ` <span style="opacity:.7">[${ago < 1 ? 'الآن' : 'قبل ' + ago + ' د'}]</span>` + (p.server != null ? ` (الخادم ${sec(p.server)}${p.cache ? '، من الذاكرة' : ''})` : '')
     + `<br>الخادم ${p.srv ? esc(p.srv) : '<b style="color:var(--bad)">قديم: انشر Code.gs الجديد</b>'}`
     + (err ? `<br><span style="color:var(--bad)">آخر خطأ في التحديث: ${esc(err.msg)}</span>` : '');
 }
@@ -816,6 +817,7 @@ function notePerf(b, t0){
     LS.set('ishraf.perf', { total: Math.round(performance.now() - t0), server: srv, cache: p.some(x => x[0] === 'cache'), srv: (b && b.srv) || '', at: Date.now() });
     LS.del('ishraf.lastErr');
     if (b) { delete b.perf; delete b.srv; }
+    const el = document.getElementById('perfLine'); if (el) el.innerHTML = perfLine();
   }catch(e){}
 }
 function handleAuthError(e){
@@ -823,7 +825,7 @@ function handleAuthError(e){
   return false;
 }
 async function refreshBg(force){
-  if (Q.jobs.length || Q.running) return;
+  if (Q.jobs.length || (Q.running && !force)) return;
   try{
     setSync('busy');
     const t0 = performance.now();
@@ -835,7 +837,7 @@ async function refreshBg(force){
       S.B = fresh; persist();
       if (!$('.sheet-bg') && !document.activeElement.matches('input,textarea')) render(true);
     }
-  } catch(e){ setSync(e.net ? 'offline' : 'ok'); if (!e.net) LS.set('ishraf.lastErr', { msg: e.message, at: Date.now() }); handleAuthError(e); }
+  } catch(e){ setSync(e.net ? 'offline' : 'ok'); if (!e.net) LS.set('ishraf.lastErr', { msg: e.message, at: Date.now() }); const el = document.getElementById('perfLine'); if (el) el.innerHTML = perfLine(); handleAuthError(e); }
 }
 function logout(silent){
   if (S.auth) LS.del(bootKey());
@@ -1134,7 +1136,7 @@ function viewMe(){
         ${ios ? '' : '<button class="btn btn-p" data-act="install">تثبيت التطبيق</button>'}</div>`}
       <div class="card stack"><div class="spread"><div><b class="d">تحديث البيانات</b><div class="small muted">جلب آخر ما سُجّل في الشيت، بما فيه التعديلات اليدوية</div></div><button class="btn btn-g" data-act="sync">تحديث</button></div></div>
       <button class="btn btn-g btn-block" data-act="logout" style="color:var(--bad)">تسجيل الخروج</button>
-      <div class="small muted" style="text-align:center">الإصدار ${VERSION}${perfLine()}</div>
+      <div class="small muted" style="text-align:center">الإصدار ${VERSION}<span id="perfLine">${perfLine()}</span></div>
     </div>`,
     mount(){ $$('#thSeg [data-th]').forEach(b => b.onclick = () => { LS.set('ishraf.theme', b.dataset.th); applyTheme(); render(true); }); }
   };
