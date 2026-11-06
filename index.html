@@ -101,6 +101,8 @@ a{color:inherit}
 .btn-a{background:linear-gradient(140deg,#F2A65A,var(--amber));color:#3A1F06;box-shadow:0 8px 18px rgba(230,145,56,.3)}
 .btn-ok{background:linear-gradient(140deg,#1FC08A,var(--ok));color:#fff;box-shadow:0 8px 18px rgba(14,159,110,.3)}
 .btn-g{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+.btn-x{background:transparent;color:var(--bad);border:1.5px solid color-mix(in srgb,var(--bad) 40%,transparent)}
+.btn-xs{background:var(--bad);color:#fff}
 .btn-w{background:#fff;color:var(--v700)}
 .btn[disabled]{opacity:.45;pointer-events:none;box-shadow:none}
 .btn.busy{color:transparent!important;pointer-events:none}
@@ -483,7 +485,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.2.4';
+const VERSION = '4.3.0';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -664,11 +666,14 @@ const allTeachers = () => B().teachers.concat(B().extraTeachers || []);
 const teacher = id => allTeachers().find(t => t.id === id);
 const user = id => B().users.find(u => u.id === id);
 const userName = id => (user(id) || {}).name || '—';
+/** أقسام المعلمين المفعّلين فقط (الموقوف لا يدخل في المتابعة) */
+const activeAssignments = () => (B().assignments || []).filter(a => { const t = B().teachers.find(x => x.id === a.teacher); return !t || t.active !== false; });
+const hasData = tid => B().visits.some(v => v.teacher === tid) || (B().lessonLog || []).some(x => x[4] === tid);
 const visitsOf = tid => B().visits.filter(v => v.teacher === tid).sort((a, b) => a.number - b.number);
 const sessionsOf = vid => B().sessions.filter(s => s.visit === vid).sort((a, b) => a.number - b.number);
 const resultsOf = vid => (B().results[vid] = B().results[vid] || {});
 /** منصب المعلم: قرآن / مادة / قسم («الكل» القديمة = قسم) */
-const post = r => !r || r === 'الكل' ? 'قسم' : r;
+const post = r => { const s = String(r ?? '').trim().replace(/\s+/g, ' ').replace(/^معلم\s*/, ''); return !s || s === 'الكل' ? 'قسم' : s; };
 /** البنود الخاصة بزيارة: المنصب ↔ المحور · نوع الحصة (تلقين/منافسة) ↔ البند · رقم الزيارة ↔ البند */
 const itemsFor = (role, type, n) => {
   const cfg = B().cfg; role = post(role);
@@ -871,7 +876,7 @@ function navBadges(){
       if (list.some(a => progressOf(a.level, a.group, a.subject, map).st === 'late')) n++;
       out[''] = n;
     } else {
-      out.prog = list.filter(a => progressOf(a.level, a.group, a.subject, map).st === 'late').length;
+      out.prog = activeAssignments().filter(a => progressOf(a.level, a.group, a.subject, map).st === 'late').length;
     }
     const total = Object.values(out).reduce((x, y) => x + y, 0);
     if (navigator.setAppBadge) (total ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(() => {});
@@ -1480,11 +1485,26 @@ function teacherSheet(t){
       <div class="field"><span>سنوات الخبرة <small class="muted">(0 = معلم جديد)</small></span><div class="stepper"><span class="lb">بالسنوات</span><button type="button" data-y="-1">−</button><input id="tExp" type="number" min="0" max="60" inputmode="numeric" value="${esc(t.experience ?? '')}" placeholder="—" style="width:76px"><button type="button" data-y="1">+</button></div></div>
       <div class="field"><span>عدد الزيارات</span>${chips('vo', ['تلقائي', '1', '2', '3', '4'], t.visitsOverride ? String(t.visitsOverride) : 'تلقائي')}</div>
       ${sups.length > 1 ? `<div class="field"><span>المساعد البيداغوجي</span>${chips('sup', ['غير مسند'].concat(sups.map(u => u.name)), t.supervisor ? userName(t.supervisor) : 'غير مسند')}</div>` : ''}
-      ${t.id ? `<div class="spread card" style="box-shadow:none"><b class="d">المعلم مفعّل</b><button type="button" class="switch ${t.active !== false ? 'on' : ''}" id="tAct"></button></div>` : ''}
+      ${t.id ? `<div class="spread card" style="box-shadow:none"><b class="d">المعلم مفعّل</b><button type="button" class="switch ${t.active !== false ? 'on' : ''}" id="tAct"></button></div>
+        <div class="small muted">المعلم الموقوف لا يظهر في «معلميّ» ولا في الإحصاءات والسيرورة، وتبقى زياراته السابقة وتقاريرها محفوظة.</div>
+        ${String(t.id).startsWith('tmp') ? '' : hasData(t.id) ? `<div class="small muted">لهذا المعلم زيارات أو دروس مسجّلة، فلا يُحذف؛ يكفي إيقافه.</div>`
+          : `<button type="button" class="btn btn-x" id="tDel">حذف المعلم نهائيًا</button>`}` : ''}
     </div>
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svT">حفظ</button></div>`,
   (m, close) => {
     bindSegs(m);
+    const del = m.querySelector('#tDel');
+    if (del) del.onclick = async () => {
+      close();
+      if (!await confirmBox('حذف المعلم', `سيُحذف ${esc(tName(t))} نهائيًا مع أقسامه («ما يدرّسه»). لا يمكن التراجع.`, 'حذف نهائيًا', 'btn-xs')) return;
+      try {
+        await api('deleteTeacher', { teacherId: t.id });
+        B().teachers = B().teachers.filter(x => x.id !== t.id);
+        B().assignments = (B().assignments || []).filter(a => a.teacher !== t.id);
+        persist(); toast('حُذف ' + tName(t));
+        if (location.hash === '#/t/' + t.id) location.hash = '#/'; else render(true);
+      } catch (err) { toast(err.message, true); }
+    };
     ['role', 'vo', 'sup'].forEach(n => { const s = m.querySelector(`[data-seg="${n}"]`); if (s) s.dataset.req = 1; });
     m.querySelector('[data-seg="ngr"]').dataset.req = 1;
     const drawCls = () => {
@@ -1824,7 +1844,7 @@ const normHeader = h => String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, 
 function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
-      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «الفوج»: أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.</div>
+      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «الفوج»: أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
         ${IC.xls}<b class="d">اختر ملف إكسل</b><span class="small muted" id="fname">xlsx · xls · csv</span>
@@ -1867,8 +1887,13 @@ function openImport(){
       try{
         const r = await busy(e.currentTarget, () => api('importTeachers', { rows }));
         r.added.forEach(t => { B().teachers.push(t); B().assignments = (B().assignments || []).concat(t.teaching || []); });
+        (r.updated || []).forEach(t => {
+          const j = B().teachers.findIndex(x => x.id === t.id); if (j >= 0) B().teachers[j] = Object.assign({}, B().teachers[j], t); else B().teachers.push(t);
+          B().assignments = (B().assignments || []).filter(a => a.teacher !== t.id).concat(t.teaching || []);
+        });
         persist(); close(); render(true);
-        const msg = `أُضيف ${r.added.length} معلمًا` + (r.skipped.length ? ` · ${r.skipped.length} مكرر` : '') + (r.errors.length ? ` · ${r.errors.length} أخطاء` : '');
+        const nu = (r.updated || []).length;
+        const msg = `أُضيف ${r.added.length} معلمًا` + (nu ? ` · حُدّث ${nu}` : '') + (r.skipped.length ? ` · ${r.skipped.length} مكرر` : '') + (r.errors.length ? ` · ${r.errors.length} أخطاء` : '');
         const busyL = r.busy || [];
         if (r.errors.length || busyL.length) sheet(`<h3>نتيجة الاستيراد</h3><p>${esc(msg)}</p>
           ${r.errors.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>السطر</th><th>الخطأ</th></tr></thead><tbody>${r.errors.map(x => `<tr><td>${x.line}</td><td>${esc(x.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}
@@ -2060,7 +2085,8 @@ function viewStats(){
   const roleOk = t => rf === 'all' || post(t.role) === rf;
   const ts = B().teachers.filter(t => t.active && roleOk(t));
   const tIds = new Set(ts.map(t => t.id));
-  const vs = B().visits.filter(v => tIds.has(v.teacher) || (rf === 'all' && !seeAll() && v.supervisor === S.auth.user));
+  const off = new Set(B().teachers.filter(t => t.active === false).map(t => t.id));
+  const vs = B().visits.filter(v => !off.has(v.teacher) && (tIds.has(v.teacher) || (rf === 'all' && !seeAll() && v.supervisor === S.auth.user)));
   const maxN = Math.max(1, ...vs.map(v => v.number), ...ts.map(t => t.planned));
   const vf = S.statVisit || 'all';
   const done = vs.filter(v => v.status === 'مكتملة');
@@ -2368,7 +2394,7 @@ function viewProgress(){
   const P = program();
   const hero0 = `<h1>سيرورة الدروس</h1><div class="sub">${esc(B().school.name)} · ${esc(B().cfg.season)}</div>`;
   if (!P) return Object.assign({ hero: hero0 }, progSkeleton());
-  const list = B().assignments || [];
+  const list = activeAssignments();
   const map = logMap();
   const f = S.progFilter || 'all';
   let late = 0, done = 0, total = 0;
