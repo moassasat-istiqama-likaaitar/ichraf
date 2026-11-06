@@ -12,13 +12,14 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<link href="https://fonts.googleapis.com/css2?family=Changa:wght@400;500;600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root{
   --v950:#1E0B3A; --v900:#2E1065; --v800:#4C1D95; --v700:#5B21B6; --v600:#7C3AED; --v500:#8B5CF6; --v400:#A78BFA; --v300:#C4B5FD; --v100:#EDE9FE; --v50:#F5F3FF;
   --clay:#A0522D; --clay-l:#F6E6DA; --amber:#E69138; --amber-l:#FDF0DF;
   --paper:#F7F5FC; --card:#FFFFFF; --ink:#1E1433; --muted:#6E6488; --line:#E7E2F3; --soft:#F1EDFA;
-  --ok:#0E9F6E; --ok-l:#DDF6EC; --warn:#C47A12; --warn-l:#FDF0DF; --bad:#D9443A; --bad-l:#FDE6E4;
+  --ok:#0A8560; --ok-l:#DDF6EC; --warn:#C47A12; --warn-l:#FDF0DF; --bad:#D9443A; --bad-l:#FDE6E4;
   --s1:#E5484D; --s2:#F08A3E; --s3:#E8B730; --s4:#7BBF4E; --s5:#13A26C;
   --sh:0 1px 2px rgba(46,16,101,.06),0 8px 24px rgba(46,16,101,.08);
   --sh-lg:0 20px 60px rgba(30,11,58,.28);
@@ -99,7 +100,7 @@ a{color:inherit}
 .btn-p{background:linear-gradient(140deg,var(--v500),var(--v700));color:#fff;box-shadow:0 8px 20px rgba(91,33,182,.32)}
 .btn-p:hover{filter:brightness(1.07)}
 .btn-a{background:linear-gradient(140deg,#F2A65A,var(--amber));color:#3A1F06;box-shadow:0 8px 18px rgba(230,145,56,.3)}
-.btn-ok{background:linear-gradient(140deg,#1FC08A,var(--ok));color:#fff;box-shadow:0 8px 18px rgba(14,159,110,.3)}
+.btn-ok{background:linear-gradient(140deg,#12A174,#0B7F58);color:#fff;box-shadow:0 8px 18px rgba(14,159,110,.3)}
 .btn-g{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
 .btn-x{background:transparent;color:var(--bad);border:1.5px solid color-mix(in srgb,var(--bad) 40%,transparent)}
 .btn-xs{background:var(--bad);color:#fff}
@@ -117,6 +118,7 @@ a{color:inherit}
 .chip.v{background:var(--v100);color:var(--v700)}
 :root[data-theme="dark"] .chip.v{color:var(--v300)}
 .chip.clay{background:var(--clay-l);color:var(--clay)}
+:root[data-theme="dark"] .chip.clay{color:#EBA982}
 
 /* ===== إدخال ===== */
 .field{display:block}
@@ -128,7 +130,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .search input{padding-inline-start:42px;border-radius:16px}
 .search svg{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
-.seg button{border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:8px 14px;font-size:14px;font-weight:500;transition:all .15s}
+.seg button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 14px;font-size:14px;font-weight:500;transition:all .15s}
 .seg button.on{border-color:var(--v600);background:var(--v600);color:#fff;box-shadow:0 6px 14px rgba(124,58,237,.25)}
 .tabs{display:flex;gap:4px;background:var(--soft);border-radius:14px;padding:4px;overflow-x:auto}
 .tab{border:0;background:transparent;color:var(--muted);padding:8px 14px;border-radius:11px;font-size:14px;font-weight:500;white-space:nowrap;flex:1}
@@ -485,7 +487,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.3.0';
+const VERSION = '4.4.0';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -578,8 +580,16 @@ async function busy(el, fn){
 }
 
 /* ============================== السمة ============================== */
-function applyTheme(){ const t = LS.get('ishraf.theme'); if (t && t !== 'auto') document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme'); }
+// «تلقائي» يُترجم إلى ليلي أو نهاري حسب الهاتف، فتنطبق نفس قواعد الألوان في الحالتين
+const DARK_MQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+function applyTheme(){
+  const t = LS.get('ishraf.theme');
+  const eff = t === 'dark' || t === 'light' ? t : (DARK_MQ && DARK_MQ.matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', eff);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = eff === 'dark' ? '#1A0638' : '#5B21B6';
+}
 applyTheme();
+if (DARK_MQ) (DARK_MQ.addEventListener ? DARK_MQ.addEventListener('change', applyTheme) : DARK_MQ.addListener(applyTheme));
 
 /* ============================== الاتصال ============================== */
 async function api(action, payload = {}){
@@ -690,10 +700,10 @@ const getDraft = vid => LS.get(draftKey(vid)) || {};
 const setDraft = (vid, d) => Object.keys(d).length ? LS.set(draftKey(vid), d) : LS.del(draftKey(vid));
 const valueOf = (vid, id) => { const d = getDraft(vid); if (d[id] !== undefined) return d[id]; const r = resultsOf(vid)[id]; return r ? r.value : undefined; };
 
-const PALETTE = ['#7C3AED','#A0522D','#0E9F6E','#DB2777','#2563EB','#E69138','#0891B2','#9333EA','#C2410C','#4F46E5'];
+const PALETTE = ['#7C3AED','#A0522D','#0B7F58','#BE185D','#2563EB','#B45309','#0E7490','#9333EA','#C2410C','#4F46E5'];
 function hue(str){ let h = 0; for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; }
 function initials(name){ const p = String(name || '').trim().split(/\s+/); return ((p[0] || '')[0] || '') + ((p[1] || '')[0] || ''); }
-function avGrad(name){ const c = hue(name); return `background:linear-gradient(140deg,${c},${c}CC)`; }
+function avGrad(name){ const c = hue(name); return `background:linear-gradient(140deg,${c},${c}E6)`; }
 
 function progress(v){
   const items = visitItems(v);
@@ -782,18 +792,33 @@ async function boot(){
   const cached = LS.get(bootKey());
   if (cached && cached.cfg){ S.B = cached; render(); refreshBg(); return; }
   $('#app').innerHTML = skeleton();
-  try { S.B = await api('bootstrap'); persist(); render(); }
+  try { const t0 = performance.now(); S.B = await api('bootstrap'); notePerf(S.B, t0); persist(); render(); }
   catch(e){ handleAuthError(e) || ($('#app').innerHTML = `<div class="login"><div class="lcard stack"><div class="banner">${esc(e.message)}</div><button class="btn btn-p btn-block" onclick="boot()">إعادة المحاولة</button></div></div>`); }
+}
+/** زمن آخر تحميل: الكلي (مع الشبكة) وزمن الخادم، للتشخيص في «حسابي» */
+function perfLine(){
+  const p = LS.get('ishraf.perf'); if (!p) return '';
+  const sec = ms => (ms / 1000).toFixed(1).replace('.0', '') + ' ث';
+  return ` · آخر تحميل ${sec(p.total)}` + (p.server != null ? ` (الخادم ${sec(p.server)}${p.cache ? '، من الذاكرة' : ''})` : '');
+}
+function notePerf(b, t0){
+  try{
+    const p = (b && b.perf) || [], srv = p.length ? p[p.length - 1][1] : null;
+    LS.set('ishraf.perf', { total: Math.round(performance.now() - t0), server: srv, cache: p.some(x => x[0] === 'cache'), at: Date.now() });
+    if (b) delete b.perf;
+  }catch(e){}
 }
 function handleAuthError(e){
   if (/الجلسة|الحساب|المؤقت/.test(e.message)){ logout(true); toast(e.message, true); return true; }
   return false;
 }
-async function refreshBg(){
+async function refreshBg(force){
   if (Q.jobs.length || Q.running) return;
   try{
     setSync('busy');
-    const fresh = await api('bootstrap');
+    const t0 = performance.now();
+    const fresh = await api('bootstrap', force ? { fresh: true } : {});
+    notePerf(fresh, t0);
     setSync('ok');
     if (Q.jobs.length) return;
     if (JSON.stringify(fresh) !== JSON.stringify(S.B)){
@@ -953,7 +978,9 @@ async function renderLogin(){
       const okBtn = $('.pad .ok');
       if (L.step === 'pin'){
         try{
+          const t0 = performance.now();
           const r = await busy(okBtn, () => api('login', { auth: { school: L.school, user: L.user, code: L.code } }));
+          if (r.boot) notePerf(r.boot, t0);
           S.auth = { school: L.school, user: L.user, code: L.code, name: r.user.name, role: r.user.role };
           LS.set('ishraf.last', { school: L.school, user: L.user });
           if (r.mustChange){ L.userObj = r.user; L.step = 'new1'; return renderLogin(); }
@@ -1093,9 +1120,9 @@ function viewMe(){
       ${standalone ? '' : `<div class="card stack"><b class="d">ثبّت التطبيق على هاتفك</b>
         <div class="small muted">${ios ? 'في Safari: زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».' : 'يفتح كتطبيق مستقل بملء الشاشة، ويعمل أسرع.'}</div>
         ${ios ? '' : '<button class="btn btn-p" data-act="install">تثبيت التطبيق</button>'}</div>`}
-      <div class="card stack"><div class="spread"><div><b class="d">تحديث البيانات</b><div class="small muted">جلب آخر ما سُجّل في الشيت</div></div><button class="btn btn-g" data-act="sync">تحديث</button></div></div>
+      <div class="card stack"><div class="spread"><div><b class="d">تحديث البيانات</b><div class="small muted">جلب آخر ما سُجّل في الشيت، بما فيه التعديلات اليدوية</div></div><button class="btn btn-g" data-act="sync">تحديث</button></div></div>
       <button class="btn btn-g btn-block" data-act="logout" style="color:var(--bad)">تسجيل الخروج</button>
-      <div class="small muted" style="text-align:center">الإصدار ${VERSION}</div>
+      <div class="small muted" style="text-align:center">الإصدار ${VERSION}${perfLine()}</div>
     </div>`,
     mount(){ $$('#thSeg [data-th]').forEach(b => b.onclick = () => { LS.set('ishraf.theme', b.dataset.th); applyTheme(); render(true); }); }
   };
@@ -2475,7 +2502,7 @@ function assignEditor(tid){
 /* ============================== الإجراءات ============================== */
 const ACT = {
   print: () => { buzz(); window.print(); },
-  sync: async el => { await busy(el, refreshBg); toast('تم التحديث'); },
+  sync: async el => { await busy(el, () => refreshBg(true)); toast('تم التحديث'); render(true); },
   logout: async () => { if (Q.jobs.length) return toast('انتظر حتى يكتمل الحفظ', true); if (await confirmBox('الخروج', 'هل تريد الخروج من حسابك على هذا الجهاز؟', 'خروج')) logout(); },
   install: async () => { if (installEvt){ installEvt.prompt(); installEvt = null; } else toast('افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»'); },
   copy: el => { try { navigator.clipboard.writeText(el.dataset.t); toast('نُسخ الرمز'); } catch(e){} },
