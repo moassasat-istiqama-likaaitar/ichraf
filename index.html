@@ -77,6 +77,8 @@ a{color:inherit}
 .kpi.accent{background:linear-gradient(140deg,rgba(230,145,56,.38),rgba(230,145,56,.16));border-color:rgba(253,215,170,.4)}
 
 /* ===== اللوحة ===== */
+#app.shell{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
+#app.shell>.panel{flex:1 0 auto}
 .panel{background:var(--paper);border-radius:30px 30px 0 0;margin-top:-34px;min-height:60vh;position:relative;z-index:2;padding:22px 0 calc(var(--nav-h) + 40px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(30,11,58,.18)}
 .enter-f{animation:inF .32s cubic-bezier(.2,.8,.2,1)}
 .enter-b{animation:inB .32s cubic-bezier(.2,.8,.2,1)}
@@ -156,6 +158,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 :root[data-theme="dark"] .bnav{background:rgba(31,20,51,.86);border-color:rgba(255,255,255,.08)}
 .bnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;font-family:Changa;font-size:12px;color:var(--muted);border-radius:18px;transition:all .2s}
 .bnav a.on{color:var(--v700);background:var(--v100)}
+.bnav a{min-width:0}
+.bnav a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px}
+.bnav.n6 a{font-size:11px;letter-spacing:-.2px}
 :root[data-theme="dark"] .bnav a.on{color:var(--v300)}
 @media (min-width:900px){
   .bnav{position:absolute;top:calc(70px + env(safe-area-inset-top));bottom:auto;inset-inline:auto;left:50%;transform:translateX(-50%);height:50px;width:auto;padding:5px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.2);box-shadow:none}
@@ -163,6 +168,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
   :root[data-theme="dark"] .bnav{background:rgba(255,255,255,.08)}
   .bnav a{flex-direction:row;gap:7px;padding:0 16px;font-size:14px;color:rgba(255,255,255,.85)}
   .bnav a.on{background:#fff;color:var(--v700)}
+  .bnav.n6 a{font-size:14px;letter-spacing:0}
   .panel{padding-bottom:60px}
 }
 
@@ -487,7 +493,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbzz1lTSFZ0DQECXYvTuKey70SVxiDIAeqIsRP3TquANZP1EwaKtcit4I6Y-blRTYTuD0A/exec';
-const VERSION = '4.4.0';
+const VERSION = '4.4.1';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -799,13 +805,17 @@ async function boot(){
 function perfLine(){
   const p = LS.get('ishraf.perf'); if (!p) return '';
   const sec = ms => (ms / 1000).toFixed(1).replace('.0', '') + ' ث';
-  return ` · آخر تحميل ${sec(p.total)}` + (p.server != null ? ` (الخادم ${sec(p.server)}${p.cache ? '، من الذاكرة' : ''})` : '');
+  const err = LS.get('ishraf.lastErr');
+  return ` · آخر تحميل ${sec(p.total)}` + (p.server != null ? ` (الخادم ${sec(p.server)}${p.cache ? '، من الذاكرة' : ''})` : '')
+    + `<br>الخادم ${p.srv ? esc(p.srv) : '<b style="color:var(--bad)">قديم: انشر Code.gs الجديد</b>'}`
+    + (err ? `<br><span style="color:var(--bad)">آخر خطأ في التحديث: ${esc(err.msg)}</span>` : '');
 }
 function notePerf(b, t0){
   try{
     const p = (b && b.perf) || [], srv = p.length ? p[p.length - 1][1] : null;
-    LS.set('ishraf.perf', { total: Math.round(performance.now() - t0), server: srv, cache: p.some(x => x[0] === 'cache'), at: Date.now() });
-    if (b) delete b.perf;
+    LS.set('ishraf.perf', { total: Math.round(performance.now() - t0), server: srv, cache: p.some(x => x[0] === 'cache'), srv: (b && b.srv) || '', at: Date.now() });
+    LS.del('ishraf.lastErr');
+    if (b) { delete b.perf; delete b.srv; }
   }catch(e){}
 }
 function handleAuthError(e){
@@ -825,7 +835,7 @@ async function refreshBg(force){
       S.B = fresh; persist();
       if (!$('.sheet-bg') && !document.activeElement.matches('input,textarea')) render(true);
     }
-  } catch(e){ setSync(e.net ? 'offline' : 'ok'); handleAuthError(e); }
+  } catch(e){ setSync(e.net ? 'offline' : 'ok'); if (!e.net) LS.set('ishraf.lastErr', { msg: e.message, at: Date.now() }); handleAuthError(e); }
 }
 function logout(silent){
   if (S.auth) LS.del(bootKey());
@@ -836,6 +846,7 @@ function logout(silent){
 }
 
 function render(keep){
+  $('#app').classList.remove('shell');
   // أثناء التحميل الأول نعرض الهياكل، ولا نعود لشاشة الدخول إلا إن لم يكن هناك حساب
   if (S.auth && !S.B && !['new1', 'new2'].includes(S.L.step)){ $('#app').innerHTML = skeleton(); return; }
   if (!S.auth || !S.B) return renderLogin();
@@ -863,6 +874,7 @@ function render(keep){
   else if (isMain() && ['sup', 'tea', 'vis'].includes(r)) v = viewDirector(r);
   else v = r === 'visits' ? viewMyVisits() : viewSupervisor();
   const noNav = r === 'fill';
+  $('#app').classList.add('shell');
   $('#app').innerHTML = `<div class="hero"><div class="wrap">${topbar()}${v.hero || ''}</div></div>
     <div class="panel"><div class="wrap ${anim}">${v.body}</div></div>${noNav ? '' : bottomNav(r)}${v.after || ''}`;
   setSync(Q.jobs.length ? 'busy' : (Q.state === 'offline' ? 'offline' : 'ok'));
@@ -886,7 +898,7 @@ function bottomNav(r){
   if (isMain() && ['sup', 'tea', 'vis'].includes(r)) cur = 'team';
   if (r === 'cls') cur = isTeacher() ? '' : 'prog';
   const bd = navBadges();
-  return `<nav class="bnav">${items.map(([h, k, l, i]) => `<a href="${h}" class="${k === cur ? 'on' : ''}" style="position:relative">${i}<span>${l}</span>${bd[k] ? `<b class="badge">${bd[k]}</b>` : ''}</a>`).join('')}</nav>`;
+  return `<nav class="bnav${items.length > 5 ? ' n6' : ''}">${items.map(([h, k, l, i]) => `<a href="${h}" class="${k === cur ? 'on' : ''}" style="position:relative">${i}<span>${l}</span>${bd[k] ? `<b class="badge">${bd[k]}</b>` : ''}</a>`).join('')}</nav>`;
 }
 
 /** الشارات الحمراء: للمعلم (لم يسجّل هذا الأسبوع + متأخر)، وللمساعد والمدير (مواد متأخرة) */
