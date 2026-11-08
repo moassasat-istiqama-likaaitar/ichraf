@@ -408,6 +408,23 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .rsign .stamp i{width:22mm;height:22mm;border-radius:50%;border:.4mm dashed #C4B5FD;display:grid;place-items:center;font-family:Changa;font-size:7pt;color:#A99CC6;font-style:normal}
 .rfoot{display:flex;justify-content:space-between;font-size:6.8pt;color:#A99CC6;margin-top:2mm;border-top:.2mm solid #E7E2F3;padding-top:1mm}
 .a4+.a4{margin-top:10mm}
+/* النموذج الفارغ */
+.rit .bx{width:4.6mm;height:4.6mm;border-radius:50%;border:.3mm solid #A99CC6;flex:none;background:#fff}
+.rit .bx.c{width:9mm;border-radius:1.2mm}
+.rinfo.blank td:last-child{font-weight:400;color:#A99CC6;height:4.6mm}
+.rinfo.blank td.f{color:#1B1530;font-weight:600}
+.rscore.blank b{height:11mm;border-bottom:.3mm dotted #A99CC6;width:18mm;margin:1mm auto}
+.rbox .nl{min-height:16mm;background:repeating-linear-gradient(transparent 0 5.2mm,#E7E2F3 5.2mm 5.4mm)}
+/* تضييق تلقائي حين تكثر البنود لتبقى الاستمارة في صفحة واحدة */
+.a4.tight .rit .bx{width:3.5mm;height:3.5mm}
+.a4.tight .rit .bx.c{width:8mm}
+.a4.tight .rit{padding:.1mm 2mm;line-height:1.15}
+.a4.tight .rbox .nl{min-height:11mm}
+.a4.tight .rsign>div{min-height:16mm}
+.a4.tighter{font-size:7.3pt}
+.a4.tighter .rax{margin-bottom:.8mm}
+.a4.tighter .rinfo td{padding:.35mm 1.5mm}
+.a4.tightest{font-size:6.8pt}
 .p2h{display:flex;justify-content:space-between;align-items:center;padding-bottom:2.5mm;border-bottom:.6mm solid #A0522D}
 .p2h h2{font-family:Changa;font-size:14pt;color:#4C1D95;margin:0;line-height:1.2}
 .p2h h2 small{display:block;font-size:8.5pt;color:#6E6488;font-weight:500}
@@ -493,7 +510,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 /* ============================== الإعداد ============================== */
 // ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
 const API_URL = 'https://script.google.com/macros/s/AKfycbxTIaJHfcqkh0J2zR8HO17X4TdWK-yiZrIJZgRCF6vJDHvY2QIlCs2X6kLoGmC6UrqfVg/exec';
-const VERSION = '4.4.2';
+const VERSION = '4.5.0';
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -787,7 +804,7 @@ function skeleton(){
 }
 
 /* ============================== التوجيه ============================== */
-const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3, codes: 3 };
+const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3, codes: 3, blank: 3 };
 function go(h){ if (location.hash === h) render(); else location.hash = h; }
 window.addEventListener('hashchange', () => render());
 
@@ -853,7 +870,7 @@ function render(keep){
   if (S.auth && !S.B && !['new1', 'new2'].includes(S.L.step)){ $('#app').innerHTML = skeleton(); return; }
   if (!S.auth || !S.B) return renderLogin();
   program();   // تحميل البرنامج الدراسي في الخلفية (مرة واحدة)
-  if (!['report', 'codes'].includes(route().r)) document.title = appName();
+  if (!['report', 'codes', 'blank'].includes(route().r)) document.title = appName();
   const { r, id } = route();
   const depth = ROUTES_DEPTH[r] ?? 0;
   const anim = S.lastRoute === location.hash ? '' : depth >= S.lastDepth ? 'enter-f' : 'enter-b';
@@ -862,6 +879,7 @@ function render(keep){
   const y = scrollY;
   if (r === 'report') return renderReport(id);
   if (r === 'codes') return renderCodes();
+  if (r === 'blank' && !isTeacher()) return renderBlank(id);
   let v;
   if (isTeacher()) v = r === 'me' ? viewMe() : r === 'cls' ? viewLessons(id) : viewTeacherHome();
   else if (r === 'prog') v = viewProgress();
@@ -1134,6 +1152,7 @@ function viewMe(){
       ${standalone ? '' : `<div class="card stack"><b class="d">ثبّت التطبيق على هاتفك</b>
         <div class="small muted">${ios ? 'في Safari: زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».' : 'يفتح كتطبيق مستقل بملء الشاشة، ويعمل أسرع.'}</div>
         ${ios ? '' : '<button class="btn btn-p" data-act="install">تثبيت التطبيق</button>'}</div>`}
+      ${isTeacher() ? '' : `<div class="card stack"><div class="spread"><div><b class="d">استمارة زيارة فارغة</b><div class="small muted">للطباعة أو المشاركة مع المعلمين قبل الزيارة</div></div><button class="btn btn-g" data-act="blankForm">${IC.print} النموذج</button></div></div>`}
       <div class="card stack"><div class="spread"><div><b class="d">تحديث البيانات</b><div class="small muted">جلب آخر ما سُجّل في الشيت، بما فيه التعديلات اليدوية</div></div><button class="btn btn-g" data-act="sync">تحديث</button></div></div>
       <button class="btn btn-g btn-block" data-act="logout" style="color:var(--bad)">تسجيل الخروج</button>
       <div class="small muted" style="text-align:center">الإصدار ${VERSION}<span id="perfLine">${perfLine()}</span></div>
@@ -2098,8 +2117,140 @@ function reportPage2(v, t, items, scores, c, secs){
     ${strong.length ? `<div class="p2t">نقاط التميّز<small>البنود التي نالت ${cfg.max} من ${cfg.max}</small></div><div class="strong">${strong.slice(0, 16).map(it => `<span>${esc(it.text)}</span>`).join('')}${strong.length > 16 ? `<span>+${strong.length - 16}</span>` : ''}</div>` : ''}
   </div>`;
 }
-addEventListener('beforeprint', () => { S.oldTitle = document.title; if (['report', 'codes'].includes(route().r) && S.printTitle) document.title = S.printTitle; const s = $('#rpS'); if (s) s.style.transform = 'none'; });
-addEventListener('afterprint', () => { if (S.oldTitle) document.title = S.oldTitle; if (route().r === 'report') render(); });
+/* ============================== الاستمارة الفارغة ============================== */
+// الرابط: #/blank/<منصب>-<نوع>-<رقم>  (q/m/c · t/n/x · 1..)
+const BL_POST = { q: 'قرآن', m: 'مادة', c: 'قسم' };
+const BL_TYPE = { t: 'تلقين', n: 'منافسة', x: '' };
+const keyOf = (o, v) => Object.keys(o).find(k => o[k] === v);
+function blankFormSheet(){
+  const cfg = B().cfg, last = LS.get('ishraf.blank') || {};
+  const types = (cfg.lists['نوع القسم'] || ['تلقين', 'منافسة']).filter(x => keyOf(BL_TYPE, x));
+  const nums = range(1, cfg.maxVisit || 1).map(n => 'الزيارة ' + (ORD[n - 1] || n));
+  sheet(`<h3>استمارة زيارة فارغة</h3><div class="stack">
+      <div class="field"><span>منصب المعلم</span><div class="seg" data-seg="ps" data-req="1">${Object.values(BL_POST).map(x => `<button type="button" data-val="${x}" class="${x === (last.p || 'قرآن') ? 'on' : ''}">${ROLE_LABEL[x]}</button>`).join('')}</div></div>
+      <div class="field" id="blTy"><span>نوع الحصة</span><div class="seg" data-seg="ty" data-req="1">${types.map(x => `<button type="button" data-val="${x}" class="${x === (last.t || types[0]) ? 'on' : ''}">${x}</button>`).join('')}</div></div>
+      ${nums.length > 1 ? `<div class="field"><span>رقم الزيارة</span><div class="seg" data-seg="vn" data-req="1">${nums.map((x, i) => `<button type="button" data-val="${i + 1}" class="${i + 1 === (last.n || 1) ? 'on' : ''}">${x}</button>`).join('')}</div></div>` : ''}
+      <div class="small muted">تظهر في الاستمارة البنود الخاصة بهذا الاختيار فقط، كما سيراها المعلم يوم الزيارة.</div>
+      <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="blGo">${IC.print} عرض الاستمارة</button></div></div>`,
+    (m, close) => {
+      bindSegs(m);
+      const sync = () => { m.querySelector('#blTy').style.display = segVal(m, 'ps') === 'مادة' ? 'none' : ''; };
+      m.querySelector('[data-seg="ps"]').addEventListener('click', () => setTimeout(sync));
+      sync();
+      m.querySelector('#blGo').onclick = () => {
+        const p = segVal(m, 'ps'), t = p === 'مادة' ? '' : segVal(m, 'ty'), n = Number(segVal(m, 'vn')) || 1;
+        LS.set('ishraf.blank', { p, t: t || last.t, n });
+        close(); location.hash = `#/blank/${keyOf(BL_POST, p)}-${keyOf(BL_TYPE, t) || 'x'}-${n}`;
+      };
+    });
+}
+function renderBlank(id){
+  const [pk, tk, nk] = String(id || '').split('-');
+  const role = BL_POST[pk] || 'قرآن', type = role === 'مادة' ? '' : (BL_TYPE[tk] ?? 'تلقين'), n = Number(nk) || 1;
+  const cfg = B().cfg, items = itemsFor(role, type, n);
+  const ordN = ORD[n - 1] || n;
+  const secs = [];
+  cfg.axes.forEach(ax => {
+    const its = items.filter(it => it.axis === ax.id);
+    if (!its.length) return;
+    let sec = secs.find(s => s.name === ax.section);
+    if (!sec){ sec = { name: ax.section, axes: [] }; secs.push(sec); }
+    sec.axes.push({ ax, its });
+  });
+  const secHtml = secs.map(sec => `<div class="rsec"><h3><span>${esc(sec.name)}</span><span></span></h3>${sec.axes.map(({ ax, its }) =>
+    `<div class="rax"><h4><span>${esc(ax.name)}</span><span></span></h4>${its.map(it =>
+      `<div class="rit"><span class="x">${esc(it.text)}${(it.weight ?? 1) !== 1 ? ` <b style="color:#A0522D;font-size:6.8pt">×${it.weight}</b>` : ''}</span><span class="bx${it.kind === 'علامة' ? '' : ' c'}"></span></div>`).join('')}</div>`).join('')}</div>`).join('');
+  const cats = [...new Set(cfg.trainings.map(x => x.category).filter(Boolean))];
+  const trHtml = cats.map(cat => `<div style="margin-top:.8mm"><b style="font-family:Changa;font-size:8pt;color:#6E6488">${esc(cat)}:</b> <span class="rtr" style="display:inline-flex">${cfg.trainings.filter(x => x.category === cat).map(x => `<span>${esc(x.name)}</span>`).join('')}</span></div>`).join('');
+  const sub = ROLE_LABEL[role] + (type ? ' · حصة ' + type : '');
+  const dots = '<td></td>';
+  $('#app').innerHTML = `<div class="rp-bar no-print"><button class="back" data-go="#/me">${IC.back} رجوع</button><span class="t">استمارة فارغة</span>
+      <button class="btn btn-w" data-act="sharePdf" id="shBtn">مشاركة PDF</button>
+      <button class="btn btn-w" data-act="print">${IC.print} طباعة</button></div>
+    <div class="rp-stage" id="rpStage"><div class="rp-scale" id="rpS"><div class="a4" id="a4">
+      <div class="rh">
+        <div class="org"><b>${esc(B().school.name)}</b>الموسم الدراسي ${esc(cfg.season)}</div>
+        <h1>استمارة الزيارة التربوية ${ordN}<small>${esc(sub)}</small></h1>
+        <div class="lg"><span>برنامج الزيارات<br>${items.length} بندًا</span><i>${IC.book}</i></div>
+      </div>
+      <div class="rinfo blank">
+        <table><tr><td>المعلم</td>${dots}</tr>
+          <tr><td>المنصب والمستوى</td><td class="f">${esc(ROLE_LABEL[role])}${type ? ' · ' + esc(type) : ''}</td></tr>
+          <tr><td>المستوى التعليمي</td>${dots}</tr>
+          <tr><td>سنوات الخبرة</td>${dots}</tr>
+          <tr><td>المساعد البيداغوجي</td>${dots}</tr></table>
+        <table><tr><td>تاريخ الزيارة</td>${dots}</tr>
+          <tr><td>التوقيت</td>${dots}</tr>
+          <tr><td>المادة والدرس</td>${dots}</tr>
+          <tr><td>عدد التلاميذ</td><td>ذكور ......  إناث ......  المجموع ......</td></tr>
+          <tr><td>الحصص الميدانية</td>${dots}</tr></table>
+        <div class="rscore blank"><small>النقطة النهائية</small><b></b><small>من 100</small></div>
+      </div>
+      <div class="rlegend">${range(cfg.min, cfg.max).map(k => `<span><i style="background:${sHex(k)}"></i>${k}</span>`).join('')}<span>· سلّم التقييم من ${cfg.min} إلى ${cfg.max} — الدائرة للعلامة، والمستطيل للعدد</span></div>
+      <div class="rsecs">${secHtml || '<div style="padding:4mm;color:#A99CC6">لا توجد بنود لهذا الاختيار</div>'}</div>
+      <div class="rbox"><h5>ملاحظات المساعد البيداغوجي</h5><div class="nl"></div></div>
+      ${trHtml ? `<div class="rbox"><h5>التكوينات التي حضرها المعلم</h5>${trHtml}</div>` : ''}
+      <div class="rsign">
+        <div><h5>المساعد البيداغوجي</h5><div class="small" style="color:#6E6488;font-size:7.5pt">الاسم والتوقيع:</div><div class="lines"></div></div>
+        <div><h5>ملاحظة المدير</h5><div class="lines"></div></div>
+        <div><h5>الختم والتوقيع</h5><div class="stamp"><i>ختم المدرسة</i></div></div>
+      </div>
+      <div class="rbox" style="display:flex;gap:6mm;font-size:8pt;padding:1.5mm 2.8mm"><span>اطّلع عليه المعلم:</span><span style="flex:1;border-bottom:.2mm dotted #A99CC6"></span><span>التاريخ:</span><span style="width:28mm;border-bottom:.2mm dotted #A99CC6"></span></div>
+    </div></div></div>`;
+  const fit = () => {
+    const a4 = $('#a4'), s = $('#rpS'), st = $('#rpStage'); if (!a4) return;
+    const k = Math.min(1, (innerWidth - 24) / a4.offsetWidth);
+    s.style.transform = `scale(${k})`;
+    st.style.height = (s.offsetHeight * k + 50) + 'px';
+    st.style.overflow = 'hidden';
+  };
+  const a4 = $('#a4'), A4H = 297 * 96 / 25.4;
+  for (const c of ['tight', 'tighter', 'tightest']) if (a4.offsetHeight > A4H + 1) a4.classList.add(c);
+  fit(); window.onresize = () => { if (route().r === 'blank') fit(); };
+  S.printTitle = `استمارة الزيارة ${ordN} - ${ROLE_LABEL[role]}${type ? ' - ' + type : ''}`;
+  S.pdf = null;
+  window.scrollTo(0, 0);
+  preparePdf();   // يُجهَّز الملف مسبقًا فتفتح قائمة المشاركة فور الضغط
+}
+const loadJs = src => new Promise((ok, no) => {
+  if (document.querySelector(`script[src="${src}"]`)) return ok();
+  const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => no(new Error('تعذّر تحميل أداة PDF — تحقق من الاتصال'));
+  document.head.appendChild(s);
+});
+async function buildPdf(){
+  await Promise.all([loadJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'), loadJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]);
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+  const pages = $$('.a4'); if (!pages.length) throw new Error('لا توجد صفحة');
+  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
+  for (let i = 0; i < pages.length; i++){
+    const cv = await html2canvas(pages[i], { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false,
+      onclone: d => { const s = d.getElementById('rpS'); if (s) s.style.transform = 'none'; d.documentElement.removeAttribute('data-theme'); } });
+    if (i) doc.addPage();
+    const h = Math.min(297, cv.height * 210 / cv.width);
+    doc.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, h);
+  }
+  return new File([doc.output('blob')], (S.printTitle || 'استمارة') + '.pdf', { type: 'application/pdf' });
+}
+function preparePdf(){
+  const r = location.hash, b = $('#shBtn');
+  if (b) b.textContent = 'تجهيز PDF…';
+  S.pdfJob = buildPdf().then(f => { if (location.hash === r){ S.pdf = f; const x = $('#shBtn'); if (x) x.textContent = 'مشاركة PDF'; } return f; })
+    .catch(e => { const x = $('#shBtn'); if (x) x.textContent = 'مشاركة PDF'; throw e; });
+  S.pdfJob.catch(() => {});
+}
+async function sharePdf(el){
+  buzz();
+  let f = S.pdf;
+  try { if (!f) f = await busy(el, () => S.pdfJob || buildPdf()); }
+  catch(e){ return toast(e.message, true); }
+  const dl = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = f.name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('حُفظ الملف في التنزيلات'); };
+  if (navigator.canShare && navigator.canShare({ files: [f] })){
+    try { await navigator.share({ files: [f], title: f.name.replace(/\.pdf$/, '') }); }
+    catch(e){ if (e.name !== 'AbortError') dl(); }
+  } else dl();
+}
+addEventListener('beforeprint', () => { S.oldTitle = document.title; if (['report', 'codes', 'blank'].includes(route().r) && S.printTitle) document.title = S.printTitle; const s = $('#rpS'); if (s) s.style.transform = 'none'; });
+addEventListener('afterprint', () => { if (S.oldTitle) document.title = S.oldTitle; if (['report', 'blank'].includes(route().r)) render(); });
 
 /* ============================== لوحة الإحصاءات ============================== */
 function hbars(rows, unit){
@@ -2516,6 +2667,8 @@ function assignEditor(tid){
 /* ============================== الإجراءات ============================== */
 const ACT = {
   print: () => { buzz(); window.print(); },
+  blankForm: () => blankFormSheet(),
+  sharePdf: el => sharePdf(el),
   sync: async el => { await busy(el, () => refreshBg(true)); toast('تم التحديث'); render(true); },
   logout: async () => { if (Q.jobs.length) return toast('انتظر حتى يكتمل الحفظ', true); if (await confirmBox('الخروج', 'هل تريد الخروج من حسابك على هذا الجهاز؟', 'خروج')) logout(); },
   install: async () => { if (installEvt){ installEvt.prompt(); installEvt = null; } else toast('افتح قائمة المتصفح واختر «تثبيت التطبيق» أو «إضافة إلى الشاشة الرئيسية»'); },
