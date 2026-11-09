@@ -508,9 +508,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 
 <script>
 /* ============================== الإعداد ============================== */
-// ضع هنا رابط نشر Code.gs (ينتهي بـ /exec)
-const API_URL = 'https://script.google.com/macros/s/AKfycbxTIaJHfcqkh0J2zR8HO17X4TdWK-yiZrIJZgRCF6vJDHvY2QIlCs2X6kLoGmC6UrqfVg/exec';
-const VERSION = '4.5.0';
+// الخادم: قاعدة بيانات المؤسسة (Supabase). المفتاح «العام» آمن هنا: كل الجداول مغلقة، والدخول برمز المستخدم داخل القاعدة
+const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
+const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
+const API_URL = SB_URL + '/rest/v1/rpc/api';
+const VERSION = '5.0.0';
+const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
 const $ = s => document.querySelector(s);
@@ -621,20 +624,65 @@ async function api(action, payload = {}){
   let res;
   try{
     res = await fetch(API_URL, {
-      method: 'POST', redirect: 'follow', signal: ctl.signal,
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(Object.assign({ action, auth: S.auth ? { school: S.auth.school, user: S.auth.user, code: S.auth.code } : null }, payload))
+      method: 'POST', signal: ctl.signal,
+      headers: { 'Content-Type': 'application/json', apikey: SB_KEY },
+      body: JSON.stringify({ req: Object.assign({ action, cid: CID, auth: S.auth ? { school: S.auth.school, user: S.auth.user, code: S.auth.code } : null }, payload) })
     });
   } catch(e){
     const err = new Error('تعذّر الاتصال بالخادم، تحقق من الإنترنت'); err.net = true; throw err;
   } finally { clearTimeout(timer); }
   let j;
   try { j = await res.json(); } catch(e){ const err = new Error('ردّ غير مفهوم من الخادم'); err.net = true; throw err; }
+  if (!res.ok){ const err = new Error(res.status >= 500 ? 'الخادم مشغول، أعد المحاولة' : (j && j.message) || 'خطأ في الاتصال'); err.net = res.status >= 500; throw err; }
   if (!j.ok) throw new Error(j.error || 'خطأ غير معروف');
   return j.data;
 }
-// إيقاظ الخادم مبكرًا بينما يختار المستخدم مدرسته
-try { if (/^https?:/.test(API_URL)) fetch(API_URL, { method: 'GET' }).catch(() => {}); } catch(e){}
+
+/* ===== اللحظية: قناة المدرسة — أي تغيير من جهاز آخر يُحدّث الشاشة خلال ثانية ===== */
+const RT = { ws: null, topic: '', ref: 0, hb: null, retry: 0, timer: null, idle: null, want: '' };
+function rtConnect(topic){
+  RT.want = topic || RT.want;
+  if (!RT.want || !/^https?:/.test(SB_URL) || typeof WebSocket === 'undefined') return;
+  if (RT.ws && RT.topic === RT.want && RT.ws.readyState <= 1) return;
+  rtClose(true);
+  let ws;
+  try { ws = new WebSocket(SB_URL.replace(/^http/, 'ws') + '/realtime/v1/websocket?apikey=' + encodeURIComponent(SB_KEY) + '&vsn=1.0.0'); } catch(e){ return; }
+  RT.ws = ws; RT.topic = RT.want;
+  const send = (topic, event, payload) => { try { ws.send(JSON.stringify({ topic, event, payload, ref: String(++RT.ref) })); } catch(e){} };
+  ws.onopen = () => {
+    RT.retry = 0;
+    send('realtime:' + RT.topic, 'phx_join', { config: { broadcast: { self: false, ack: false }, presence: { key: '' }, private: false } });
+    RT.hb = setInterval(() => send('phoenix', 'heartbeat', {}), 25000);
+  };
+  ws.onmessage = e => {
+    let m; try { m = JSON.parse(e.data); } catch(x){ return; }
+    if (m.event !== 'broadcast') return;
+    const inner = m.payload || {}, body = inner.payload || {};
+    if (body.cid && body.cid === CID) return;
+    clearTimeout(RT.timer);
+    RT.timer = setTimeout(() => { if (S.auth && S.B) refreshBg(); }, 700);   // عدة تنبيهات متتالية = تحديث واحد
+  };
+  ws.onclose = () => {
+    clearInterval(RT.hb);
+    if (RT.ws !== ws) return;
+    RT.ws = null;
+    if (!S.auth || document.hidden) return;
+    RT.retry = Math.min(RT.retry + 1, 6);
+    setTimeout(() => { if (!RT.ws && S.auth && !document.hidden) rtConnect(); }, 1000 * 2 ** RT.retry);
+  };
+}
+function rtClose(keepWant){
+  clearInterval(RT.hb);
+  const ws = RT.ws; RT.ws = null;
+  if (!keepWant) RT.want = '';
+  try { ws && ws.close(); } catch(e){}
+}
+// التطبيق في الخلفية أكثر من دقيقة: نغلق القناة (حدّ الاتصالات المتزامنة)، وعند العودة نحدّث ونعيد فتحها
+document.addEventListener('visibilitychange', () => {
+  clearTimeout(RT.idle);
+  if (document.hidden) RT.idle = setTimeout(() => rtClose(true), 60000);
+  else if (S.auth && S.B){ if (!RT.ws) { rtConnect(); refreshBg(); } }
+});
 
 /* ===== طابور الحفظ في الخلفية (التحديث المتفائل) ===== */
 const Q = { jobs: [], running: false };
@@ -673,7 +721,7 @@ async function runQ(){
 window.addEventListener('beforeunload', e => { if (Q.jobs.length){ e.preventDefault(); e.returnValue = ''; } });
 
 let persistT;
-function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.auth && S.B) LS.set(bootKey(), S.B); }, 300); }
+function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.auth && S.B) LS.set(bootKey(), S.B); }, 300); if (S.auth && S.B && S.B.rt) rtConnect(S.B.rt); }
 
 /* ============================== البيانات ============================== */
 const B = () => S.B;
@@ -858,6 +906,7 @@ async function refreshBg(force){
 }
 function logout(silent){
   if (S.auth) LS.del(bootKey());
+  rtClose();
   S.auth = null; S.B = null; LS.del('ishraf.auth'); S.L = { step: '' };
   if (!silent) toast('تم الخروج');
   history.replaceState(null, '', location.pathname);
