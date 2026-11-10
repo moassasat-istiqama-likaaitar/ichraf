@@ -516,7 +516,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.1.0';
+const VERSION = '5.2.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -1331,7 +1331,7 @@ function viewVisit(id){
   return {
     hero: `<div class="row" style="margin-top:14px"><button class="back" data-go="#/t/${esc(v.teacher)}">${IC.back} ${esc(tName(t))}</button></div>
       <h1>الزيارة ${v.number}</h1><div class="sub">${esc(tName(t))} · ${v.status === 'مكتملة' ? 'مكتملة' : 'مفتوحة'}${seeAll() && v.supervisor !== S.auth.user ? ' · ' + esc(userName(v.supervisor)) : ''}</div>
-      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}${v.group ? ' — فوج ' + esc(v.group) : ''}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
+      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}${v.group ? ' — فوج ' + esc(v.group) : ''}${tagTxt(v.level, v.group)}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
     body: `<div class="stack">${main}
       <div class="spread" style="margin-top:14px"><div class="sec-t" style="margin:0">الحصص الميدانية</div>${editable ? `<button class="btn btn-a" data-act="addSession" data-v="${esc(id)}">${IC.plus} حصة</button>` : ''}</div>
       ${sess}</div>`
@@ -1614,7 +1614,7 @@ function teacherSheet(t){
   const P = program();
   if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t); return; }
   // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بالفوج «أ» والمواد الافتراضية
-  let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, subs: c.subs.map(a => a.subject) }));
+  let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, tag: tagOf(c.level, c.group), subs: c.subs.map(a => a.subject) }));
   if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: 'أ', subs: defaultSubs(P, x, t.role) }));
   const posts = [...new Set((L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post))];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
@@ -1658,9 +1658,11 @@ function teacherSheet(t){
     const drawCls = () => {
       m.querySelector('#tCls').innerHTML = cls.length ? cls.map((c, i) => `<div class="card" style="box-shadow:none;padding:10px 12px">
         <div class="spread"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}</b><button type="button" class="chip bad" data-rmc="${i}" style="border:0">حذف القسم ✕</button></div>
+        <label class="row small muted" style="gap:8px;margin-top:6px;flex-wrap:nowrap">معرّف القسم 2 (اختياري) <input class="in" data-tg="${i}" value="${esc(c.tag || '')}" maxlength="6" placeholder="ذ / إ" style="width:70px;padding:6px 10px;min-height:0;text-align:center"></label>
         <div class="trs" style="margin-top:8px">${Object.keys(P.levels[c.level] || {}).map(sj => `<button type="button" data-ci="${i}" data-sj="${esc(sj)}" class="${c.subs.includes(sj) ? 'on' : ''}">${esc(sj)}</button>`).join('')}</div></div>`).join('')
         : '<div class="small muted">لم يُضف أي قسم بعد.</div>';
       m.querySelectorAll('[data-rmc]').forEach(b => b.onclick = () => { cls.splice(Number(b.dataset.rmc), 1); drawCls(); });
+      m.querySelectorAll('[data-tg]').forEach(x => x.oninput = () => { cls[Number(x.dataset.tg)].tag = x.value.trim(); });
       m.querySelectorAll('[data-sj]').forEach(b => b.onclick = () => { const c = cls[Number(b.dataset.ci)], sj = b.dataset.sj; c.subs = c.subs.includes(sj) ? c.subs.filter(x => x !== sj) : c.subs.concat([sj]); buzz(5); drawCls(); });
     };
     drawCls();
@@ -1668,7 +1670,7 @@ function teacherSheet(t){
       const lvl = segVal(m, 'nlv'), g = segVal(m, 'ngr') || 'أ';
       if (!lvl) return toast('اختر المستوى أولًا', true);
       if (cls.some(c => c.level === lvl && c.group === g)) return toast('هذا القسم مضاف', true);
-      cls.push({ level: lvl, group: g, subs: defaultSubs(P, lvl, segVal(m, 'role') || t.role) });
+      cls.push({ level: lvl, group: g, tag: tagOf(lvl, g), subs: defaultSubs(P, lvl, segVal(m, 'role') || t.role) });
       m.querySelectorAll('[data-seg="nlv"] button').forEach(b => b.classList.remove('on'));
       buzz(10); drawCls();
     };
@@ -1676,7 +1678,7 @@ function teacherSheet(t){
     m.querySelectorAll('[data-y]').forEach(b => b.onclick = () => { yi.value = Math.max(0, Math.min(60, (yi.value === '' ? (b.dataset.y > 0 ? -1 : 1) : Number(yi.value)) + Number(b.dataset.y))); buzz(5); });
     const act = m.querySelector('#tAct'); if (act) act.onclick = () => act.classList.toggle('on');
     m.querySelector('#svT').onclick = () => {
-      const teaching = [].concat(...cls.map(c => c.subs.map(sj => ({ level: c.level, group: c.group, subject: sj }))));
+      const teaching = [].concat(...cls.map(c => c.subs.map(sj => ({ level: c.level, group: c.group, subject: sj, tag: c.tag || '' }))));
       if (cls.some(c => !c.subs.length)) return toast('كل قسم يحتاج مادة واحدة على الأقل، أو احذف القسم', true);
       const taken = (B().assignments || []).find(a => a.teacher !== t.id && teaching.some(x => x.level === a.level && x.group === a.group && x.subject === a.subject));
       if (taken){ const ot = teacher(taken.teacher); return toast(`${taken.subject} في ${taken.level} فوج ${taken.group} مسندة إلى ${ot ? tName(ot) : 'معلم آخر'}`, true); }
@@ -1689,6 +1691,8 @@ function teacherSheet(t){
       if (sups.length > 1){ const sn = segVal(m, 'sup'); const su = sups.find(u => u.name === sn); o.supervisor = su ? su.id : ''; }
       else o.supervisor = t.supervisor || (sups[0] ? sups[0].id : '');
       if (act) o.active = act.classList.contains('on');
+      B().classTags = B().classTags || {};
+      cls.forEach(c => { const k = c.level + '|' + c.group; if (c.tag) B().classTags[k] = c.tag; else delete B().classTags[k]; });
       close(); saveTeacherOptimistic(o, t);
     };
   });
@@ -1717,7 +1721,7 @@ function saveTeacherOptimistic(o, before){
     if (o.teaching) B().assignments = prevA.filter(a => a.teacher !== o.id).concat(o.teaching.map(a => Object.assign({ teacher: o.id }, a)));
     render(true); persist(); toast('تم الحفظ');
     enqueue({ action: 'saveTeacher', payload: { teacher: o },
-      onOk: r => { const j = B().teachers.findIndex(x => x.id === r.id); if (j >= 0) B().teachers[j] = r; },
+      onOk: r => { const j = B().teachers.findIndex(x => x.id === r.id); if (j >= 0) B().teachers[j] = r; if (r.classTags) B().classTags = r.classTags; },
       onFail: () => { const j = B().teachers.findIndex(x => x.id === o.id); if (j >= 0) B().teachers[j] = prev; else B().teachers.push(prev); B().assignments = prevA; render(true); } });
   } else {
     const tmp = 'tmp' + Date.now();
@@ -1726,7 +1730,7 @@ function saveTeacherOptimistic(o, before){
     B().assignments = (B().assignments || []).concat((o.teaching || []).map(a => Object.assign({ teacher: tmp }, a)));
     render(true); persist(); toast('أُضيف ' + tName(nt));
     enqueue({ action: 'saveTeacher', payload: { teacher: Object.assign({}, o, { id: undefined }) },
-      onOk: r => { const j = B().teachers.findIndex(x => x.id === tmp); if (j >= 0) B().teachers[j] = r;
+      onOk: r => { const j = B().teachers.findIndex(x => x.id === tmp); if (j >= 0) B().teachers[j] = r; if (r.classTags) B().classTags = r.classTags;
         B().assignments = B().assignments.filter(a => a.teacher !== tmp).concat(r.teaching || []);
         if (location.hash === '#/t/' + tmp) location.replace('#/t/' + r.id); else render(true); },
       onFail: () => { B().teachers = B().teachers.filter(x => x.id !== tmp); B().assignments = B().assignments.filter(a => a.teacher !== tmp); render(true); } });
@@ -1748,7 +1752,7 @@ function startVisitSheet(t){
   const asg = classesOf((B().assignments || []).filter(a => a.teacher === t.id));
   const lv0 = t.levels && t.levels.length ? t.levels : (t.level ? [t.level] : cfg.lists['المستويات المدرَّسة'] || []);
   const opts = asg.length ? asg.map(c => ({ level: c.level, group: c.group })) : lv0.map(x => ({ level: x, group: 'أ' }));
-  const lab = o => opts.some(x => x.level === o.level && x.group !== o.group) || asg.length ? `${o.level} — فوج ${o.group}` : o.level;
+  const lab = o => (opts.some(x => x.level === o.level && x.group !== o.group) || asg.length ? `${o.level} — فوج ${o.group}` : o.level) + (tagOf(o.level, o.group) ? ` (${tagOf(o.level, o.group)})` : '');
   const lv = opts.map(lab);
   const pick = v => opts.find(o => lab(o) === v);
   const needType = post(t.role) !== 'مادة' && (cfg.lists['نوع القسم'] || []).length;
@@ -1926,7 +1930,7 @@ function clockPicker(value, title){
 }
 
 /* ============================== الاستيراد من إكسل ============================== */
-const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['معرّف القسم 1', 'group'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
+const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['معرّف القسم 1', 'group'], ['معرّف القسم 2', 'tag'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
 const IMPORT_ALIAS = { 'المستوى المدرَّس': 'المستويات المدرَّسة', 'معرّف القسم 1': 'الفوج' };   // الملفات القديمة بعنوان «الفوج» تُقبل
 const tKey = o => [o.last, o.first, o.father].map(x => String(x || '').trim()).join('|');
 function loadQR(){
@@ -1955,9 +1959,9 @@ async function downloadTemplate(){
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } }; head.height = 22;
   head.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6B45AD' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
   const lv = levels, edu = (L['المستوى التعليمي'] || [''])[0] || '';
-  [['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[1] || '', 'أ', edu, 3],
-   ['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[2] || '', 'ب', edu, 3],
-   ['حاج سعيد', 'مريم', 'يوسف', 'أنثى', 'معلم مادة', lv[7] || '', '', edu, 0]].forEach(r => ws.addRow(r).eachCell(c => { c.font = { color: { argb: 'FF8A80A8' }, italic: true }; }));
+  [['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[1] || '', 'أ', 'ذ', edu, 3],
+   ['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[2] || '', 'ب', 'ذ', edu, 3],
+   ['حاج سعيد', 'مريم', 'يوسف', 'أنثى', 'معلم مادة', lv[7] || '', '', 'إ', edu, 0]].forEach(r => ws.addRow(r).eachCell(c => { c.font = { color: { argb: 'FF8A80A8' }, italic: true }; }));
   const N = 500, letter = i => String.fromCharCode(65 + i);
   let li = 0;
   Object.entries(lists).forEach(([h, vals]) => {
@@ -1992,7 +1996,8 @@ const normHeader = h => String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, 
 function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
-      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1» (الفوج): أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
+      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1» (الفوج): أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج.
+عمود «معرّف القسم 2»: حر واختياري، مثل ذ للذكور وإ للإناث، ويظهر بين قوسين: الثانية ابتدائية أ (ذ). المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
         ${IC.xls}<b class="d">اختر ملف إكسل</b><span class="small muted" id="fname">xlsx · xls · csv</span>
@@ -2026,7 +2031,7 @@ function openImport(){
         const nT = new Set(rows.map(tKey)).size;
         m.querySelector('#prev').innerHTML = rows.length ? `<div class="banner v">${nT} معلمًا · ${rows.length} سطرًا (قسمًا) في الملف${bad ? ` · <span style="color:var(--bad)">${bad} سطرًا فيه خطأ</span>` : ''}</div>
           <div class="tbl-wrap" style="max-height:200px;overflow:auto;margin-top:8px"><table class="tbl"><tbody>
-          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}${o.group ? ' — ' + esc(o.group) : ''}</td><td class="small" style="${badRow(o) ? 'color:var(--bad)' : ''}">${esc(ROLE_LABEL[o.role] || o.role)}${o.experience !== '' ? ' · ' + esc(o.experience) + ' س' : ''}</td></tr>`).join('')}</tbody></table></div>`
+          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}${o.group ? ' — ' + esc(o.group) : ''}${o.tag ? ' (' + esc(o.tag) + ')' : ''}</td><td class="small" style="${badRow(o) ? 'color:var(--bad)' : ''}">${esc(ROLE_LABEL[o.role] || o.role)}${o.experience !== '' ? ' · ' + esc(o.experience) + ' س' : ''}</td></tr>`).join('')}</tbody></table></div>`
           : '<div class="banner">لم أجد معلمين في الملف. تأكد من عناوين الأعمدة.</div>';
         m.querySelector('#doImp').disabled = !rows.length;
       } catch(err){ toast('تعذّرت قراءة الملف: ' + err.message, true); }
@@ -2034,6 +2039,7 @@ function openImport(){
     m.querySelector('#doImp').onclick = async e => {
       try{
         const r = await busy(e.currentTarget, () => api('importTeachers', { rows }));
+        if (r.classTags) B().classTags = r.classTags;
         r.added.forEach(t => { B().teachers.push(t); B().assignments = (B().assignments || []).concat(t.teaching || []); });
         (r.updated || []).forEach(t => {
           const j = B().teachers.findIndex(x => x.id === t.id); if (j >= 0) B().teachers[j] = Object.assign({}, B().teachers[j], t); else B().teachers.push(t);
@@ -2109,7 +2115,7 @@ function renderReport(id){
       </div>
       <div class="rinfo">
         <table><tr><td>المعلم</td><td>${esc(tName(t))}${t.father ? ' بن ' + esc(t.father) : ''}</td></tr>
-          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.group ? ' — فوج ' + esc(v.group) : ''}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
+          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.group ? ' — فوج ' + esc(v.group) : ''}${v.level ? tagTxt(v.level, v.group) : ''}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
           <tr><td>المستوى التعليمي</td><td>${esc(t.edu || '—')}</td></tr>
           <tr><td>سنوات الخبرة</td><td>${t.experience === '' ? '—' : t.experience}</td></tr>
           <tr><td>المساعد البيداغوجي</td><td>${esc(sup)}</td></tr></table>
@@ -2490,6 +2496,9 @@ function program(){
   return PROG ? PROG.data : null;
 }
 const clsKey = (lv, g, sj) => encodeURIComponent([lv, g, sj].join('|'));
+/** معرّف القسم 2 (ذ للذكور، إ للإناث…): يُكتب بين قوسين بعد اسم القسم، إن وُجد */
+const tagOf = (lv, g) => ((S.B && S.B.classTags) || {})[lv + '|' + (g || 'أ')] || '';
+const tagTxt = (lv, g) => { const t = tagOf(lv, g); return t ? ' (' + esc(t) + ')' : ''; };
 const logKey = (id, lv, g) => id + '|' + lv + '|' + g;
 function logMap(){
   const m = new Map();
@@ -2556,7 +2565,7 @@ function viewTeacherHome(){
         <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">دروس متأخرة</div></div></div>`,
     body: `<div class="stack">
       ${alerts.map(a => `<div class="notif"><span class="dot">!</span>${esc(a)}</div>`).join('')}
-      ${cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:10px">${esc(c.level)} — فوج ${esc(c.group)}</div>
+      ${cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:10px">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
         <div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
         : emptyBox('لم يُسند إليك أي قسم بعد.<br>اتصل بالمساعد البيداغوجي.')}</div>`
   };
@@ -2651,7 +2660,7 @@ function renderCodes(){
   const q = qrcode(0, 'M'); q.addData(link); q.make();
   const qr = q.createSvgTag({ cellSize: 2, margin: 0, scalable: true });
   const card = t => {
-    const cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => c.level + ' ' + c.group).join('، ');
+    const cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => c.level + ' ' + c.group + (tagOf(c.level, c.group) ? ' (' + tagOf(c.level, c.group) + ')' : '')).join('، ');
     return `<div class="ccard"><div class="ch"><b>${esc(B().school.name)}</b><span>سيرورة الدروس · ${esc(B().cfg.season)}</span></div>
       <div class="cn">${esc(tName(t))}</div><div class="cc">${esc(cls || ROLE_LABEL[t.role] || '')}</div>
       <div class="cb"><div class="qr">${qr}</div><div style="flex:1;min-width:0">
@@ -2689,7 +2698,7 @@ function viewProgress(){
     body: `<div class="stack">
       ${codesBar()}
       <div class="seg">${[['all', 'كل الأفواج'], ['late', 'المتأخرة فقط']].map(([k, l]) => `<button data-pf="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div>
-      ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} — فوج ${esc(c.group)}</div>
+      ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
         <div class="stack">${c.subs.map(a => subjectRow(a, map, true)).join('')}</div>`).join('') : emptyBox('لا توجد مواد متأخرة 👏'))
         : emptyBox(isMain() ? 'لم تُحدَّد بعد ما يدرّسه كل معلم.<br>افتح صفحة المعلم واضغط «تعديل ما يدرّسه».' : 'لم يحدد المساعد الرئيسي ما يدرّسه المعلمون بعد.')}</div>`,
     mount(){ $$('[data-pf]').forEach(b => b.onclick = () => { S.progFilter = b.dataset.pf; render(true); }); }
@@ -2706,7 +2715,7 @@ function teachingCard(t){
       : `<div class="spread" style="margin-top:10px"><span class="small muted">حساب المعلم مفعّل</span><button class="btn btn-g" data-act="activateT" data-id="${esc(t.id)}" style="min-height:38px">رمز جديد</button></div>`)
     : `<button class="btn btn-a" data-act="activateT" data-id="${esc(t.id)}" style="margin-top:10px">${IC.plus} تفعيل حساب المعلم</button>`;
   return `<div class="card stack"><div class="spread"><b class="d">ما يدرّسه</b>${isMain() ? `<button class="btn btn-g" data-act="editTeacher" data-id="${esc(t.id)}" style="min-height:38px">${IC.edit} تعديل</button>` : ''}</div>
-    ${!P ? '<div class="sk" style="height:60px"></div>' : list.length ? classesOf(list).map(c => `<div class="small muted d">${esc(c.level)} — فوج ${esc(c.group)}</div><div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
+    ${!P ? '<div class="sk" style="height:60px"></div>' : list.length ? classesOf(list).map(c => `<div class="small muted d">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</div><div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
       : '<div class="small muted">لم يُحدَّد بعد.</div>'}
     ${account}</div>`;
 }
@@ -2719,7 +2728,7 @@ function assignEditor(tid){
   let lv = '', g = 'أ';
   const draw = m => {
     const cls = classesOf(rows);
-    m.querySelector('#asCur').innerHTML = cls.length ? cls.map(c => `<div class="card" style="box-shadow:none;padding:10px 12px"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}</b>
+    m.querySelector('#asCur').innerHTML = cls.length ? cls.map(c => `<div class="card" style="box-shadow:none;padding:10px 12px"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</b>
       <div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap">${c.subs.map(a => `<button class="chip v" data-rm="${esc(a.level + '|' + a.group + '|' + a.subject)}" style="border:0">${esc(a.subject)} ✕</button>`).join('')}</div></div>`).join('')
       : '<div class="small muted">لا شيء بعد. اختر المستوى والفوج والمواد ثم «إضافة».</div>';
     m.querySelector('#asSub').innerHTML = lv ? `<span>المواد في ${esc(lv)}</span><div class="trs">${Object.keys(P.levels[lv]).map(s => `<button type="button" data-sj="${esc(s)}" class="${rows.some(a => a.level === lv && a.group === g && a.subject === s) ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>` : '';
