@@ -62,6 +62,7 @@ a{color:inherit}
 .tb-t b{display:block;font-family:Changa;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tb-t small{display:block;font-size:12.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sync{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.14);font-family:Changa;font-size:12.5px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);white-space:nowrap}
+.coord-b{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.2);color:#fff;font-family:Changa;font-size:13px;border:1px solid rgba(255,255,255,.3);white-space:nowrap;cursor:pointer}
 .sync i{width:8px;height:8px;border-radius:50%;background:#5EEAD4;box-shadow:0 0 0 3px rgba(94,234,212,.25)}
 .sync.busy i{background:#FDE68A;animation:pulse 1s infinite}
 .sync.offline i{background:#FCA5A5}
@@ -169,6 +170,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
   .bnav a{flex-direction:row;gap:7px;padding:0 16px;font-size:14px;color:rgba(255,255,255,.85)}
   .bnav a.on{background:#fff;color:var(--v700)}
   .bnav.n6 a{font-size:14px;letter-spacing:0}
+  .bnav{max-width:none}
+  .bnav a{flex:0 0 auto;white-space:nowrap}
+  .bnav a span{max-width:none;overflow:visible;text-overflow:clip}
   .panel{padding-bottom:60px}
 }
 
@@ -512,7 +516,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.0.0';
+const VERSION = '5.1.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -725,7 +729,9 @@ function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.
 
 /* ============================== البيانات ============================== */
 const B = () => S.B;
-const isDir = () => S.auth && S.auth.role === 'مدير';
+// المنسق التربوي يرى ما يراه المدير (للاطلاع فقط) في كل مدرسة من مدارسه
+const isCoord = () => S.auth && S.auth.role === 'منسق تربوي';
+const isDir = () => S.auth && (S.auth.role === 'مدير' || isCoord());
 const isTeacher = () => S.auth && S.auth.role === 'معلم';
 /** اسم التطبيق: «سيرورة الدروس» للمعلم، و«برنامج الزيارات» للمساعد والمدير */
 const appName = () => (S.auth ? isTeacher() : LS.get('ishraf.mode') === 'sira') ? 'سيرورة الدروس' : 'برنامج الزيارات';
@@ -758,7 +764,8 @@ const post = r => { const s = String(r ?? '').trim().replace(/\s+/g, ' ').replac
 /** البنود الخاصة بزيارة: المنصب ↔ المحور · نوع الحصة (تلقين/منافسة) ↔ البند · رقم الزيارة ↔ البند */
 const itemsFor = (role, type, n) => {
   const cfg = B().cfg; role = post(role);
-  const axOk = new Set(cfg.axes.filter(a => (a.role || 'الكل') === 'الكل' || role === 'قسم' || a.role === role).map(a => a.id));
+  // «الكل» = كل المعلمين؛ والمنصب يُقبل بصيغتيه («معلم مادة» = «مادة»)
+  const axOk = new Set(cfg.axes.filter(a => !String(a.role || '').trim() || a.role === 'الكل' || role === 'قسم' || post(a.role) === role).map(a => a.id));
   const vn = String(Math.min(Number(n) || 1, cfg.maxVisit || 1));
   return cfg.items.filter(it => axOk.has(it.axis) && (it.scope === 'الكل' || it.scope === type) && (!it.visits || it.visits.includes('الكل') || it.visits.includes(vn)));
 };
@@ -858,6 +865,37 @@ window.addEventListener('hashchange', () => render());
 
 function route(){ const p = location.hash.replace(/^#\/?/, '').split('/'); return { r: p[0] || '', id: p[1] }; }
 
+/* ============================== المنسق التربوي ============================== */
+/** مدارسه مع مؤشراتها: الزيارات المنجزة من المقررة، متوسط النتائج، الدروس المسجلة — والضغط على مدرسة ينقله إليها */
+function coordSchools(){
+  buzz();
+  const list = B().mySchools || [];
+  const card = (code, inner) => `<button class="card stack" data-act="switchSchool" data-s="${esc(code)}" style="text-align:start;gap:8px;width:100%;border:${code === S.auth.school ? '2px solid var(--v500)' : '1px solid var(--line)'}">${inner}</button>`;
+  sheet(`<h3>مدارسي</h3><div class="small muted" style="margin-top:-6px">الموسم ${esc(B().cfg.season)} · اضغط على مدرسة للانتقال إليها</div>
+    <div id="coL" class="stack" style="margin-top:12px">${list.map(sc => card(sc.code, `<b class="d">${esc(sc.name)}</b><div class="small muted">جارٍ تحميل المؤشرات…</div>`)).join('')}</div>
+    <div class="acts"><button class="btn btn-g" data-close>إغلاق</button></div>`,
+    m => {
+      api('coordOverview').then(rows => {
+        const el = m.querySelector('#coL'); if (!el) return;
+        el.innerHTML = rows.map(r => {
+          const pct = r.planned ? Math.round(100 * r.done / r.planned) : 0;
+          return card(r.code, `<div class="spread"><b class="d" style="font-size:15.5px">${esc(r.name)}</b>${r.code === S.auth.school ? '<span class="chip v" style="padding:0 8px">الحالية</span>' : ''}</div>
+            <div class="bar"><i style="width:${pct}%"></i></div>
+            <div class="small muted">${r.done} / ${r.planned} زيارة مكتملة (${pct}%)${r.open ? ` · <span style="color:var(--warn)">${r.open} مفتوحة</span>` : ''}</div>
+            <div class="small muted">${r.supervisors} مساعد · ${r.teachers} معلم · متوسط النتائج ${r.avg == null ? '—' : esc(String(r.avg))} · ${r.lessons} درسًا مسجّلًا${r.lastVisit ? ' · آخر زيارة ' + esc(r.lastVisit) : ''}</div>`);
+        }).join('') || emptyBox('لا توجد مدارس مسندة إليك. تضيفها الإدارة العامة في ورقة المستخدمين.');
+      }).catch(e => toast(e.message, true));
+    });
+}
+function switchSchool(code){
+  document.querySelectorAll('.sheet-bg').forEach(x => x.remove());
+  if (!code || code === S.auth.school) return;
+  rtClose();
+  S.auth.school = code; LS.set('ishraf.auth', S.auth);
+  S.B = null; location.hash = '#/';
+  boot();
+}
+
 async function boot(){
   if (!S.auth) return render();
   const cached = LS.get(bootKey());
@@ -954,6 +992,7 @@ function render(keep){
 function topbar(){
   return `<div class="topbar"><div class="mark">${IC.book}</div>
     <div class="tb-t"><b>${esc(B().school.name || appName())}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
+    ${isCoord() ? `<button class="coord-b" data-act="mySchools">⇄ مدارسي (${(B().mySchools || []).length})</button>` : ''}
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
@@ -1019,7 +1058,7 @@ async function renderLogin(){
       <div class="search">${IC.search}<input id="ss" placeholder="ابحث عن مدرستك…" autocomplete="off"></div>
       <div class="school-list" id="sl"></div>`;
   } else if (L.step === 'name'){
-    const rank = u => u.role === 'مدير' ? 0 : u.role === 'معلم' ? 2 : 1;
+    const rank = u => u.role === 'مدير' ? 0 : u.role === 'منسق تربوي' ? 0.5 : u.role === 'معلم' ? 2 : 1;
     const users = L.dir.users.filter(u => u.school === L.school).sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, 'ar'));
     body = `<div class="lstep-h"><h2>من أنت؟</h2><button class="chip v" id="chSch" style="border:0">${esc(school ? school.name : '')} · تغيير</button></div>
       ${users.length ? `<div class="names">${users.map(u => `<button data-u="${esc(u.id)}"><span class="ini" style="${avGrad(u.name)}">${esc(initials(u.name))}</span><span>${esc(u.name)}</span><span class="role">${esc(u.role)}</span></button>`).join('')}</div>`
@@ -1577,7 +1616,7 @@ function teacherSheet(t){
   // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بالفوج «أ» والمواد الافتراضية
   let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, subs: c.subs.map(a => a.subject) }));
   if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: 'أ', subs: defaultSubs(P, x, t.role) }));
-  const posts = L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قرآن', 'مادة', 'قسم'];
+  const posts = [...new Set((L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post))];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
     <div class="stack">
       <div class="grid" style="grid-template-columns:1fr 1fr"><label class="field"><span>اللقب *</span><input id="tLast" value="${esc(t.last)}"></label><label class="field"><span>الاسم *</span><input id="tFirst" value="${esc(t.first)}"></label></div>
@@ -1887,8 +1926,8 @@ function clockPicker(value, title){
 }
 
 /* ============================== الاستيراد من إكسل ============================== */
-const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['الفوج', 'group'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
-const IMPORT_ALIAS = { 'المستوى المدرَّس': 'المستويات المدرَّسة' };
+const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['معرّف القسم 1', 'group'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
+const IMPORT_ALIAS = { 'المستوى المدرَّس': 'المستويات المدرَّسة', 'معرّف القسم 1': 'الفوج' };   // الملفات القديمة بعنوان «الفوج» تُقبل
 const tKey = o => [o.last, o.first, o.father].map(x => String(x || '').trim()).join('|');
 function loadQR(){
   if (window.qrcode) return Promise.resolve();
@@ -1902,23 +1941,23 @@ function loadExcelJS(){
 async function downloadTemplate(){
   await loadExcelJS();
   const L = B().cfg.lists, P = program();
-  const posts = L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قرآن', 'مادة', 'قسم'];
+  const posts = (L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(p => ROLE_LABEL[post(p)] || p);
   const levels = P ? Object.keys(P.levels) : (L['المستويات المدرَّسة'] || []);
   const sups = assts().filter(u => u.active);
   const cols = IMPORT_COLS.map(c => c[0]).concat(sups.length > 1 ? ['المساعد'] : []);
-  const lists = { 'الجنس': L['الجنس'] || ['ذكر', 'أنثى'], 'المنصب': posts, 'المستوى المدرَّس': levels, 'الفوج': GROUPS,
+  const lists = { 'الجنس': L['الجنس'] || ['ذكر', 'أنثى'], 'المنصب': posts, 'المستوى المدرَّس': levels, 'معرّف القسم 1': GROUPS,
                   'المستوى التعليمي': L['المستوى التعليمي'] || [], 'المساعد': sups.map(u => u.name) };
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('المعلمون', { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] });
   const ls = wb.addWorksheet('القوائم', { state: 'veryHidden' });
-  ws.columns = cols.map(h => ({ header: h, key: h, width: h === 'المستوى المدرَّس' || h === 'المساعد' ? 22 : h === 'الفوج' || h === 'الجنس' ? 10 : 16 }));
+  ws.columns = cols.map(h => ({ header: h, key: h, width: h === 'المستوى المدرَّس' || h === 'المساعد' ? 22 : h === 'الجنس' ? 10 : 16 }));
   const head = ws.getRow(1);
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } }; head.height = 22;
   head.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6B45AD' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
   const lv = levels, edu = (L['المستوى التعليمي'] || [''])[0] || '';
-  [['بن أحمد', 'محمد', 'عمر', 'ذكر', 'قسم', lv[1] || '', 'أ', edu, 3],
-   ['بن أحمد', 'محمد', 'عمر', 'ذكر', 'قسم', lv[2] || '', 'ب', edu, 3],
-   ['حاج سعيد', 'مريم', 'يوسف', 'أنثى', 'مادة', lv[7] || '', '', edu, 0]].forEach(r => ws.addRow(r).eachCell(c => { c.font = { color: { argb: 'FF8A80A8' }, italic: true }; }));
+  [['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[1] || '', 'أ', edu, 3],
+   ['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[2] || '', 'ب', edu, 3],
+   ['حاج سعيد', 'مريم', 'يوسف', 'أنثى', 'معلم مادة', lv[7] || '', '', edu, 0]].forEach(r => ws.addRow(r).eachCell(c => { c.font = { color: { argb: 'FF8A80A8' }, italic: true }; }));
   const N = 500, letter = i => String.fromCharCode(65 + i);
   let li = 0;
   Object.entries(lists).forEach(([h, vals]) => {
@@ -1928,7 +1967,7 @@ async function downloadTemplate(){
     vals.forEach((v, i) => { ls.getCell(L1 + (i + 2)).value = v; });
     const ref = `'القوائم'!$${L1}$2:$${L1}$${vals.length + 1}`;
     for (let r = 2; r <= N; r++) ws.getCell(letter(ci) + r).dataValidation = { type: 'list', allowBlank: true, formulae: [ref],
-      showErrorMessage: true, errorStyle: 'stop', errorTitle: h, error: 'اختر من القائمة' + (h === 'الفوج' ? ' أو اتركه فارغًا' : '') };
+      showErrorMessage: true, errorStyle: 'stop', errorTitle: h, error: 'اختر من القائمة' + (h === 'معرّف القسم 1' ? ' أو اتركه فارغًا' : '') };
   });
   const ei = cols.indexOf('سنوات الخبرة');
   for (let r = 2; r <= N; r++) ws.getCell(letter(ei) + r).dataValidation = { type: 'whole', operator: 'between', allowBlank: true, formulae: [0, 60],
@@ -1953,7 +1992,7 @@ const normHeader = h => String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, 
 function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
-      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «الفوج»: أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
+      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1» (الفوج): أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
         ${IC.xls}<b class="d">اختر ملف إكسل</b><span class="small muted" id="fname">xlsx · xls · csv</span>
@@ -1980,7 +2019,7 @@ function openImport(){
           const su = sups.find(u => u.name === String(keys['المساعد'] ?? '').trim()); o.supervisor = su ? su.id : '';
           return o;
         }).filter(o => o.last || o.first);
-        const roles = B().cfg.lists['المنصب'] && B().cfg.lists['المنصب'].length ? B().cfg.lists['المنصب'] : ['قرآن', 'مادة', 'قسم'];
+        const roles = (B().cfg.lists['المنصب'] && B().cfg.lists['المنصب'].length ? B().cfg.lists['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post);
         rows.forEach(o => { o.role = post(o.role); });
         const badRow = o => !o.last || !o.first || !roles.includes(o.role) || (o.experience !== '' && !/^\d{1,2}$/.test(o.experience)) || (o.group && !GROUPS.includes(o.group));
         const bad = rows.filter(badRow).length;
@@ -2716,6 +2755,8 @@ function assignEditor(tid){
 /* ============================== الإجراءات ============================== */
 const ACT = {
   print: () => { buzz(); window.print(); },
+  mySchools: () => coordSchools(),
+  switchSchool: el => switchSchool(el.dataset.s),
   blankForm: () => blankFormSheet(),
   sharePdf: el => sharePdf(el),
   sync: async el => { await busy(el, () => refreshBg(true)); toast('تم التحديث'); render(true); },
