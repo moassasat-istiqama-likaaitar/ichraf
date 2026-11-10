@@ -516,7 +516,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.2.0';
+const VERSION = '5.3.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -866,33 +866,63 @@ window.addEventListener('hashchange', () => render());
 function route(){ const p = location.hash.replace(/^#\/?/, '').split('/'); return { r: p[0] || '', id: p[1] }; }
 
 /* ============================== المنسق التربوي ============================== */
-/** مدارسه مع مؤشراتها: الزيارات المنجزة من المقررة، متوسط النتائج، الدروس المسجلة — والضغط على مدرسة ينقله إليها */
-function coordSchools(){
-  buzz();
-  const list = B().mySchools || [];
-  const card = (code, inner) => `<button class="card stack" data-act="switchSchool" data-s="${esc(code)}" style="text-align:start;gap:8px;width:100%;border:${code === S.auth.school ? '2px solid var(--v500)' : '1px solid var(--line)'}">${inner}</button>`;
-  sheet(`<h3>مدارسي</h3><div class="small muted" style="margin-top:-6px">الموسم ${esc(B().cfg.season)} · اضغط على مدرسة للانتقال إليها</div>
-    <div id="coL" class="stack" style="margin-top:12px">${list.map(sc => card(sc.code, `<b class="d">${esc(sc.name)}</b><div class="small muted">جارٍ تحميل المؤشرات…</div>`)).join('')}</div>
-    <div class="acts"><button class="btn btn-g" data-close>إغلاق</button></div>`,
-    m => {
-      api('coordOverview').then(rows => {
-        const el = m.querySelector('#coL'); if (!el) return;
-        el.innerHTML = rows.map(r => {
-          const pct = r.planned ? Math.round(100 * r.done / r.planned) : 0;
-          return card(r.code, `<div class="spread"><b class="d" style="font-size:15.5px">${esc(r.name)}</b>${r.code === S.auth.school ? '<span class="chip v" style="padding:0 8px">الحالية</span>' : ''}</div>
-            <div class="bar"><i style="width:${pct}%"></i></div>
-            <div class="small muted">${r.done} / ${r.planned} زيارة مكتملة (${pct}%)${r.open ? ` · <span style="color:var(--warn)">${r.open} مفتوحة</span>` : ''}</div>
-            <div class="small muted">${r.supervisors} مساعد · ${r.teachers} معلم · متوسط النتائج ${r.avg == null ? '—' : esc(String(r.avg))} · ${r.lessons} درسًا مسجّلًا${r.lastVisit ? ' · آخر زيارة ' + esc(r.lastVisit) : ''}</div>`);
-        }).join('') || emptyBox('لا توجد مدارس مسندة إليك. تضيفها الإدارة العامة في ورقة المستخدمين.');
-      }).catch(e => toast(e.message, true));
-    });
+// لوحة المنسق: أول ما يراه بعد الدخول — مجموع مدارسه، ثم ما يحتاج متابعة، ثم كل مدرسة ببطاقة وزر دخول
+const daysSince = d => d ? Math.floor((Date.now() - new Date(d + 'T12:00:00').getTime()) / 864e5) : null;
+function coordFlags(r, avgPct){
+  const f = [], pct = r.planned ? r.done / r.planned : 0, ds = daysSince(r.lastVisit);
+  if (r.planned && ds === null) f.push('لم تبدأ الزيارات بعد');
+  else if (r.planned && ds > 30) f.push(`لا زيارة منذ ${ds} يومًا`);
+  if (r.planned && avgPct > 0 && pct < avgPct - 0.2) f.push('إنجاز أقل من بقية المدارس');
+  if (!r.supervisors) f.push('لا مساعد بيداغوجي مفعّل');
+  return f;
 }
-function switchSchool(code){
-  document.querySelectorAll('.sheet-bg').forEach(x => x.remove());
-  if (!code || code === S.auth.school) return;
+function viewCoord(){
+  const rows = S.coordOv || null;
+  const sum = k => (rows || []).reduce((a, r) => a + (Number(r[k]) || 0), 0);
+  const planned = sum('planned'), done = sum('done'), pct = planned ? Math.round(100 * done / planned) : 0;
+  const scored = (rows || []).filter(r => r.avg != null);
+  const avg = scored.length ? Math.round(10 * scored.reduce((a, r) => a + Number(r.avg) * (r.done || 1), 0) / scored.reduce((a, r) => a + (r.done || 1), 0)) / 10 : null;
+  const avgPct = planned ? done / planned : 0;
+  const card = r => {
+    const p = r.planned ? Math.round(100 * r.done / r.planned) : 0, fl = coordFlags(r, avgPct), cur = r.code === S.auth.school;
+    return `<div class="card stack" style="gap:8px${fl.length ? ';border:1.5px solid rgba(217,119,6,.45)' : ''}">
+      <div class="spread"><b class="d" style="font-size:16px">${esc(r.name)}</b>${cur ? '<span class="chip v" style="padding:0 8px">المفتوحة الآن</span>' : ''}</div>
+      <div class="bar"><i style="width:${p}%"></i></div>
+      <div class="spread small"><span><b>${r.done}</b> / ${r.planned} زيارة مكتملة · <b>${p}%</b></span><span class="muted">${r.open ? r.open + ' مفتوحة' : ''}</span></div>
+      <div class="small muted">${r.supervisors} مساعد · ${r.teachers} معلم · متوسط النتائج ${r.avg == null ? '—' : esc(String(r.avg))} · ${r.lessons} درسًا مسجّلًا${r.lastVisit ? ' · آخر زيارة ' + esc(r.lastVisit) : ''}</div>
+      ${fl.length ? `<div class="small" style="color:var(--warn)">⚠ ${fl.map(esc).join(' · ')}</div>` : ''}
+      <div class="row" style="gap:8px"><button class="btn btn-p" data-act="enterSchool" data-s="${esc(r.code)}" style="flex:1">دخول المدرسة</button>
+        <button class="btn btn-g" data-act="enterSchool" data-s="${esc(r.code)}" data-to="#/sup">المساعدون</button></div>
+    </div>`;
+  };
+  const sorted = (rows || []).slice().sort((a, b) => (coordFlags(b, avgPct).length > 0) - (coordFlags(a, avgPct).length > 0)
+    || (a.planned ? a.done / a.planned : 1) - (b.planned ? b.done / b.planned : 1));
+  const need = sorted.filter(r => coordFlags(r, avgPct).length);
+  const kpi = (n, l, cls) => `<div class="glass kpi${cls ? ' ' + cls : ''}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  return {
+    hero: `<h1>لوحة المنسق التربوي</h1><div class="sub">${esc(S.auth.name || '')} · الموسم ${esc(B().cfg.season)} · للاطلاع فقط</div>
+      <div class="kpis" style="grid-template-columns:repeat(2,1fr)">${rows ? kpi((rows || []).length, 'مدارس') + kpi(sum('teachers'), 'معلمًا')
+        + kpi(`${done} <small>/ ${planned}</small>`, `زيارة مكتملة · ${pct}%`, 'accent') + kpi(avg == null ? '—' : avg, 'متوسط النتائج')
+        : '<div class="sk" style="height:70px"></div><div class="sk" style="height:70px"></div>'}</div>`,
+    body: !rows ? '<div class="sk" style="height:120px"></div><div class="sk" style="height:120px;margin-top:12px"></div>'
+      : !rows.length ? emptyBox('لا توجد مدارس مسندة إليك. تضيفها الإدارة العامة في ورقة «المنسقون».')
+      : `${need.length ? `<div class="sec-t">تحتاج متابعة <span class="chip warn">${need.length}</span></div><div class="stack">${need.map(card).join('')}</div>` : ''}
+         ${sorted.length > need.length ? `<div class="sec-t"${need.length ? ' style="margin-top:18px"' : ''}>${need.length ? 'بقية المدارس' : 'مدارسي'}</div>
+         <div class="stack">${sorted.filter(r => !need.includes(r)).map(card).join('')}</div>` : ''}`,
+    mount: () => {
+      if (S.coordOvAt && Date.now() - S.coordOvAt < 60000) return;
+      S.coordOvAt = Date.now();
+      api('coordOverview').then(r => { S.coordOv = r; if (route().r === '') render(true); }).catch(e => { S.coordOvAt = 0; toast(e.message, true); });
+    }
+  };
+}
+/** يدخل مدرسة من اللوحة: نفس المدرسة = انتقال فقط، غيرها = تحميل بياناتها */
+function enterSchool(code, to){
+  to = to || '#/tea';
+  if (!code || code === S.auth.school) { location.hash = to; return; }
   rtClose();
   S.auth.school = code; LS.set('ishraf.auth', S.auth);
-  S.B = null; location.hash = '#/';
+  S.B = null; location.hash = to;
   boot();
 }
 
@@ -969,6 +999,7 @@ function render(keep){
   if (r === 'blank' && !isTeacher()) return renderBlank(id);
   let v;
   if (isTeacher()) v = r === 'me' ? viewMe() : r === 'cls' ? viewLessons(id) : viewTeacherHome();
+  else if (isCoord() && r === '') v = viewCoord();
   else if (r === 'prog') v = viewProgress();
   else if (r === 'cls') v = viewLessons(id);
   else if (r === 'stats') v = viewStats();
@@ -992,17 +1023,19 @@ function render(keep){
 function topbar(){
   return `<div class="topbar"><div class="mark">${IC.book}</div>
     <div class="tb-t"><b>${esc(B().school.name || appName())}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
-    ${isCoord() ? `<button class="coord-b" data-act="mySchools">⇄ مدارسي (${(B().mySchools || []).length})</button>` : ''}
+    ${isCoord() && route().r !== '' ? `<a class="coord-b" href="#/">→ لوحة المنسق</a>` : ''}
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
   const items = isTeacher() ? [['#/', '', 'دروسي', IC.book2], ['#/me', 'me', 'حسابي', IC.me]]
+    : isCoord()
+    ? [['#/', '', 'لوحتي', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
     : isDir()
     ? [['#/sup', 'sup', 'المساعدون', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
     : isMain()
     ? [['#/', '', 'معلميّ', IC.users], ['#/tea', 'team', 'الفريق', IC.shield], ['#/visits', 'visits', 'زياراتي', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
     : [['#/', '', 'معلميّ', IC.users], ['#/visits', 'visits', 'الزيارات', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]];
-  let cur = ['t', 'v', 'close'].includes(r) ? (isDir() ? 'tea' : '') : (isDir() && r === '' ? 'sup' : r);
+  let cur = ['t', 'v', 'close'].includes(r) ? (isDir() ? 'tea' : '') : (isDir() && !isCoord() && r === '' ? 'sup' : r);
   if (isMain() && ['sup', 'tea', 'vis'].includes(r)) cur = 'team';
   if (r === 'cls') cur = isTeacher() ? '' : 'prog';
   const bd = navBadges();
@@ -2764,8 +2797,7 @@ function assignEditor(tid){
 /* ============================== الإجراءات ============================== */
 const ACT = {
   print: () => { buzz(); window.print(); },
-  mySchools: () => coordSchools(),
-  switchSchool: el => switchSchool(el.dataset.s),
+  enterSchool: el => { buzz(); enterSchool(el.dataset.s, el.dataset.to); },
   blankForm: () => blankFormSheet(),
   sharePdf: el => sharePdf(el),
   sync: async el => { await busy(el, () => refreshBg(true)); toast('تم التحديث'); render(true); },
