@@ -57,7 +57,7 @@ a{color:inherit}
 /* ===== البطل والشريط ===== */
 .hero{color:#fff;padding:calc(10px + env(safe-area-inset-top)) 0 54px;position:relative;z-index:1}
 .topbar{display:flex;align-items:center;gap:10px;min-height:52px}
-.mark{width:40px;height:40px;border-radius:13px;background:linear-gradient(140deg,#B8693F,var(--clay));display:grid;place-items:center;box-shadow:0 6px 16px rgba(160,82,45,.45),inset 0 1px 0 rgba(255,255,255,.25);flex:none}
+.mark{width:40px;height:40px;border-radius:13px;background:#FBF4E9;display:grid;place-items:center;box-shadow:0 6px 16px rgba(160,82,45,.45),inset 0 1px 0 rgba(255,255,255,.25);flex:none}
 .tb-t{flex:1;min-width:0}
 .tb-t b{display:block;font-family:Changa;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tb-t small{display:block;font-size:12.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -133,6 +133,19 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .search input{padding-inline-start:42px;border-radius:16px}
 .search svg{position:absolute;inset-inline-start:14px;top:50%;transform:translateY(-50%);color:var(--muted)}
 .seg{display:flex;flex-wrap:wrap;gap:8px}
+.acc{border:1.5px solid var(--line);border-radius:16px;background:var(--card);overflow:hidden}
+.acc.open{border-color:var(--v600);box-shadow:0 8px 20px rgba(124,58,237,.10)}
+.acc-h{display:flex;align-items:center;gap:12px;width:100%;padding:13px 14px;background:none;border:0;text-align:right;color:var(--ink);cursor:pointer}
+.acc-n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-family:Changa;font-size:14px;background:var(--line);color:var(--muted)}
+.acc.done .acc-n{background:#16a34a;color:#fff}
+.acc-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.acc-t b{font-family:Changa;font-size:15.5px;font-weight:600}
+.acc-s{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-c{flex:none;color:var(--muted);transition:transform .2s;display:grid}
+.acc.open .acc-c{transform:rotate(180deg)}
+.acc-b{display:none;padding:2px 14px 14px;flex-direction:column;gap:14px}
+.acc.open .acc-b{display:flex}
+.acc-nx{align-self:flex-start}
 .seg button{border:1.5px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 14px;font-size:14px;font-weight:500;transition:all .15s}
 .seg button.on{border-color:var(--v600);background:var(--v600);color:#fff;box-shadow:0 6px 14px rgba(124,58,237,.25)}
 .tabs{display:flex;gap:4px;background:var(--soft);border-radius:14px;padding:4px;overflow-x:auto}
@@ -199,6 +212,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 16px calc(28px + env(safe-area-inset-bottom));position:relative;z-index:1;color:#fff}
 .login .brandbig{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:22px;text-align:center}
 .login .brandbig .mark{width:66px;height:66px;border-radius:22px}
+.mark img{width:76%;height:76%;object-fit:contain}
 .login h1{font-size:28px;font-weight:700}
 .lcard{width:100%;max-width:440px;background:var(--card);color:var(--ink);border-radius:28px;padding:22px;box-shadow:var(--sh-lg)}
 .lstep-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
@@ -377,6 +391,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .rh h1{font-family:Changa;font-size:15.5pt;color:#4C1D95;text-align:center;margin:0;line-height:1.2}
 .rh h1 small{display:block;font-size:9pt;color:#6E6488;font-weight:500}
 .rh .lg{justify-self:end;display:flex;align-items:center;gap:2.5mm;font-family:Changa;font-size:8pt;color:#6E6488;text-align:left}
+.rh .brand{justify-self:start;height:13mm;display:flex;align-items:center}
+.rh .brand img{height:12mm;width:auto;max-width:54mm;object-fit:contain}
+.rh .slogo{height:14mm;width:auto;max-width:28mm;object-fit:contain}
 .rh .lg i{width:11mm;height:11mm;border-radius:3mm;background:linear-gradient(140deg,#B8693F,#A0522D);display:grid;place-items:center}
 .rinfo{display:grid;grid-template-columns:1fr 1.25fr 30mm;gap:0 4mm;margin-top:2mm}
 .rinfo table{width:100%;border-collapse:collapse}
@@ -516,7 +533,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.3.0';
+const VERSION = '5.4.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -780,7 +797,7 @@ const valueOf = (vid, id) => { const d = getDraft(vid); if (d[id] !== undefined)
 
 const PALETTE = ['#7C3AED','#A0522D','#0B7F58','#BE185D','#2563EB','#B45309','#0E7490','#9333EA','#C2410C','#4F46E5'];
 function hue(str){ let h = 0; for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; }
-function initials(name){ const p = String(name || '').trim().split(/\s+/); return ((p[0] || '')[0] || '') + ((p[1] || '')[0] || ''); }
+function initials(name){ const w = String(name || '').trim().split(/\s+/)[0] || ''; return (w.length > 3 && w.startsWith('ال') ? w.slice(2) : w).charAt(0); }
 function avGrad(name){ const c = hue(name); return `background:linear-gradient(140deg,${c},${c}E6)`; }
 
 function progress(v){
@@ -852,7 +869,7 @@ function animateGauges(){
 }
 function emptyBox(text){ return `<div class="card empty">${IC.empty}<div>${text}</div></div>`; }
 function skeleton(){
-  return `<div class="hero"><div class="wrap"><div class="topbar"><div class="mark">${IC.book}</div><div class="tb-t"><b>برنامج الزيارات</b><small>جارٍ التحميل…</small></div></div>
+  return `<div class="hero"><div class="wrap"><div class="topbar"><div class="mark"><img src="emblem.svg" alt=""></div><div class="tb-t"><b>برنامج الزيارات</b><small>جارٍ التحميل…</small></div></div>
     <div class="sk" style="height:30px;width:55%;margin-top:22px;opacity:.35"></div>
     <div class="kpis">${'<div class="sk" style="height:74px;opacity:.3"></div>'.repeat(3)}</div></div></div>
     <div class="panel"><div class="wrap stack">${'<div class="sk" style="height:84px"></div>'.repeat(5)}</div></div>`;
@@ -994,6 +1011,7 @@ function render(keep){
   if (S.lastRoute !== location.hash && !keep) window.scrollTo(0, 0);
   S.lastRoute = location.hash; S.lastDepth = depth;
   const y = scrollY;
+  if (['report', 'blank'].includes(r)) ensureLogo();
   if (r === 'report') return renderReport(id);
   if (r === 'codes') return renderCodes();
   if (r === 'blank' && !isTeacher()) return renderBlank(id);
@@ -1018,10 +1036,11 @@ function render(keep){
   setSync(Q.jobs.length ? 'busy' : (Q.state === 'offline' ? 'offline' : 'ok'));
   if (keep) window.scrollTo(0, y);
   if (v.mount) v.mount();
+  ensureLogo();
   animateGauges();
 }
 function topbar(){
-  return `<div class="topbar"><div class="mark">${IC.book}</div>
+  return `<div class="topbar"><div class="mark"><img src="emblem.svg" alt=""></div>
     <div class="tb-t"><b>${esc(B().school.name || appName())}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
     ${isCoord() && route().r !== '' ? `<a class="coord-b" href="#/">→ لوحة المنسق</a>` : ''}
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
@@ -1169,7 +1188,7 @@ async function renderLogin(){
 }
 function loginFrame(body){
   document.title = appName();
-  return `<div class="login"><div class="brandbig"><div class="mark">${IC.bookBig}</div><h1>${appName()}</h1></div>
+  return `<div class="login"><div class="brandbig"><div class="mark"><img src="emblem.svg" alt=""></div><h1>${appName()}</h1></div>
     <div class="lcard enter-f">${body}</div></div>`;
 }
 function finishLogin(boot){
@@ -1260,6 +1279,51 @@ function viewMyVisits(){
 /* ============================== حسابي ============================== */
 let installEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+/* ============================== شعار المدرسة ============================== */
+// يُحفظ في القاعدة ويُنسخ في الجهاز؛ bootstrap يحمل رقم نسخته فقط (logoAt) فلا يُجلب إلا عند تغيّره
+const logoKey = () => 'ishraf.logo.' + (S.auth && S.auth.school);
+const schoolLogo = () => { const c = LS.get(logoKey()); return c && S.B && S.B.school && c.at === S.B.school.logoAt ? c.logo : ''; };
+const schoolLogoImg = () => schoolLogo() ? `<img class="slogo" src="${schoolLogo()}" alt="">` : '';
+const canLogo = () => !isCoord() && (S.auth.role === 'مدير' || isMain());
+let logoBusy = false;
+function ensureLogo(){
+  if (!S.B || !S.B.school || logoBusy) return;
+  const at = S.B.school.logoAt || '', c = LS.get(logoKey());
+  if (!at){ if (c) LS.del(logoKey()); return; }
+  if (c && c.at === at) return;
+  logoBusy = true;
+  api('schoolLogo').then(r => { LS.set(logoKey(), { at: r.logoAt, logo: r.logo }); if (r.logoAt !== at) S.B.school.logoAt = r.logoAt; if (['me', 'report', 'blank'].includes(route().r)) render(true); })
+    .catch(() => {}).finally(() => { logoBusy = false; });
+}
+/** يصغّر الصورة إلى 256 بكسل (PNG يحفظ الشفافية) ثم يرسلها */
+function pickLogo(){
+  const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/png,image/jpeg,image/webp';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0]; if (!f) return;
+    const img = new Image(), url = URL.createObjectURL(f);
+    img.onload = async () => {
+      const k = Math.min(1, 256 / Math.max(img.width, img.height)), cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(img.width * k)); cv.height = Math.max(1, Math.round(img.height * k));
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); URL.revokeObjectURL(url);
+      let data = cv.toDataURL(f.type === 'image/jpeg' ? 'image/jpeg' : 'image/png', 0.88);
+      if (data.length > 280000) data = cv.toDataURL('image/jpeg', 0.8);
+      await saveLogo(data);
+    };
+    img.onerror = () => toast('تعذّرت قراءة الصورة', true);
+    img.src = url;
+  };
+  inp.click();
+}
+async function saveLogo(data){
+  try {
+    setSync('busy');
+    const r = await api('setLogo', { logo: data });
+    S.B.school.logoAt = r.logoAt || undefined;
+    if (r.logoAt) LS.set(logoKey(), { at: r.logoAt, logo: r.logo }); else LS.del(logoKey());
+    persist(); toast(data ? 'حُفظ شعار المدرسة' : 'حُذف شعار المدرسة'); render(true);
+  } catch (e) { toast(e.message, true); } finally { setSync('ok'); }
+}
+
 function viewMe(){
   const th = LS.get('ishraf.theme') || 'auto';
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -1270,6 +1334,9 @@ function viewMe(){
     body: `<div class="stack">
       <div class="card stack"><div class="spread"><b class="d">المظهر</b>
         <div class="seg" id="thSeg">${[['auto', 'تلقائي'], ['light', 'نهاري'], ['dark', 'ليلي']].map(([k, l]) => `<button data-th="${k}" class="${th === k ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
+      ${canLogo() ? `<div class="card stack"><div class="spread"><div><b class="d">شعار المدرسة</b><div class="small muted">يظهر في الاستمارات والتقارير المطبوعة مقابل شعار المؤسسة</div></div>
+        ${schoolLogo() ? `<img src="${schoolLogo()}" alt="" style="height:52px;max-width:90px;object-fit:contain;border-radius:8px">` : ''}</div>
+        <div class="row" style="gap:8px"><button class="btn btn-p" data-act="pickLogo" style="flex:1">${schoolLogo() ? 'تغيير الشعار' : 'رفع الشعار'}</button>${schoolLogo() ? '<button class="btn btn-g" data-act="delLogo">حذف</button>' : ''}</div></div>` : ''}
       ${standalone ? '' : `<div class="card stack"><b class="d">ثبّت التطبيق على هاتفك</b>
         <div class="small muted">${ios ? 'في Safari: زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».' : 'يفتح كتطبيق مستقل بملء الشاشة، ويعمل أسرع.'}</div>
         ${ios ? '' : '<button class="btn btn-p" data-act="install">تثبيت التطبيق</button>'}</div>`}
@@ -1327,7 +1394,7 @@ function axisTable(items, scores, c){
       : val !== undefined ? `<div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="flex:1;min-width:60px"><i style="width:${(val - cfg.min) / (cfg.max - cfg.min) * 100}%;background:${scoreColor((val - cfg.min) / (cfg.max - cfg.min) * 100)}"></i></div><b class="d">${val.toFixed(2)}</b></div>` : '—';
     return `<tr><td class="small muted">${esc(ax.section)}</td><td>${esc(ax.name)}</td><td style="min-width:150px">${cell}</td></tr>`;
   }).join('');
-  return `<div class="card tbl-wrap" style="padding:6px 12px"><table class="tbl"><thead><tr><th>القسم</th><th>المحور</th><th>المتوسط</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  return `<div class="card tbl-wrap" style="padding:6px 12px"><table class="tbl"><thead><tr><th>القسم</th><th>البعد</th><th>المتوسط</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function viewVisit(id){
   const v = visitById(id);
@@ -1364,7 +1431,7 @@ function viewVisit(id){
   return {
     hero: `<div class="row" style="margin-top:14px"><button class="back" data-go="#/t/${esc(v.teacher)}">${IC.back} ${esc(tName(t))}</button></div>
       <h1>الزيارة ${v.number}</h1><div class="sub">${esc(tName(t))} · ${v.status === 'مكتملة' ? 'مكتملة' : 'مفتوحة'}${seeAll() && v.supervisor !== S.auth.user ? ' · ' + esc(userName(v.supervisor)) : ''}</div>
-      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}${v.group ? ' — فوج ' + esc(v.group) : ''}${tagTxt(v.level, v.group)}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
+      <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}${v.group ? ' ' + esc(v.group) : ''}${tagTxt(v.level, v.group)}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
     body: `<div class="stack">${main}
       <div class="spread" style="margin-top:14px"><div class="sec-t" style="margin:0">الحصص الميدانية</div>${editable ? `<button class="btn btn-a" data-act="addSession" data-v="${esc(id)}">${IC.plus} حصة</button>` : ''}</div>
       ${sess}</div>`
@@ -1652,20 +1719,35 @@ function teacherSheet(t){
   const posts = [...new Set((L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post))];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
     <div class="stack">
-      <div class="grid" style="grid-template-columns:1fr 1fr"><label class="field"><span>اللقب *</span><input id="tLast" value="${esc(t.last)}"></label><label class="field"><span>الاسم *</span><input id="tFirst" value="${esc(t.first)}"></label></div>
-      <label class="field"><span>اسم الأب</span><input id="tFather" value="${esc(t.father)}"></label>
-      <div class="field"><span>المنصب *</span><div class="seg" data-seg="role">${posts.map(x => `<button type="button" data-val="${esc(x)}" class="${x === post(t.role) ? 'on' : ''}">${esc(ROLE_LABEL[x] || x)}</button>`).join('')}</div></div>
-      <div class="field"><span>الجنس</span>${chips('gender', L['الجنس'], t.gender)}</div>
-      <div class="field"><span>ما يدرّسه <small class="muted">(القسم = المستوى + الفوج، والمواد تُملأ حسب المنصب ويمكن حذف ما لا يدرّسه)</small></span>
-        <div id="tCls" class="stack"></div>
-        <div class="card stack" style="box-shadow:none;padding:12px;border-style:dashed" id="tAdd">
-          <div class="seg" data-seg="nlv" style="flex-wrap:wrap">${P ? Object.keys(P.levels).map(x => `<button type="button" data-val="${esc(x)}">${esc(x)}</button>`).join('') : ''}</div>
-          <div class="spread"><div class="seg" data-seg="ngr">${GROUPS.map(x => `<button type="button" data-val="${x}" class="${x === 'أ' ? 'on' : ''}">فوج ${x}</button>`).join('')}</div>
-          <button type="button" class="btn btn-a" id="tAddB" style="min-height:40px">${IC.plus} قسم</button></div></div></div>
-      <div class="field"><span>المستوى التعليمي</span>${chips('edu', L['المستوى التعليمي'], t.edu)}</div>
-      <div class="field"><span>سنوات الخبرة <small class="muted">(0 = معلم جديد)</small></span><div class="stepper"><span class="lb">بالسنوات</span><button type="button" data-y="-1">−</button><input id="tExp" type="number" min="0" max="60" inputmode="numeric" value="${esc(t.experience ?? '')}" placeholder="—" style="width:76px"><button type="button" data-y="1">+</button></div></div>
-      <div class="field"><span>عدد الزيارات</span>${chips('vo', ['تلقائي', '1', '2', '3', '4'], t.visitsOverride ? String(t.visitsOverride) : 'تلقائي')}</div>
-      ${sups.length > 1 ? `<div class="field"><span>المساعد البيداغوجي</span>${chips('sup', ['غير مسند'].concat(sups.map(u => u.name)), t.supervisor ? userName(t.supervisor) : 'غير مسند')}</div>` : ''}
+      <div class="acc" data-acc="1"><button type="button" class="acc-h"><span class="acc-n">1</span><span class="acc-t"><b>البيانات الشخصية</b><small class="acc-s"></small></span><span class="acc-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
+        <div class="acc-b">
+          <div class="grid" style="grid-template-columns:1fr 1fr"><label class="field"><span>اللقب *</span><input id="tLast" value="${esc(t.last)}"></label><label class="field"><span>الاسم *</span><input id="tFirst" value="${esc(t.first)}"></label></div>
+          <label class="field"><span>اسم الأب</span><input id="tFather" value="${esc(t.father)}"></label>
+          <div class="field"><span>الجنس</span>${chips('gender', L['الجنس'], t.gender)}</div>
+          <button type="button" class="btn btn-g acc-nx" data-nx>التالي ←</button>
+        </div></div>
+      <div class="acc" data-acc="2"><button type="button" class="acc-h"><span class="acc-n">2</span><span class="acc-t"><b>المنصب والمؤهل</b><small class="acc-s"></small></span><span class="acc-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
+        <div class="acc-b">
+          <div class="field"><span>المنصب *</span><div class="seg" data-seg="role">${posts.map(x => `<button type="button" data-val="${esc(x)}" class="${x === post(t.role) ? 'on' : ''}">${esc(ROLE_LABEL[x] || x)}</button>`).join('')}</div></div>
+          <div class="field"><span>المستوى التعليمي</span>${chips('edu', L['المستوى التعليمي'], t.edu)}</div>
+          <div class="field"><span>سنوات الخبرة <small class="muted">(0 = معلم جديد)</small></span><div class="stepper"><span class="lb">بالسنوات</span><button type="button" data-y="-1">−</button><input id="tExp" type="number" min="0" max="60" inputmode="numeric" value="${esc(t.experience ?? '')}" placeholder="—" style="width:76px"><button type="button" data-y="1">+</button></div></div>
+          <button type="button" class="btn btn-g acc-nx" data-nx>التالي ←</button>
+        </div></div>
+      <div class="acc" data-acc="3"><button type="button" class="acc-h"><span class="acc-n">3</span><span class="acc-t"><b>ما يدرّسه</b><small class="acc-s"></small></span><span class="acc-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
+        <div class="acc-b">
+          <div class="field"><span><small class="muted">القسم = المستوى + معرّف القسم. المواد تُملأ حسب المنصب، ويمكن حذف ما لا يدرّسه.</small></span>
+            <div id="tCls" class="stack"></div>
+            <div class="card stack" style="box-shadow:none;padding:12px;border-style:dashed" id="tAdd">
+              <div class="seg" data-seg="nlv" style="flex-wrap:wrap">${P ? Object.keys(P.levels).map(x => `<button type="button" data-val="${esc(x)}">${esc(x)}</button>`).join('') : ''}</div>
+              <div class="small muted">معرّف القسم</div><div class="spread"><div class="seg" data-seg="ngr">${GROUPS.map(x => `<button type="button" data-val="${x}" class="${x === 'أ' ? 'on' : ''}">${x}</button>`).join('')}</div>
+              <button type="button" class="btn btn-a" id="tAddB" style="min-height:40px">${IC.plus} قسم</button></div></div></div>
+          <button type="button" class="btn btn-g acc-nx" data-nx>التالي ←</button>
+        </div></div>
+      <div class="acc" data-acc="4"><button type="button" class="acc-h"><span class="acc-n">4</span><span class="acc-t"><b>المساعد والزيارات</b><small class="acc-s"></small></span><span class="acc-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
+        <div class="acc-b">
+          <div class="field"><span>عدد الزيارات</span>${chips('vo', ['تلقائي', '1', '2'].concat(Number(t.visitsOverride) > 2 ? [String(t.visitsOverride)] : []), t.visitsOverride ? String(t.visitsOverride) : 'تلقائي')}</div>
+          ${sups.length > 1 ? `<div class="field"><span>المساعد البيداغوجي</span>${chips('sup', ['غير مسند'].concat(sups.map(u => u.name)), t.supervisor ? userName(t.supervisor) : 'غير مسند')}</div>` : ''}
+        </div></div>
       ${t.id ? `<div class="spread card" style="box-shadow:none"><b class="d">المعلم مفعّل</b><button type="button" class="switch ${t.active !== false ? 'on' : ''}" id="tAct"></button></div>
         <div class="small muted">المعلم الموقوف لا يظهر في «معلميّ» ولا في الإحصاءات والسيرورة، وتبقى زياراته السابقة وتقاريرها محفوظة.</div>
         ${String(t.id).startsWith('tmp') ? '' : hasData(t.id) ? `<div class="small muted">لهذا المعلم زيارات أو دروس مسجّلة، فلا يُحذف؛ يكفي إيقافه.</div>`
@@ -1674,6 +1756,27 @@ function teacherSheet(t){
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svT">حفظ</button></div>`,
   (m, close) => {
     bindSegs(m);
+    // الأقسام المنطوية: قسم واحد مفتوح، و✓ عند اكتمال القسم، وملخص ما اختير تحت العنوان
+    const accs = [...m.querySelectorAll('.acc')];
+    const openAcc = n => accs.forEach(a => a.classList.toggle('open', a.dataset.acc === String(n) && !a.classList.contains('open')));
+    const accUpd = () => {
+      const v = id => (m.querySelector(id) || {}).value || '';
+      const st = {
+        1: [!!(v('#tLast').trim() && v('#tFirst').trim()), [v('#tLast').trim() + ' ' + v('#tFirst').trim(), segVal(m, 'gender')]],
+        2: [!!segVal(m, 'role'), [ROLE_LABEL[segVal(m, 'role')] || segVal(m, 'role'), segVal(m, 'edu'), v('#tExp') !== '' ? v('#tExp') + ' سنة خبرة' : '']],
+        3: [cls.length > 0 && cls.every(c => c.subs.length), [cls.length ? cls.map(c => c.level + ' ' + c.group).join('، ') : 'لم يُضف قسم']],
+        4: [true, [segVal(m, 'vo') === 'تلقائي' ? 'الزيارات تلقائيًا' : segVal(m, 'vo') + ' زيارة', segVal(m, 'sup')]]
+      };
+      accs.forEach(a => { const [done, sum] = st[a.dataset.acc]; a.classList.toggle('done', done);
+        a.querySelector('.acc-n').textContent = done ? '✓' : a.dataset.acc;
+        a.querySelector('.acc-s').textContent = sum.filter(x => x && String(x).trim()).join(' · '); });
+    };
+    accs.forEach(a => {
+      a.querySelector('.acc-h').onclick = () => { openAcc(a.dataset.acc); buzz(5); };
+      const nx = a.querySelector('[data-nx]'); if (nx) nx.onclick = () => { a.classList.remove('open'); openAcc(Number(a.dataset.acc) + 1); a.nextElementSibling && a.nextElementSibling.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
+    });
+    m.addEventListener('input', accUpd); m.addEventListener('click', () => setTimeout(accUpd));
+    if (!t.id) openAcc(1);
     const del = m.querySelector('#tDel');
     if (del) del.onclick = async () => {
       close();
@@ -1690,7 +1793,7 @@ function teacherSheet(t){
     m.querySelector('[data-seg="ngr"]').dataset.req = 1;
     const drawCls = () => {
       m.querySelector('#tCls').innerHTML = cls.length ? cls.map((c, i) => `<div class="card" style="box-shadow:none;padding:10px 12px">
-        <div class="spread"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}</b><button type="button" class="chip bad" data-rmc="${i}" style="border:0">حذف القسم ✕</button></div>
+        <div class="spread"><b class="d">${esc(c.level)} ${esc(c.group)}${c.tag ? ' (' + esc(c.tag) + ')' : ''}</b><button type="button" class="chip bad" data-rmc="${i}" style="border:0">حذف القسم ✕</button></div>
         <label class="row small muted" style="gap:8px;margin-top:6px;flex-wrap:nowrap">معرّف القسم 2 (اختياري) <input class="in" data-tg="${i}" value="${esc(c.tag || '')}" maxlength="6" placeholder="ذ / إ" style="width:70px;padding:6px 10px;min-height:0;text-align:center"></label>
         <div class="trs" style="margin-top:8px">${Object.keys(P.levels[c.level] || {}).map(sj => `<button type="button" data-ci="${i}" data-sj="${esc(sj)}" class="${c.subs.includes(sj) ? 'on' : ''}">${esc(sj)}</button>`).join('')}</div></div>`).join('')
         : '<div class="small muted">لم يُضف أي قسم بعد.</div>';
@@ -1698,7 +1801,7 @@ function teacherSheet(t){
       m.querySelectorAll('[data-tg]').forEach(x => x.oninput = () => { cls[Number(x.dataset.tg)].tag = x.value.trim(); });
       m.querySelectorAll('[data-sj]').forEach(b => b.onclick = () => { const c = cls[Number(b.dataset.ci)], sj = b.dataset.sj; c.subs = c.subs.includes(sj) ? c.subs.filter(x => x !== sj) : c.subs.concat([sj]); buzz(5); drawCls(); });
     };
-    drawCls();
+    drawCls(); accUpd();
     m.querySelector('#tAddB').onclick = () => {
       const lvl = segVal(m, 'nlv'), g = segVal(m, 'ngr') || 'أ';
       if (!lvl) return toast('اختر المستوى أولًا', true);
@@ -1712,14 +1815,14 @@ function teacherSheet(t){
     const act = m.querySelector('#tAct'); if (act) act.onclick = () => act.classList.toggle('on');
     m.querySelector('#svT').onclick = () => {
       const teaching = [].concat(...cls.map(c => c.subs.map(sj => ({ level: c.level, group: c.group, subject: sj, tag: c.tag || '' }))));
-      if (cls.some(c => !c.subs.length)) return toast('كل قسم يحتاج مادة واحدة على الأقل، أو احذف القسم', true);
+      if (cls.some(c => !c.subs.length)) { openAcc(3); return toast('كل قسم يحتاج مادة واحدة على الأقل، أو احذف القسم', true); }
       const taken = (B().assignments || []).find(a => a.teacher !== t.id && teaching.some(x => x.level === a.level && x.group === a.group && x.subject === a.subject));
-      if (taken){ const ot = teacher(taken.teacher); return toast(`${taken.subject} في ${taken.level} فوج ${taken.group} مسندة إلى ${ot ? tName(ot) : 'معلم آخر'}`, true); }
+      if (taken){ const ot = teacher(taken.teacher); return toast(`${taken.subject} في ${taken.level} ${taken.group} مسندة إلى ${ot ? tName(ot) : 'معلم آخر'}`, true); }
       const levels = [...new Set(cls.map(c => c.level))];
       const o = { id: t.id, teaching, last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(),
         role: segVal(m, 'role') || 'قسم', gender: segVal(m, 'gender'), levels, level: levels.join('، '), edu: segVal(m, 'edu'),
         experience: yi.value.trim() === '' ? '' : Number(yi.value), visitsOverride: segVal(m, 'vo') === 'تلقائي' ? '' : segVal(m, 'vo') };
-      if (!o.last || !o.first) return toast('اللقب والاسم مطلوبان', true);
+      if (!o.last || !o.first) { if (!m.querySelector('[data-acc="1"]').classList.contains('open')) openAcc(1); return toast('اللقب والاسم مطلوبان', true); }
       if (o.experience !== '' && !(o.experience >= 0 && o.experience <= 60)) return toast('سنوات الخبرة غير صحيحة', true);
       if (sups.length > 1){ const sn = segVal(m, 'sup'); const su = sups.find(u => u.name === sn); o.supervisor = su ? su.id : ''; }
       else o.supervisor = t.supervisor || (sups[0] ? sups[0].id : '');
@@ -1785,7 +1888,7 @@ function startVisitSheet(t){
   const asg = classesOf((B().assignments || []).filter(a => a.teacher === t.id));
   const lv0 = t.levels && t.levels.length ? t.levels : (t.level ? [t.level] : cfg.lists['المستويات المدرَّسة'] || []);
   const opts = asg.length ? asg.map(c => ({ level: c.level, group: c.group })) : lv0.map(x => ({ level: x, group: 'أ' }));
-  const lab = o => (opts.some(x => x.level === o.level && x.group !== o.group) || asg.length ? `${o.level} — فوج ${o.group}` : o.level) + (tagOf(o.level, o.group) ? ` (${tagOf(o.level, o.group)})` : '');
+  const lab = o => (opts.some(x => x.level === o.level && x.group !== o.group) || asg.length ? `${o.level} ${o.group}` : o.level) + (tagOf(o.level, o.group) ? ` (${tagOf(o.level, o.group)})` : '');
   const lv = opts.map(lab);
   const pick = v => opts.find(o => lab(o) === v);
   const needType = post(t.role) !== 'مادة' && (cfg.lists['نوع القسم'] || []).length;
@@ -2009,7 +2112,7 @@ async function downloadTemplate(){
   const ei = cols.indexOf('سنوات الخبرة');
   for (let r = 2; r <= N; r++) ws.getCell(letter(ei) + r).dataValidation = { type: 'whole', operator: 'between', allowBlank: true, formulae: [0, 60],
     showErrorMessage: true, errorTitle: 'سنوات الخبرة', error: 'رقم من 0 إلى 60 (0 = معلم جديد)' };
-  ws.getCell(letter(cols.length + 1) + '1').value = 'ملاحظة: احذف أسطر المثال الرمادية. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم. الفوج فارغ = لا أفواج';
+  ws.getCell(letter(cols.length + 1) + '1').value = 'ملاحظة: احذف أسطر المثال الرمادية. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم. معرّف القسم 1 فارغ = للمستوى قسم واحد';
   const buf = await wb.xlsx.writeBuffer();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
@@ -2029,7 +2132,7 @@ const normHeader = h => String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, 
 function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
-      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1» (الفوج): أ أو ب أو ج…، ويُترك فارغًا إن لم يكن للمستوى أفواج.
+      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1»: أ أو ب أو ج…، ويُترك فارغًا إن كان للمستوى قسم واحد. وعمود «معرّف القسم 2» اختياري: ذ للذكور أو إ للإناث.
 عمود «معرّف القسم 2»: حر واختياري، مثل ذ للذكور وإ للإناث، ويظهر بين قوسين: الثانية ابتدائية أ (ذ). المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
@@ -2084,7 +2187,7 @@ function openImport(){
         const busyL = r.busy || [];
         if (r.errors.length || busyL.length) sheet(`<h3>نتيجة الاستيراد</h3><p>${esc(msg)}</p>
           ${r.errors.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>السطر</th><th>الخطأ</th></tr></thead><tbody>${r.errors.map(x => `<tr><td>${x.line}</td><td>${esc(x.error)}</td></tr>`).join('')}</tbody></table></div>` : ''}
-          ${busyL.length ? `<div class="banner" style="margin-top:10px">مواد لم تُسند لأنها مسندة لمعلم آخر في نفس الفوج — صحّح الفوج من نموذج المعلم:<br>${busyL.slice(0, 30).map(esc).join('<br>')}</div>` : ''}
+          ${busyL.length ? `<div class="banner" style="margin-top:10px">مواد لم تُسند لأنها مسندة لمعلم آخر في نفس القسم — صحّح معرّف القسم من نموذج المعلم:<br>${busyL.slice(0, 30).map(esc).join('<br>')}</div>` : ''}
           <div class="acts"><button class="btn btn-p" data-close>حسنًا</button></div>`);
         else toast(msg);
       } catch(err){ toast(err.message, true); }
@@ -2142,13 +2245,13 @@ function renderReport(id){
       <button class="btn btn-w" data-act="print">${IC.print} طباعة / PDF</button></div>
     <div class="rp-stage" id="rpStage"><div class="rp-scale" id="rpS"><div class="a4" id="a4">
       <div class="rh">
-        <div class="org"><b>${esc(B().school.name)}</b>الموسم الدراسي ${esc(cfg.season)}</div>
-        <h1>تقرير الزيارة التربوية ${ORD[v.number - 1] || v.number}<small>${esc(tName(t))}</small></h1>
-        <div class="lg"><span>برنامج الزيارات · ${esc(id)}<br>أُغلقت ${esc(fmtDate((v.closed || '').slice(0, 10)))}<br>طُبع ${esc(fmtDate(today))}</span><i>${IC.book}</i></div>
+        <div class="brand"><img src="logo-wide.svg" alt="مؤسسة الاستقامة"></div>
+        <h1>تقرير الزيارة التربوية ${ORD[v.number - 1] || v.number}<small>${esc(tName(t))}</small><small style="font-size:8pt">${esc(B().school.name)} · الموسم ${esc(cfg.season)}</small></h1>
+        <div class="lg"><span>برنامج الزيارات · ${esc(id)}<br>أُغلقت ${esc(fmtDate((v.closed || '').slice(0, 10)))}<br>طُبع ${esc(fmtDate(today))}</span>${schoolLogoImg()}</div>
       </div>
       <div class="rinfo">
         <table><tr><td>المعلم</td><td>${esc(tName(t))}${t.father ? ' بن ' + esc(t.father) : ''}</td></tr>
-          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.group ? ' — فوج ' + esc(v.group) : ''}${v.level ? tagTxt(v.level, v.group) : ''}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
+          <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.group ? ' ' + esc(v.group) : ''}${v.level ? tagTxt(v.level, v.group) : ''}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
           <tr><td>المستوى التعليمي</td><td>${esc(t.edu || '—')}</td></tr>
           <tr><td>سنوات الخبرة</td><td>${t.experience === '' ? '—' : t.experience}</td></tr>
           <tr><td>المساعد البيداغوجي</td><td>${esc(sup)}</td></tr></table>
@@ -2215,8 +2318,8 @@ function reportPage2(v, t, items, scores, c, secs){
       <div class="tr"><span class="grid50" style="inset-inline-start:50%"></span><div class="now" style="width:${Math.max(8, r.p)}%;background:${scoreColor(r.p)}">${r.p}%</div>${r.pp !== null ? `<div class="prev" style="width:${r.pp}%"></div>` : ''}</div>
       <span class="d">${dTxt}</span>`;
   }).join('')}</div>
-  <div class="rlegend" style="justify-content:flex-start;margin-top:2mm"><span><i style="background:#E69138"></i>★ أعلى ثلاثة محاور</span>${pc ? `<span><i style="background:#4C1D95;opacity:.45;border-radius:1px;height:1.3mm"></i>الزيارة ${ORD[prev.number - 1] || prev.number} (${prev.score})</span><span>▲▼ الفرق بالنقاط</span>` : ''}</div>
-  ${pc && differs ? '<div style="font-size:7.4pt;color:#B9770E;margin-top:1mm">تنبيه: بعض البنود تختلف بين الزيارتين، فالمقارنة على مستوى المحور.</div>' : ''}`;
+  <div class="rlegend" style="justify-content:flex-start;margin-top:2mm"><span><i style="background:#E69138"></i>★ أعلى ثلاثة أبعاد</span>${pc ? `<span><i style="background:#4C1D95;opacity:.45;border-radius:1px;height:1.3mm"></i>الزيارة ${ORD[prev.number - 1] || prev.number} (${prev.score})</span><span>▲▼ الفرق بالنقاط</span>` : ''}</div>
+  ${pc && differs ? '<div style="font-size:7.4pt;color:#B9770E;margin-top:1mm">تنبيه: بعض البنود تختلف بين الزيارتين، فالمقارنة على مستوى البعد.</div>' : ''}`;
 
   // بنود المراجعة الذاتية: 3 فأقل، وإن قلّت نكمل بأضعف العلامات 4
   const order = it => cfg.axes.findIndex(a => a.id === it.axis) * 100 + it.order;
@@ -2228,7 +2331,7 @@ function reportPage2(v, t, items, scores, c, secs){
   weak = weak.slice(0, 11);
   const strong = scored.filter(it => scores[it.id] === cfg.max).sort((a, b) => order(a) - order(b));
 
-  const review = weak.length ? `<table class="rv ${weak.length <= 6 ? 'tall' : ''}"><thead><tr><th></th><th>البند</th><th>المحور</th><th>العلامة</th><th>ما سأعمل عليه</th></tr></thead><tbody>
+  const review = weak.length ? `<table class="rv ${weak.length <= 6 ? 'tall' : ''}"><thead><tr><th></th><th>البند</th><th>البعد</th><th>العلامة</th><th>ما سأعمل عليه</th></tr></thead><tbody>
     ${weak.map((it, i) => `<tr><td class="n">${i + 1}</td><td>${esc(it.text)}</td><td class="ax">${esc(axisOf(it.axis).name)}</td>
       <td><span class="s" style="display:inline-grid;place-items:center;width:5mm;height:5mm;border-radius:50%;color:#fff;font-family:Changa;font-weight:700;background:${sHex(scores[it.id])}">${scores[it.id]}</span></td><td class="w"></td></tr>`).join('')}</tbody></table>`
     : '<div style="padding:3mm;background:#DDF6EC;border-radius:2mm;color:#0B7A55;font-family:Changa">كل البنود نالت العلامة الكاملة — أداء متميز</div>';
@@ -2237,7 +2340,7 @@ function reportPage2(v, t, items, scores, c, secs){
     <div class="p2h"><div><h2>تحليل نتائج الزيارة ${ORD[v.number - 1] || v.number}<small>${esc(tName(t))} · ${esc(B().school.name)} · ${esc(cfg.season)}</small></h2></div>
       <div class="badge"><small style="font-size:7pt;color:#6E6488">النقطة</small><b style="color:${scoreColor(v.score)}">${v.score ?? '—'}</b><span style="font-size:8.5pt;color:${scoreColor(v.score)}">${esc(v.grade || '')}</span></div></div>
     <div class="p2secs">${secTiles}</div>
-    <div class="p2t">المحاور من الأعلى إلى الأدنى<small>النسبة من 100${pc ? ' · مقارنة بالزيارة السابقة' : ''}</small></div>
+    <div class="p2t">الأبعاد من الأعلى إلى الأدنى<small>النسبة من 100${pc ? ' · مقارنة بالزيارة السابقة' : ''}</small></div>
     ${chart}
     <div class="p2t">بنود يُراجع فيها المعلم نفسه<small>${onlyFour ? 'لا توجد علامات ضعيفة؛ هذه أدنى البنود للتحسين' : `العلامات ${threshold} فأقل، من الأضعف`}</small></div>
     ${review}
@@ -2296,9 +2399,9 @@ function renderBlank(id){
       <button class="btn btn-w" data-act="print">${IC.print} طباعة</button></div>
     <div class="rp-stage" id="rpStage"><div class="rp-scale" id="rpS"><div class="a4" id="a4">
       <div class="rh">
-        <div class="org"><b>${esc(B().school.name)}</b>الموسم الدراسي ${esc(cfg.season)}</div>
-        <h1>استمارة الزيارة التربوية ${ordN}<small>${esc(sub)}</small></h1>
-        <div class="lg"><span>برنامج الزيارات<br>${items.length} بندًا</span><i>${IC.book}</i></div>
+        <div class="brand"><img src="logo-wide.svg" alt="مؤسسة الاستقامة"></div>
+        <h1>استمارة الزيارة التربوية ${ordN}<small>${esc(sub)}</small><small style="font-size:8pt">${esc(B().school.name)} · الموسم ${esc(cfg.season)}</small></h1>
+        <div class="lg"><span>برنامج الزيارات<br>${items.length} بندًا</span>${schoolLogoImg()}</div>
       </div>
       <div class="rinfo blank">
         <table><tr><td>المعلم</td>${dots}</tr>
@@ -2348,6 +2451,7 @@ async function buildPdf(){
   await Promise.all([loadJs('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'), loadJs('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]);
   if (document.fonts && document.fonts.ready) await document.fonts.ready;
   const pages = $$('.a4'); if (!pages.length) throw new Error('لا توجد صفحة');
+  await Promise.all($$('.a4 img').map(im => im.complete ? 0 : new Promise(r => { im.onload = im.onerror = r; })));
   const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true });
   for (let i = 0; i < pages.length; i++){
     const cv = await html2canvas(pages[i], { scale: 2.5, backgroundColor: '#ffffff', useCORS: true, logging: false,
@@ -2480,7 +2584,7 @@ function viewStats(){
         <div><div class="mini-ring">${ring(rL / 100, '#F08A3E', 92, 9)}<b>${rL}%</b></div><span class="small muted">نسبة التأخرات</span></div></div>` : noData}</div>`,
     `<div class="dcard wide"><h4>أداء المعلمين <small>النقطة من 100 في كل زيارة</small></h4>${perf.length ? `<div class="gb">${perf.map(({ t, vs }) => `<div class="r"><span class="lab" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(tName(t))}</span><div class="bars">${vs.map(v => `<div><i style="width:${Math.max(2, v.score || 0)}%;background:${VCOL[v.number - 1] || '#999'}"></i><span>${v.score ?? '—'}</span></div>`).join('')}</div></div>`).join('')}</div>
       <div class="leg">${range(1, Math.max(...perf.map(p => p.vs.length))).map(n => `<span><i style="background:${VCOL[n - 1]}"></i>الزيارة ${ORD[n - 1] || n}</span>`).join('')}</div>` : noData}</div>`,
-    `<div class="dcard"><h4>المحاور <small>من الأضعف إلى الأقوى (%)</small></h4>${axRows.length ? hbars(axRows) : noData}</div>`,
+    `<div class="dcard"><h4>الأبعاد <small>من الأضعف إلى الأقوى (%)</small></h4>${axRows.length ? hbars(axRows) : noData}</div>`,
     `<div class="dcard"><h4>التكوينات التي حضرها المعلمون <small>عدد الزيارات المسجّلة</small></h4>${trRows.length ? hbars(trRows) : '<div class="muted small">لم تُسجَّل تكوينات بعد</div>'}</div>`,
     `<div class="dcard"><h4>المعلمون حسب المستوى التعليمي</h4>${hbars(eduRows)}</div>`,
     `<div class="dcard"><h4>متوسط الخبرة حسب المستوى المدرَّس <small>بالسنوات</small></h4>${expRows.length ? hbars(expRows) : '<div class="muted small">أضف سنوات الخبرة للمعلمين لتظهر هنا</div>'}</div>`,
@@ -2598,7 +2702,7 @@ function viewTeacherHome(){
         <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">دروس متأخرة</div></div></div>`,
     body: `<div class="stack">
       ${alerts.map(a => `<div class="notif"><span class="dot">!</span>${esc(a)}</div>`).join('')}
-      ${cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:10px">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
+      ${cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:10px">${esc(c.level)} ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
         <div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
         : emptyBox('لم يُسند إليك أي قسم بعد.<br>اتصل بالمساعد البيداغوجي.')}</div>`
   };
@@ -2628,7 +2732,7 @@ function viewLessons(id){
       ${rec ? `<span class="chip ok" style="white-space:nowrap">${esc(fmtDate(rec[3]))}</span>` : ''}</div>`;
   }).join('');
   return {
-    hero: head + `<h1>${esc(sj)}</h1><div class="sub">${esc(lv)} — فوج ${esc(g)}${t ? ' · ' + esc(tName(t)) : ''}</div>
+    hero: head + `<h1>${esc(sj)}</h1><div class="sub">${esc(lv)} ${esc(g)}${t ? ' · ' + esc(tName(t)) : ''}</div>
       <div style="margin-top:14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff"><div class="spread"><b>${p.done} من ${p.total} درس</b>${progChip(p)}</div>
         <div class="bar" style="margin-top:10px;background:rgba(255,255,255,.25)"><i style="width:${p.total ? p.done / p.total * 100 : 0}%;background:#5EE0A8"></i></div>
         <div class="small" style="margin-top:6px;opacity:.85">المقرر حتى الآن حسب التوزيع: ${p.prev}–${p.cur} درس</div></div>`,
@@ -2644,7 +2748,7 @@ function lessonSheet(lid, key){
   const today = new Date(); today.setHours(12);
   const days = range(-30, 0).map(d => { const x = new Date(today); x.setDate(x.getDate() + d); return x; });
   let date = rec ? rec[3] : isoDate(today);
-  sheet(`<h3>${esc(l[2])}</h3><div class="small muted" style="margin:-6px 0 12px">${esc(sj)} · ${esc(lv)} — فوج ${esc(g)}</div>
+  sheet(`<h3>${esc(l[2])}</h3><div class="small muted" style="margin:-6px 0 12px">${esc(sj)} · ${esc(lv)} ${esc(g)}</div>
     <div class="field"><span>تاريخ التدريس</span><div class="days" id="days">${days.map(d => { const iso = isoDate(d); return `<button type="button" class="day ${iso === isoDate(today) ? 'today' : ''} ${iso === date ? 'on' : ''}" data-d="${iso}"><small>${AR_DAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${AR_MONTHS[d.getMonth()]}</small></button>`; }).join('')}</div>
       <div class="small muted" id="dLbl">${esc(fmtDate(date))}</div></div>
     <div class="acts">${rec ? '<button class="btn btn-g" id="unL" style="color:var(--bad)">إلغاء التسجيل</button>' : '<button class="btn btn-g" data-close>إلغاء</button>'}<button class="btn btn-ok" id="svL">${IC.check} ${rec ? 'حفظ التاريخ' : 'تمّ تدريسه'}</button></div>`,
@@ -2725,13 +2829,13 @@ function viewProgress(){
   const cls = classesOf(list.filter(a => f === 'all' || ps.get(a).st === 'late'));
   const noAcc = B().teachers.filter(t => t.active && list.some(a => a.teacher === t.id) && !user(t.id)).length;
   return {
-    hero: hero0 + `<div class="kpis"><div class="kpi glass"><div class="n">${classesOf(list).length}</div><div class="l">فوج</div></div>
+    hero: hero0 + `<div class="kpis"><div class="kpi glass"><div class="n">${classesOf(list).length}</div><div class="l">قسم</div></div>
         <div class="kpi glass"><div class="n">${total ? Math.round(done / total * 100) : 0}<small>%</small></div><div class="l">نسبة الإنجاز</div></div>
         <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">مادة متأخرة</div></div></div>`,
     body: `<div class="stack">
       ${codesBar()}
       <div class="seg">${[['all', 'كل الأفواج'], ['late', 'المتأخرة فقط']].map(([k, l]) => `<button data-pf="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div>
-      ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
+      ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
         <div class="stack">${c.subs.map(a => subjectRow(a, map, true)).join('')}</div>`).join('') : emptyBox('لا توجد مواد متأخرة 👏'))
         : emptyBox(isMain() ? 'لم تُحدَّد بعد ما يدرّسه كل معلم.<br>افتح صفحة المعلم واضغط «تعديل ما يدرّسه».' : 'لم يحدد المساعد الرئيسي ما يدرّسه المعلمون بعد.')}</div>`,
     mount(){ $$('[data-pf]').forEach(b => b.onclick = () => { S.progFilter = b.dataset.pf; render(true); }); }
@@ -2748,7 +2852,7 @@ function teachingCard(t){
       : `<div class="spread" style="margin-top:10px"><span class="small muted">حساب المعلم مفعّل</span><button class="btn btn-g" data-act="activateT" data-id="${esc(t.id)}" style="min-height:38px">رمز جديد</button></div>`)
     : `<button class="btn btn-a" data-act="activateT" data-id="${esc(t.id)}" style="margin-top:10px">${IC.plus} تفعيل حساب المعلم</button>`;
   return `<div class="card stack"><div class="spread"><b class="d">ما يدرّسه</b>${isMain() ? `<button class="btn btn-g" data-act="editTeacher" data-id="${esc(t.id)}" style="min-height:38px">${IC.edit} تعديل</button>` : ''}</div>
-    ${!P ? '<div class="sk" style="height:60px"></div>' : list.length ? classesOf(list).map(c => `<div class="small muted d">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</div><div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
+    ${!P ? '<div class="sk" style="height:60px"></div>' : list.length ? classesOf(list).map(c => `<div class="small muted d">${esc(c.level)} ${esc(c.group)}${tagTxt(c.level, c.group)}</div><div class="stack">${c.subs.map(a => subjectRow(a, map)).join('')}</div>`).join('')
       : '<div class="small muted">لم يُحدَّد بعد.</div>'}
     ${account}</div>`;
 }
@@ -2761,9 +2865,9 @@ function assignEditor(tid){
   let lv = '', g = 'أ';
   const draw = m => {
     const cls = classesOf(rows);
-    m.querySelector('#asCur').innerHTML = cls.length ? cls.map(c => `<div class="card" style="box-shadow:none;padding:10px 12px"><b class="d">${esc(c.level)} — فوج ${esc(c.group)}${tagTxt(c.level, c.group)}</b>
+    m.querySelector('#asCur').innerHTML = cls.length ? cls.map(c => `<div class="card" style="box-shadow:none;padding:10px 12px"><b class="d">${esc(c.level)} ${esc(c.group)}${tagTxt(c.level, c.group)}</b>
       <div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap">${c.subs.map(a => `<button class="chip v" data-rm="${esc(a.level + '|' + a.group + '|' + a.subject)}" style="border:0">${esc(a.subject)} ✕</button>`).join('')}</div></div>`).join('')
-      : '<div class="small muted">لا شيء بعد. اختر المستوى والفوج والمواد ثم «إضافة».</div>';
+      : '<div class="small muted">لا شيء بعد. اختر المستوى ومعرّف القسم والمواد ثم «إضافة».</div>';
     m.querySelector('#asSub').innerHTML = lv ? `<span>المواد في ${esc(lv)}</span><div class="trs">${Object.keys(P.levels[lv]).map(s => `<button type="button" data-sj="${esc(s)}" class="${rows.some(a => a.level === lv && a.group === g && a.subject === s) ? 'on' : ''}">${esc(s)}</button>`).join('')}</div>` : '';
     m.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { rows = rows.filter(a => a.level + '|' + a.group + '|' + a.subject !== b.dataset.rm); draw(m); });
     m.querySelectorAll('[data-sj]').forEach(b => b.onclick = () => {
@@ -2775,7 +2879,7 @@ function assignEditor(tid){
   sheet(`<h3>ما يدرّسه ${esc(tName(t))}</h3>
     <div class="stack"><div id="asCur" class="stack"></div>
       <div class="field"><span>المستوى</span><div class="seg" data-seg="alv" style="flex-wrap:wrap">${levels.map(x => `<button type="button" data-val="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
-      <div class="field"><span>الفوج</span>${chips('ag', GROUPS, 'أ')}</div>
+      <div class="field"><span>معرّف القسم</span>${chips('ag', GROUPS, 'أ')}</div>
       <div class="field" id="asSub"></div></div>
     <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svA">حفظ</button></div>`,
   (m, close) => {
@@ -2798,6 +2902,8 @@ function assignEditor(tid){
 const ACT = {
   print: () => { buzz(); window.print(); },
   enterSchool: el => { buzz(); enterSchool(el.dataset.s, el.dataset.to); },
+  pickLogo: () => { buzz(); pickLogo(); },
+  delLogo: async () => { if (await confirmBox('حذف شعار المدرسة', 'لن يظهر الشعار في المطبوعات بعد الآن.', 'حذف', 'btn-xs')) saveLogo(''); },
   blankForm: () => blankFormSheet(),
   sharePdf: el => sharePdf(el),
   sync: async el => { await busy(el, () => refreshBg(true)); toast('تم التحديث'); render(true); },
@@ -2874,7 +2980,7 @@ const ACT = {
   fAxes: () => {
     const vid = route().id, items = fillItems(vid);
     let last = '';
-    sheet(`<h3>انتقل إلى محور</h3><div class="stack">${B().cfg.axes.filter(ax => items.some(it => it.axis === ax.id)).map(ax => {
+    sheet(`<h3>انتقل إلى بُعد</h3><div class="stack">${B().cfg.axes.filter(ax => items.some(it => it.axis === ax.id)).map(ax => {
       const its = items.filter(it => it.axis === ax.id); const f = its.filter(it => valueOf(vid, it.id) !== undefined).length;
       const head = ax.section !== last ? `<div class="small muted d" style="margin-top:6px">${esc(last = ax.section)}</div>` : '';
       return head + `<button class="slot click" data-ax="${esc(ax.id)}" style="width:100%;text-align:start"><div class="b"><b class="d">${esc(ax.name)}</b></div><span class="chip ${f === its.length ? 'ok' : ''}">${f}/${its.length}</span></button>`;

@@ -1,6 +1,6 @@
 // يحفظ واجهة التطبيق على الجهاز ليفتح فورًا، ولا يتدخل في طلبات البيانات
-const CACHE = 'ishraf-v20';
-const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'ishraf-v21';
+const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './emblem.svg', './logo-wide.svg'];
 const PAGE_TIMEOUT = 2500;   // أقصى انتظار للشبكة قبل فتح النسخة المحفوظة
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL))); self.skipWaiting(); });
 self.addEventListener('activate', e => {
