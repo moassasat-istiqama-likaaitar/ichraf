@@ -63,9 +63,9 @@ a{color:inherit}
 .tb-t small{display:block;font-size:12.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sync{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.14);font-family:Changa;font-size:12.5px;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.18);white-space:nowrap}
 .coord-b{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.2);color:#fff;font-family:Changa;font-size:13px;border:1px solid rgba(255,255,255,.3);white-space:nowrap;cursor:pointer}
-.sync i{width:8px;height:8px;border-radius:50%;background:#5EEAD4;box-shadow:0 0 0 3px rgba(94,234,212,.25)}
-.sync.busy i{background:#FDE68A;animation:pulse 1s infinite}
-.sync.offline i{background:#FCA5A5}
+.sync i{width:9px;height:9px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.3)}
+.sync.busy i{background:#F59E0B;box-shadow:0 0 0 3px rgba(245,158,11,.3);animation:pulse 1s infinite}
+.sync.offline i{background:#EF4444;box-shadow:0 0 0 3px rgba(239,68,68,.3)}
 @keyframes pulse{50%{opacity:.35}}
 .hero h1{font-size:27px;font-weight:700;margin-top:18px;letter-spacing:-.2px}
 .hero .sub{opacity:.82;font-size:14px;margin-top:2px}
@@ -533,7 +533,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.0';
+const VERSION = '5.4.1';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -699,6 +699,8 @@ function rtClose(keepWant){
   try { ws && ws.close(); } catch(e){}
 }
 // التطبيق في الخلفية أكثر من دقيقة: نغلق القناة (حدّ الاتصالات المتزامنة)، وعند العودة نحدّث ونعيد فتحها
+window.addEventListener('online', () => { if (!S.auth || !S.B) return; if (Q.jobs.length) runQ(); else refreshBg(); if (!RT.ws) rtConnect(); });
+window.addEventListener('offline', () => setSync('offline'));
 document.addEventListener('visibilitychange', () => {
   clearTimeout(RT.idle);
   if (document.hidden) RT.idle = setTimeout(() => rtClose(true), 60000);
@@ -709,6 +711,9 @@ document.addEventListener('visibilitychange', () => {
 const Q = { jobs: [], running: false };
 function setSync(state){
   Q.state = state;
+  // انقطاع: نعيد المحاولة كل 10 ثوانٍ حتى يعود الاتصال، فتعود النقطة خضراء دون تحديث الصفحة
+  clearTimeout(Q.retryT);
+  if (state === 'offline') Q.retryT = setTimeout(() => { if (Q.state === 'offline' && !Q.running && S.auth && S.B) refreshBg(); }, 10000);
   $$('.sync').forEach(el => {
     el.className = 'sync ' + (state === 'ok' ? '' : state);
     el.querySelector('span').textContent = state === 'busy' ? 'يُحفظ…' : state === 'offline' ? 'غير متصل — سيُعاد' : 'محفوظ';
@@ -1341,7 +1346,7 @@ function viewMe(){
         <div class="small muted">${ios ? 'في Safari: زر المشاركة ثم «إضافة إلى الشاشة الرئيسية».' : 'يفتح كتطبيق مستقل بملء الشاشة، ويعمل أسرع.'}</div>
         ${ios ? '' : '<button class="btn btn-p" data-act="install">تثبيت التطبيق</button>'}</div>`}
       ${isTeacher() ? '' : `<div class="card stack"><div class="spread"><div><b class="d">استمارة زيارة فارغة</b><div class="small muted">للطباعة أو المشاركة مع المعلمين قبل الزيارة</div></div><button class="btn btn-g" data-act="blankForm">${IC.print} النموذج</button></div></div>`}
-      <div class="card stack"><div class="spread"><div><b class="d">تحديث البيانات</b><div class="small muted">جلب آخر ما سُجّل في الشيت، بما فيه التعديلات اليدوية</div></div><button class="btn btn-g" data-act="sync">تحديث</button></div></div>
+      <div class="card stack"><div class="spread"><b class="d">تحديث البيانات</b><button class="btn btn-g" data-act="sync">تحديث</button></div></div>
       <button class="btn btn-g btn-block" data-act="logout" style="color:var(--bad)">تسجيل الخروج</button>
       <div class="small muted" style="text-align:center">الإصدار ${VERSION}<span id="perfLine">${perfLine()}</span></div>
     </div>`,
