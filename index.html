@@ -533,7 +533,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.1';
+const VERSION = '5.4.2';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -1718,7 +1718,7 @@ function teacherSheet(t){
   const lv = t.levels || (t.level ? String(t.level).split(/\s*[،,]\s*/).filter(Boolean) : []);
   const P = program();
   if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t); return; }
-  // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بالفوج «أ» والمواد الافتراضية
+  // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بمعرّف القسم «أ» والمواد الافتراضية
   let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, tag: tagOf(c.level, c.group), subs: c.subs.map(a => a.subject) }));
   if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: 'أ', subs: defaultSubs(P, x, t.role) }));
   const posts = [...new Set((L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post))];
@@ -1887,7 +1887,7 @@ function assignSheet(tid){
 const ts_count = sid => B().teachers.filter(x => x.supervisor === sid && x.active).length;
 
 /* ============================== ورقة بدء الزيارة ============================== */
-/** القسم المزور (مستوى + فوج) + نوع الحصة (لمعلم القرآن والقسم) + عدد التلاميذ مرة واحدة لكل قسم في الموسم */
+/** القسم المزور (مستوى + معرّف القسم) + نوع الحصة (لمعلم القرآن والقسم) + عدد التلاميذ مرة واحدة لكل قسم في الموسم */
 function startVisitSheet(t){
   const cfg = B().cfg;
   const asg = classesOf((B().assignments || []).filter(a => a.teacher === t.id));
@@ -2072,7 +2072,7 @@ function clockPicker(value, title){
 
 /* ============================== الاستيراد من إكسل ============================== */
 const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['معرّف القسم 1', 'group'], ['معرّف القسم 2', 'tag'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
-const IMPORT_ALIAS = { 'المستوى المدرَّس': 'المستويات المدرَّسة', 'معرّف القسم 1': 'الفوج' };   // الملفات القديمة بعنوان «الفوج» تُقبل
+const IMPORT_ALIAS = { 'المستوى المدرَّس': 'المستويات المدرَّسة', 'معرّف القسم 1': 'الفوج' };   // الملفات القديمة بالعنوان القديم تُقبل
 const tKey = o => [o.last, o.first, o.father].map(x => String(x || '').trim()).join('|');
 function loadQR(){
   if (window.qrcode) return Promise.resolve();
@@ -2082,7 +2082,7 @@ function loadExcelJS(){
   if (window.ExcelJS) return Promise.resolve();
   return new Promise((ok, no) => { const s = document.createElement('script'); s.src = 'exceljs.min.js'; s.onload = ok; s.onerror = () => no(new Error('تعذّر تحميل مولّد ملفات إكسل')); document.head.appendChild(s); });
 }
-/** نموذج الاستيراد: قوائم منسدلة للجنس والمنصب والمستوى والفوج والمستوى التعليمي (ورقة «القوائم» مخفية) */
+/** نموذج الاستيراد: قوائم منسدلة للجنس والمنصب والمستوى ومعرّف القسم والمستوى التعليمي (ورقة «القوائم» مخفية) */
 async function downloadTemplate(){
   await loadExcelJS();
   const L = B().cfg.lists, P = program();
@@ -2669,7 +2669,7 @@ function progChip(p){
   if (p.done >= p.total) return '<span class="chip ok">اكتمل البرنامج</span>';
   return p.st === 'late' ? `<span class="chip bad">متأخر بـ ${p.n}</span>` : p.st === 'ahead' ? `<span class="chip ok">متقدم بـ ${p.n}</span>` : '<span class="chip v">في الموعد</span>';
 }
-/** الأقسام (مستوى + فوج) ومواد كل قسم، مرتبة حسب ترتيب المستويات في البرنامج */
+/** الأقسام (مستوى + معرّف القسم) ومواد كل قسم، مرتبة حسب ترتيب المستويات في البرنامج */
 function classesOf(list){
   const P = program() || { levels: {} };
   const order = Object.keys(P.levels);
@@ -2839,7 +2839,7 @@ function viewProgress(){
         <div class="kpi glass ${late ? 'accent' : ''}"><div class="n">${late}</div><div class="l">مادة متأخرة</div></div></div>`,
     body: `<div class="stack">
       ${codesBar()}
-      <div class="seg">${[['all', 'كل الأفواج'], ['late', 'المتأخرة فقط']].map(([k, l]) => `<button data-pf="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div>
+      <div class="seg">${[['all', 'كل الأقسام'], ['late', 'المتأخرة فقط']].map(([k, l]) => `<button data-pf="${k}" class="${f === k ? 'on' : ''}">${l}</button>`).join('')}</div>
       ${list.length ? (cls.length ? cls.map(c => `<div class="sec-t" style="margin-top:12px">${esc(c.level)} ${esc(c.group)}${tagTxt(c.level, c.group)}</div>
         <div class="stack">${c.subs.map(a => subjectRow(a, map, true)).join('')}</div>`).join('') : emptyBox('لا توجد مواد متأخرة 👏'))
         : emptyBox(isMain() ? 'لم تُحدَّد بعد ما يدرّسه كل معلم.<br>افتح صفحة المعلم واضغط «تعديل ما يدرّسه».' : 'لم يحدد المساعد الرئيسي ما يدرّسه المعلمون بعد.')}</div>`,
