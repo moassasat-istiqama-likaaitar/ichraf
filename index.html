@@ -533,7 +533,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.2';
+const VERSION = '5.4.3';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -2751,7 +2751,10 @@ function lessonSheet(lid, key){
   const k = logKey(lid, lv, g);
   const rec = logMap().get(k);
   const today = new Date(); today.setHours(12);
-  const days = range(-30, 0).map(d => { const x = new Date(today); x.setDate(x.getDate() + d); return x; });
+  // من أول سبتمبر لسنة بداية الموسم إلى اليوم (وإن غابت السنة: الموسم الجاري)
+  const sy = Number(B().cfg && B().cfg.seasonYear) || (today.getMonth() >= 7 ? today.getFullYear() : today.getFullYear() - 1);
+  let start = new Date(sy, 8, 1, 12); if (start > today || (today - start) / 864e5 > 366) start = new Date(today.getTime() - 30 * 864e5);
+  const days = []; for (let x = new Date(start); x <= today; x.setDate(x.getDate() + 1)) days.push(new Date(x));
   let date = rec ? rec[3] : isoDate(today);
   sheet(`<h3>${esc(l[2])}</h3><div class="small muted" style="margin:-6px 0 12px">${esc(sj)} · ${esc(lv)} ${esc(g)}</div>
     <div class="field"><span>تاريخ التدريس</span><div class="days" id="days">${days.map(d => { const iso = isoDate(d); return `<button type="button" class="day ${iso === isoDate(today) ? 'today' : ''} ${iso === date ? 'on' : ''}" data-d="${iso}"><small>${AR_DAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${AR_MONTHS[d.getMonth()]}</small></button>`; }).join('')}</div>
