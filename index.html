@@ -346,6 +346,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .empty svg{opacity:.4;margin-bottom:8px}
 .banner{border-radius:16px;padding:11px 14px;font-family:Changa;font-size:14px;background:var(--warn-l);color:var(--warn)}
 .banner.v{background:var(--v100);color:var(--v700)}
+.banner.bad-b{background:var(--bad-l);color:var(--bad)}
 :root[data-theme="dark"] .banner.v{color:var(--v300)}
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th,.tbl td{padding:10px;border-bottom:1px solid var(--line);text-align:start}
@@ -533,7 +534,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.3';
+const VERSION = '5.4.4';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -1207,6 +1208,9 @@ function finishLogin(boot){
 }
 
 /* ============================== المشرف: الرئيسية ============================== */
+/** معلم مفعّل بلا أي قسم مسند ← لا تظهر له مواد في السيرورة */
+const noClass = t => t && t.active !== false && !String(t.id).startsWith('tmp') && !(B().assignments || []).some(a => a.teacher === t.id);
+const NOCLS = '<span class="chip bad">بلا قسم</span>';
 function teacherCard(t){
   const vs = visitsOf(t.id);
   const done = vs.filter(v => v.status === 'مكتملة').length;
@@ -1217,7 +1221,7 @@ function teacherCard(t){
   return `<div class="card tcard" data-go="#/t/${esc(t.id)}">${avatar(tName(t), t.planned ? done / t.planned : 0, color)}
     <div class="b"><h3>${esc(tName(t))}</h3>
       <div class="small muted">${esc(ROLE_LABEL[t.role] || '')} · ${esc(t.level || '—')}${t.experience === 0 ? ' · <span class="chip clay" style="padding:0 8px">جديد</span>' : ''}</div>
-      <div class="row" style="margin-top:4px;gap:6px">${chip}${seeAll() && t.supervisor !== S.auth.user ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
+      <div class="row" style="margin-top:4px;gap:6px">${chip}${noClass(t) ? NOCLS : ''}${seeAll() && t.supervisor !== S.auth.user ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
     ${last ? `<span class="score-pill" style="background:${scoreColor(last.score)}22;color:${scoreColor(last.score)}">${last.score}</span>` : ''}</div>`;
 }
 function filterTeachers(list){
@@ -1381,6 +1385,7 @@ function viewTeacher(id){
         ${isMain() ? `<button class="back" data-act="editTeacher" data-id="${esc(id)}">${IC.edit}</button>` : ''}</div>`,
     body: `<div class="stack">
       ${!t.active ? '<div class="banner">هذا المعلم موقوف</div>' : ''}
+      ${noClass(t) ? `<div class="banner bad-b"><div class="spread" style="gap:10px"><span>لم يُسند لهذا المعلم أي قسم، فلا تظهر له مواد في السيرورة.</span>${isMain() ? `<button class="btn btn-p" data-act="editTeacher" data-id="${esc(id)}" data-sec="3" style="flex:none">إضافة قسمه</button>` : ''}</div></div>` : ''}
       <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
         ${info.map(([k, v]) => `<div><div class="small muted d">${k}</div><div style="font-weight:500">${esc(v || '—')}</div></div>`).join('')}</div></div>
       ${teachingCard(t)}
@@ -1654,25 +1659,27 @@ function viewDirector(tab){
     const q = S.q.trim();
     const list = ts.filter(x => !q || tName(x).includes(q) || (x.level || '').includes(q));
     const unassigned = ts.filter(x => !x.supervisor && x.active).length;
+    const noCls = ts.filter(noClass).length;
     const wide = matchMedia('(min-width:900px)').matches;
     const useK = wide && S.kanban && !ro;
     body = `<div class="spread"><div class="sec-t" style="margin:0">${ro ? 'المعلمون والمساعدون' : 'الإسناد'}</div>
         ${ro ? '' : `<div class="row">${wide ? `<button class="btn btn-g" data-act="toggleKanban">${useK ? IC.list + ' قائمة' : IC.cols + ' أعمدة'}</button>` : ''}
           <button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div>`}</div>
       ${unassigned && !ro ? `<div class="banner" style="margin-top:12px">${unassigned} معلمين غير مسندين — ${useK ? 'اسحبهم إلى عمود المساعد' : 'اضغط على «إسناد» بجانب كل معلم'}</div>` : ''}
+      ${noCls ? `<div class="banner bad-b" style="margin-top:12px">${noCls === 1 ? 'معلم واحد' : noCls + ' معلمين'} بلا قسم، فلن تظهر ${noCls === 1 ? 'له' : 'لهم'} مواد في السيرورة. ${ro ? '' : 'افتح المعلم واضغط «إضافة قسمه».'}</div>` : ''}
       <div class="search" style="margin:12px 0">${IC.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>`;
     if (useK){
       const cols = [{ id: '', name: 'غير مسند' }].concat(sups.filter(u => u.active));
       body += `<div class="kanban">${cols.map(c => {
         const its = list.filter(x => (x.supervisor || '') === c.id);
         return `<div class="col" data-col="${esc(c.id)}"><h4><span>${esc(c.name)}</span><span class="chip v">${its.length}</span></h4>
-          ${its.map(x => `<div class="kc" draggable="true" data-tid="${esc(x.id)}" style="${x.active ? '' : 'opacity:.5'}"><b>${esc(tName(x))}</b><small>${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</small></div>`).join('') || '<div class="small muted" style="text-align:center;padding:16px 0">أفلت المعلم هنا</div>'}</div>`;
+          ${its.map(x => `<div class="kc" draggable="true" data-tid="${esc(x.id)}" style="${x.active ? '' : 'opacity:.5'}"><b>${esc(tName(x))}</b><small>${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</small>${noClass(x) ? NOCLS : ''}</div>`).join('') || '<div class="small muted" style="text-align:center;padding:16px 0">أفلت المعلم هنا</div>'}</div>`;
       }).join('')}</div>`;
       mount = () => { bindSearch(); bindKanban(); };
     } else {
       body += `<div class="stack">${list.map(x => `<div class="slot" style="${x.active ? '' : 'opacity:.55'}">
           ${avatar(tName(x), x.planned ? visitsOf(x.id).filter(v => v.status === 'مكتملة').length / x.planned : 0, 'var(--v600)')}
-          <div class="b" data-go="#/t/${esc(x.id)}" style="cursor:pointer"><b class="d">${esc(tName(x))}</b><div class="small muted">${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</div></div>
+          <div class="b" data-go="#/t/${esc(x.id)}" style="cursor:pointer"><b class="d">${esc(tName(x))}</b><div class="small muted">${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</div>${noClass(x) ? `<div style="margin-top:4px">${NOCLS}</div>` : ''}</div>
           ${ro ? `<span class="chip ${x.supervisor ? 'v' : 'warn'}">${esc(x.supervisor ? userName(x.supervisor) : 'غير مسند')}</span>` : `<button class="chip ${x.supervisor ? 'v' : 'warn'}" style="border:0;padding:6px 12px;font-size:13px" data-act="assignSheet" data-id="${esc(x.id)}">${esc(x.supervisor ? userName(x.supervisor) : 'إسناد')} ▾</button>`}</div>`).join('') || emptyBox('لا يوجد معلمون')}</div>`;
       mount = bindSearch;
     }
@@ -1712,15 +1719,17 @@ function chips(name, list, val){
 function bindSegs(m){ m.querySelectorAll('[data-seg]').forEach(s => s.onclick = e => { const b = e.target.closest('[data-val]'); if (!b) return; const was = b.classList.contains('on'); s.querySelectorAll('button').forEach(x => x.classList.remove('on')); if (!was || s.dataset.req) b.classList.add('on'); buzz(5); }); }
 const segVal = (m, name) => { const b = m.querySelector(`[data-seg="${name}"] .on`); return b ? b.dataset.val : ''; };
 
-function teacherSheet(t){
+function teacherSheet(t, openSec){
   const L = B().cfg.lists;
   const sups = assts().filter(u => u.active || u.id === t.supervisor);
   const lv = t.levels || (t.level ? String(t.level).split(/\s*[،,]\s*/).filter(Boolean) : []);
   const P = program();
-  if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t); return; }
+  if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t, openSec); return; }
   // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بمعرّف القسم «أ» والمواد الافتراضية
   let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, tag: tagOf(c.level, c.group), subs: c.subs.map(a => a.subject) }));
-  if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: 'أ', subs: defaultSubs(P, x, t.role) }));
+  // من عمود المستويات: أول معرّف قسم غير مستعمل عند معلم آخر في نفس المستوى (أ ثم ب…)
+  const freeGrp = x => GROUPS.find(g => !(B().assignments || []).some(a => a.teacher !== t.id && a.level === x && a.group === g)) || 'أ';
+  if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: freeGrp(x), subs: defaultSubs(P, x, t.role) }));
   const posts = [...new Set((L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post))];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
     <div class="stack">
@@ -1781,7 +1790,7 @@ function teacherSheet(t){
       const nx = a.querySelector('[data-nx]'); if (nx) nx.onclick = () => { a.classList.remove('open'); openAcc(Number(a.dataset.acc) + 1); a.nextElementSibling && a.nextElementSibling.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); };
     });
     m.addEventListener('input', accUpd); m.addEventListener('click', () => setTimeout(accUpd));
-    if (!t.id) openAcc(1);
+    if (!t.id) openAcc(1); else if (openSec) openAcc(openSec);
     const del = m.querySelector('#tDel');
     if (del) del.onclick = async () => {
       close();
@@ -2921,7 +2930,7 @@ const ACT = {
   filter: el => { S.filter = el.dataset.k; render(true); },
   toggleKanban: () => { S.kanban = !S.kanban; LS.set('ishraf.kanban', S.kanban); render(true); },
   addTeacher: () => teacherSheet({ supervisor: '' }),
-  editTeacher: el => teacherSheet(Object.assign({}, teacher(el.dataset.id))),
+  editTeacher: el => teacherSheet(Object.assign({}, teacher(el.dataset.id)), el.dataset.sec),
   lsn: el => lessonSheet(el.dataset.l, el.dataset.k),
   editAssign: el => assignEditor(el.dataset.id),
   activateAll: async el => {
