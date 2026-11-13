@@ -347,6 +347,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .banner{border-radius:16px;padding:11px 14px;font-family:Changa;font-size:14px;background:var(--warn-l);color:var(--warn)}
 .banner.v{background:var(--v100);color:var(--v700)}
 .banner.bad-b{background:var(--bad-l);color:var(--bad)}
+.kc.nocls{border-inline-start:3px solid var(--bad)}
 :root[data-theme="dark"] .banner.v{color:var(--v300)}
 .tbl{width:100%;border-collapse:collapse;font-size:14px}
 .tbl th,.tbl td{padding:10px;border-bottom:1px solid var(--line);text-align:start}
@@ -1673,7 +1674,7 @@ function viewDirector(tab){
       body += `<div class="kanban">${cols.map(c => {
         const its = list.filter(x => (x.supervisor || '') === c.id);
         return `<div class="col" data-col="${esc(c.id)}"><h4><span>${esc(c.name)}</span><span class="chip v">${its.length}</span></h4>
-          ${its.map(x => `<div class="kc" draggable="true" data-tid="${esc(x.id)}" style="${x.active ? '' : 'opacity:.5'}"><b>${esc(tName(x))}</b><small>${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}</small>${noClass(x) ? NOCLS : ''}</div>`).join('') || '<div class="small muted" style="text-align:center;padding:16px 0">أفلت المعلم هنا</div>'}</div>`;
+          ${its.map(x => `<div class="kc${noClass(x) ? ' nocls' : ''}" draggable="true" data-tid="${esc(x.id)}" style="${x.active ? '' : 'opacity:.5'}"><b>${esc(tName(x))}</b><small>${esc(ROLE_LABEL[x.role] || '')} · ${esc(x.level || '—')}${noClass(x) ? ' · <span style="color:var(--bad)">بلا قسم</span>' : ''}</small></div>`).join('') || '<div class="small muted" style="text-align:center;padding:16px 0">أفلت المعلم هنا</div>'}</div>`;
       }).join('')}</div>`;
       mount = () => { bindSearch(); bindKanban(); };
     } else {
