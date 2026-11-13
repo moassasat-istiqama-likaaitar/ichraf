@@ -535,7 +535,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.4';
+const VERSION = '5.4.5';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -778,6 +778,8 @@ const teacher = id => allTeachers().find(t => t.id === id);
 const user = id => B().users.find(u => u.id === id);
 const userName = id => (user(id) || {}).name || '—';
 /** أقسام المعلمين المفعّلين فقط (الموقوف لا يدخل في المتابعة) */
+/** أقسام بلا دروس (قسم القرآن للاستظهار): تُسند وتُزار ولا تدخل في السيرورة */
+const inProg = a => !((program() || {}).quranOnly || []).includes(a.level);
 const activeAssignments = () => (B().assignments || []).filter(a => { const t = B().teachers.find(x => x.id === a.teacher); return !t || t.active !== false; });
 const hasData = tid => B().visits.some(v => v.teacher === tid) || (B().lessonLog || []).some(x => x[4] === tid);
 const visitsOf = tid => B().visits.filter(v => v.teacher === tid).sort((a, b) => a.number - b.number);
@@ -1080,7 +1082,7 @@ function navBadges(){
       if (list.some(a => progressOf(a.level, a.group, a.subject, map).st === 'late')) n++;
       out[''] = n;
     } else {
-      out.prog = activeAssignments().filter(a => progressOf(a.level, a.group, a.subject, map).st === 'late').length;
+      out.prog = activeAssignments().filter(inProg).filter(a => progressOf(a.level, a.group, a.subject, map).st === 'late').length;
     }
     const total = Object.values(out).reduce((x, y) => x + y, 0);
     if (navigator.setAppBadge) (total ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(() => {});
@@ -2700,7 +2702,7 @@ function viewTeacherHome(){
   const P = program();
   const first = S.auth.name.split(' ').slice(-1)[0];
   if (!P) return Object.assign({ hero: `<h1>مرحبًا، ${esc(first)}</h1><div class="sub">جارٍ تحميل البرنامج الدراسي…</div>` }, progSkeleton());
-  const mine = B().assignments || [];
+  const mine = (B().assignments || []).filter(inProg);
   const map = logMap();
   const cls = classesOf(mine);
   let done = 0, total = 0, late = 0;
@@ -2838,7 +2840,7 @@ function viewProgress(){
   const P = program();
   const hero0 = `<h1>سيرورة الدروس</h1><div class="sub">${esc(B().school.name)} · ${esc(B().cfg.season)}</div>`;
   if (!P) return Object.assign({ hero: hero0 }, progSkeleton());
-  const list = activeAssignments();
+  const list = activeAssignments().filter(inProg);
   const map = logMap();
   const f = S.progFilter || 'all';
   let late = 0, done = 0, total = 0;
