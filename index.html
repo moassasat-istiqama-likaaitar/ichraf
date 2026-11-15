@@ -535,7 +535,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.5';
+const VERSION = '5.4.6';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -2652,6 +2652,10 @@ function program(){
 const clsKey = (lv, g, sj) => encodeURIComponent([lv, g, sj].join('|'));
 /** معرّف القسم 2 (ذ للذكور، إ للإناث…): يُكتب بين قوسين بعد اسم القسم، إن وُجد */
 const tagOf = (lv, g) => ((S.B && S.B.classTags) || {})[lv + '|' + (g || 'أ')] || '';
+/** دروس القسم: القسم «ذ» لا يرى دروس «إ» والعكس (العمود «خاص بـ» في البرنامج)؛ القسم بلا معرّف 2 يرى الكل */
+const lessonsOf = (lv, g, sj) => { const P = program(), ls = (P && P.levels[lv] && P.levels[lv][sj]) || [], t = tagOf(lv, g);
+  return t === 'ذ' || t === 'إ' ? ls.filter(l => !l[4] || l[4] === t) : ls; };
+const needsTag = (lv, g, sj) => !['ذ', 'إ'].includes(tagOf(lv, g)) && lessonsOf(lv, g, sj).some(l => l[4]);
 const tagTxt = (lv, g) => { const t = tagOf(lv, g); return t ? ' (' + esc(t) + ')' : ''; };
 const logKey = (id, lv, g) => id + '|' + lv + '|' + g;
 function logMap(){
@@ -2662,8 +2666,8 @@ function logMap(){
 const curMonthIdx = () => SEQ.indexOf(new Date().getMonth() + 1);
 /** التقدم مقارنة بالتوزيع الشهري: متأخر إن أنجز أقل من دروس الأشهر الماضية، متقدم إن تجاوز دروس الشهر الحالي */
 function progressOf(lv, g, sj, map){
-  const P = program(); map = map || logMap();
-  const ls = (P && P.levels[lv] && P.levels[lv][sj]) || [];
+  map = map || logMap();
+  const ls = lessonsOf(lv, g, sj);
   const ci = curMonthIdx();
   let done = 0, prev = 0, cur = 0;
   ls.forEach(l => {
@@ -2730,7 +2734,7 @@ function viewLessons(id){
   const back = isTeacher() ? '#/' : '#/prog';
   const head = `<div class="row" style="margin-top:14px"><button class="back" data-go="${back}">${IC.back} رجوع</button></div>`;
   if (!P) return Object.assign({ hero: head + `<h1>${esc(sj || '')}</h1>` }, progSkeleton());
-  const ls = (P.levels[lv] && P.levels[lv][sj]) || [];
+  const ls = lessonsOf(lv, g, sj);
   const map = logMap();
   const p = progressOf(lv, g, sj, map);
   const a = (B().assignments || []).find(x => x.level === lv && x.group === g && x.subject === sj);
@@ -2745,7 +2749,7 @@ function viewLessons(id){
     lastAx = l[1]; n++;
     return ax + `<div class="lsn ${rec ? 'on' : ''} ${overdue ? 'due' : ''} ${ro ? '' : 'click'}" ${ro ? '' : `data-act="lsn" data-l="${esc(l[0])}" data-k="${esc(id)}"`}>
       <span class="ck">${rec ? IC.check : n}</span>
-      <div class="b"><div>${esc(l[2])}</div><div class="small muted">${l[3] ? 'مقرر في ' + MONTHS_AR[l[3]] : 'بلا شهر'}${overdue ? ' · <b style="color:var(--bad)">متأخر</b>' : ''}</div></div>
+      <div class="b"><div>${esc(l[2])}${l[4] && needsTag(lv, g, sj) ? ` <span class="chip ${l[4] === 'ذ' ? 'v' : 'warn'}" style="font-size:11px">${l[4] === 'ذ' ? 'ذكور' : 'إناث'}</span>` : ''}</div><div class="small muted">${l[3] ? 'مقرر في ' + MONTHS_AR[l[3]] : 'بلا شهر'}${overdue ? ' · <b style="color:var(--bad)">متأخر</b>' : ''}</div></div>
       ${rec ? `<span class="chip ok" style="white-space:nowrap">${esc(fmtDate(rec[3]))}</span>` : ''}</div>`;
   }).join('');
   return {
@@ -2753,7 +2757,7 @@ function viewLessons(id){
       <div style="margin-top:14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff"><div class="spread"><b>${p.done} من ${p.total} درس</b>${progChip(p)}</div>
         <div class="bar" style="margin-top:10px;background:rgba(255,255,255,.25)"><i style="width:${p.total ? p.done / p.total * 100 : 0}%;background:#5EE0A8"></i></div>
         <div class="small" style="margin-top:6px;opacity:.85">المقرر حتى الآن حسب التوزيع: ${p.prev}–${p.cur} درس</div></div>`,
-    body: `<div class="stack">${ro ? '' : '<div class="small muted">اضغط على الدرس عند تدريسه لتسجيله مع التاريخ.</div>'}${rows || emptyBox('لا توجد دروس لهذه المادة في البرنامج')}</div>`
+    body: `<div class="stack">${needsTag(lv, g, sj) ? `<div class="banner bad-b">في هذه المادة دروس خاصة بالذكور وأخرى خاصة بالإناث، وهذا القسم لم يُحدَّد له «ذ» أو «إ»، فتظهر له كلها. حدّده من استمارة المعلم ← «ما يدرّسه» ← معرّف القسم 2.</div>` : ''}${ro ? '' : '<div class="small muted">اضغط على الدرس عند تدريسه لتسجيله مع التاريخ.</div>'}${rows || emptyBox('لا توجد دروس لهذه المادة في البرنامج')}</div>`
   };
 }
 /** ورقة تسجيل درس: شريط الأيام (اليوم افتراضيًا) */
