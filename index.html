@@ -535,7 +535,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.6';
+const VERSION = '5.4.7';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -1781,7 +1781,7 @@ function teacherSheet(t, openSec){
       const st = {
         1: [!!(v('#tLast').trim() && v('#tFirst').trim()), [v('#tLast').trim() + ' ' + v('#tFirst').trim(), segVal(m, 'gender')]],
         2: [!!segVal(m, 'role'), [ROLE_LABEL[segVal(m, 'role')] || segVal(m, 'role'), segVal(m, 'edu'), v('#tExp') !== '' ? v('#tExp') + ' سنة خبرة' : '']],
-        3: [cls.length > 0 && cls.every(c => c.subs.length), [cls.length ? cls.map(c => c.level + ' ' + c.group).join('، ') : 'لم يُضف قسم']],
+        3: [cls.length > 0 && cls.every(c => c.subs.length && c.tag), [cls.length ? cls.map(c => c.level + ' ' + c.group + (c.tag ? ' (' + c.tag + ')' : '')).join('، ') : 'لم يُضف قسم']],
         4: [true, [segVal(m, 'vo') === 'تلقائي' ? 'الزيارات تلقائيًا' : segVal(m, 'vo') + ' زيارة', segVal(m, 'sup')]]
       };
       accs.forEach(a => { const [done, sum] = st[a.dataset.acc]; a.classList.toggle('done', done);
@@ -1811,11 +1811,11 @@ function teacherSheet(t, openSec){
     const drawCls = () => {
       m.querySelector('#tCls').innerHTML = cls.length ? cls.map((c, i) => `<div class="card" style="box-shadow:none;padding:10px 12px">
         <div class="spread"><b class="d">${esc(c.level)} ${esc(c.group)}${c.tag ? ' (' + esc(c.tag) + ')' : ''}</b><button type="button" class="chip bad" data-rmc="${i}" style="border:0">حذف القسم ✕</button></div>
-        <label class="row small muted" style="gap:8px;margin-top:6px;flex-wrap:nowrap">معرّف القسم 2 (اختياري) <input class="in" data-tg="${i}" value="${esc(c.tag || '')}" maxlength="6" placeholder="ذ / إ" style="width:70px;padding:6px 10px;min-height:0;text-align:center"></label>
+        <div class="row small" style="gap:8px;margin-top:8px;flex-wrap:wrap"><span class="${c.tag ? 'muted' : ''}" style="${c.tag ? '' : 'color:var(--bad);font-weight:600'}">معرّف القسم 2 *</span><div class="seg" data-tgs="${i}">${TAGS.map(([k, n]) => `<button type="button" data-val="${k}" class="${c.tag === k ? 'on' : ''}" style="min-height:34px;padding:4px 12px">${k} · ${n}</button>`).join('')}</div></div>
         <div class="trs" style="margin-top:8px">${Object.keys(P.levels[c.level] || {}).map(sj => `<button type="button" data-ci="${i}" data-sj="${esc(sj)}" class="${c.subs.includes(sj) ? 'on' : ''}">${esc(sj)}</button>`).join('')}</div></div>`).join('')
         : '<div class="small muted">لم يُضف أي قسم بعد.</div>';
       m.querySelectorAll('[data-rmc]').forEach(b => b.onclick = () => { cls.splice(Number(b.dataset.rmc), 1); drawCls(); });
-      m.querySelectorAll('[data-tg]').forEach(x => x.oninput = () => { cls[Number(x.dataset.tg)].tag = x.value.trim(); });
+      m.querySelectorAll('[data-tgs] button').forEach(b => b.onclick = () => { cls[Number(b.parentNode.dataset.tgs)].tag = b.dataset.val; drawCls(); });
       m.querySelectorAll('[data-sj]').forEach(b => b.onclick = () => { const c = cls[Number(b.dataset.ci)], sj = b.dataset.sj; c.subs = c.subs.includes(sj) ? c.subs.filter(x => x !== sj) : c.subs.concat([sj]); buzz(5); drawCls(); });
     };
     drawCls(); accUpd();
@@ -1833,6 +1833,7 @@ function teacherSheet(t, openSec){
     m.querySelector('#svT').onclick = () => {
       const teaching = [].concat(...cls.map(c => c.subs.map(sj => ({ level: c.level, group: c.group, subject: sj, tag: c.tag || '' }))));
       if (cls.some(c => !c.subs.length)) { openAcc(3); return toast('كل قسم يحتاج مادة واحدة على الأقل، أو احذف القسم', true); }
+      if (cls.some(c => !c.tag)) { if (!m.querySelector('[data-acc="3"]').classList.contains('open')) openAcc(3); return toast('اختر معرّف القسم 2 لكل قسم: ذ ذكور أو إ إناث أو م مختلط', true); }
       const taken = (B().assignments || []).find(a => a.teacher !== t.id && teaching.some(x => x.level === a.level && x.group === a.group && x.subject === a.subject));
       if (taken){ const ot = teacher(taken.teacher); return toast(`${taken.subject} في ${taken.level} ${taken.group} مسندة إلى ${ot ? tName(ot) : 'معلم آخر'}`, true); }
       const levels = [...new Set(cls.map(c => c.level))];
@@ -2102,7 +2103,7 @@ async function downloadTemplate(){
   const levels = P ? Object.keys(P.levels) : (L['المستويات المدرَّسة'] || []);
   const sups = assts().filter(u => u.active);
   const cols = IMPORT_COLS.map(c => c[0]).concat(sups.length > 1 ? ['المساعد'] : []);
-  const lists = { 'الجنس': L['الجنس'] || ['ذكر', 'أنثى'], 'المنصب': posts, 'المستوى المدرَّس': levels, 'معرّف القسم 1': GROUPS,
+  const lists = { 'الجنس': L['الجنس'] || ['ذكر', 'أنثى'], 'المنصب': posts, 'المستوى المدرَّس': levels, 'معرّف القسم 1': GROUPS, 'معرّف القسم 2': TAGS.map(x => x[0]),
                   'المستوى التعليمي': L['المستوى التعليمي'] || [], 'المساعد': sups.map(u => u.name) };
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('المعلمون', { views: [{ rightToLeft: true, state: 'frozen', ySplit: 1 }] });
@@ -2124,12 +2125,19 @@ async function downloadTemplate(){
     vals.forEach((v, i) => { ls.getCell(L1 + (i + 2)).value = v; });
     const ref = `'القوائم'!$${L1}$2:$${L1}$${vals.length + 1}`;
     for (let r = 2; r <= N; r++) ws.getCell(letter(ci) + r).dataValidation = { type: 'list', allowBlank: true, formulae: [ref],
-      showErrorMessage: true, errorStyle: 'stop', errorTitle: h, error: 'اختر من القائمة' + (h === 'معرّف القسم 1' ? ' أو اتركه فارغًا' : '') };
+      showErrorMessage: true, errorStyle: 'stop', errorTitle: h, error: h === 'معرّف القسم 2' ? 'إجباري: ذ = ذكور، إ = إناث، م = مختلط' : 'اختر من القائمة' + (h === 'معرّف القسم 1' ? ' أو اتركه فارغًا' : ''),
+      ...(h === 'معرّف القسم 2' ? { allowBlank: false, showInputMessage: true, promptTitle: 'معرّف القسم 2 (إجباري)', prompt: 'ذ = ذكور\nإ = إناث\nم = مختلط' } : {}) };
   });
   const ei = cols.indexOf('سنوات الخبرة');
   for (let r = 2; r <= N; r++) ws.getCell(letter(ei) + r).dataValidation = { type: 'whole', operator: 'between', allowBlank: true, formulae: [0, 60],
     showErrorMessage: true, errorTitle: 'سنوات الخبرة', error: 'رقم من 0 إلى 60 (0 = معلم جديد)' };
   ws.getCell(letter(cols.length + 1) + '1').value = 'ملاحظة: احذف أسطر المثال الرمادية. المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم. معرّف القسم 1 فارغ = للمستوى قسم واحد';
+  // مفتاح معرّف القسم 2
+  const kc = letter(cols.length + 1);
+  [['مفتاح «معرّف القسم 2» (إجباري)', true]].concat(TAGS.map(([k, n]) => [k + ' = ' + n, false])).forEach(([v, b], i) => {
+    const c = ws.getCell(kc + (i + 3)); c.value = v; c.font = { bold: b, color: { argb: b ? 'FF6B45AD' : 'FF333333' } };
+    if (!b) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1ECFA' } }; });
+  ws.getColumn(cols.length + 2).width = 30;
   const buf = await wb.xlsx.writeBuffer();
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
@@ -2149,8 +2157,8 @@ const normHeader = h => String(h || '').replace(/[ً-ْ]/g, '').replace(/\s+/g, 
 function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
-      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1»: أ أو ب أو ج…، ويُترك فارغًا إن كان للمستوى قسم واحد. وعمود «معرّف القسم 2» اختياري: ذ للذكور أو إ للإناث.
-عمود «معرّف القسم 2»: حر واختياري، مثل ذ للذكور وإ للإناث، ويظهر بين قوسين: الثانية ابتدائية أ (ذ). المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
+      <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1»: أ أو ب أو ج…، ويُترك فارغًا إن كان للمستوى قسم واحد.
+عمود «معرّف القسم 2» إجباري: ذ = ذكور، إ = إناث، م = مختلط، ويظهر بين قوسين: الثانية ابتدائية أ (ذ). المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
         ${IC.xls}<b class="d">اختر ملف إكسل</b><span class="small muted" id="fname">xlsx · xls · csv</span>
@@ -2178,18 +2186,20 @@ function openImport(){
           return o;
         }).filter(o => o.last || o.first);
         const roles = (B().cfg.lists['المنصب'] && B().cfg.lists['المنصب'].length ? B().cfg.lists['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post);
-        rows.forEach(o => { o.role = post(o.role); });
-        const badRow = o => !o.last || !o.first || !roles.includes(o.role) || (o.experience !== '' && !/^\d{1,2}$/.test(o.experience)) || (o.group && !GROUPS.includes(o.group));
+        rows.forEach(o => { o.role = post(o.role); o.tag = normTag(o.tag); });
+        const badRow = o => !o.last || !o.first || !roles.includes(o.role) || (o.experience !== '' && !/^\d{1,2}$/.test(o.experience)) || (o.group && !GROUPS.includes(o.group)) || (o.level && !['ذ', 'إ', 'م'].includes(o.tag) && !tagOf(o.level, o.group || 'أ'));
         const bad = rows.filter(badRow).length;
         const nT = new Set(rows.map(tKey)).size;
         m.querySelector('#prev').innerHTML = rows.length ? `<div class="banner v">${nT} معلمًا · ${rows.length} سطرًا (قسمًا) في الملف${bad ? ` · <span style="color:var(--bad)">${bad} سطرًا فيه خطأ</span>` : ''}</div>
           <div class="tbl-wrap" style="max-height:200px;overflow:auto;margin-top:8px"><table class="tbl"><tbody>
-          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}${o.group ? ' — ' + esc(o.group) : ''}${o.tag ? ' (' + esc(o.tag) + ')' : ''}</td><td class="small" style="${badRow(o) ? 'color:var(--bad)' : ''}">${esc(ROLE_LABEL[o.role] || o.role)}${o.experience !== '' ? ' · ' + esc(o.experience) + ' س' : ''}</td></tr>`).join('')}</tbody></table></div>`
+          ${rows.slice(0, 50).map(o => `<tr><td>${esc(o.last)} ${esc(o.first)}</td><td class="small">${esc(o.level)}${o.group ? ' — ' + esc(o.group) : ''}${o.tag ? ' (' + esc(o.tag) + ')' : ''}${o.level && !['ذ', 'إ', 'م'].includes(o.tag) && !tagOf(o.level, o.group || 'أ') ? ' <b style="color:var(--bad)">(معرّف 2؟)</b>' : ''}</td><td class="small" style="${badRow(o) ? 'color:var(--bad)' : ''}">${esc(ROLE_LABEL[o.role] || o.role)}${o.experience !== '' ? ' · ' + esc(o.experience) + ' س' : ''}</td></tr>`).join('')}</tbody></table></div>`
           : '<div class="banner">لم أجد معلمين في الملف. تأكد من عناوين الأعمدة.</div>';
         m.querySelector('#doImp').disabled = !rows.length;
       } catch(err){ toast('تعذّرت قراءة الملف: ' + err.message, true); }
     };
     m.querySelector('#doImp').onclick = async e => {
+      const noTag = rows.filter(o => o.level && !['ذ', 'إ', 'م'].includes(o.tag) && !tagOf(o.level, o.group || 'أ'));
+      if (noTag.length) return toast(`${noTag.length} سطرًا بلا «معرّف القسم 2» أو بقيمة خاطئة. اكتب ذ أو إ أو م ثم ارفع الملف من جديد`, true);
       try{
         const r = await busy(e.currentTarget, () => api('importTeachers', { rows }));
         if (r.classTags) B().classTags = r.classTags;
@@ -2651,11 +2661,13 @@ function program(){
 }
 const clsKey = (lv, g, sj) => encodeURIComponent([lv, g, sj].join('|'));
 /** معرّف القسم 2 (ذ للذكور، إ للإناث…): يُكتب بين قوسين بعد اسم القسم، إن وُجد */
+const TAGS = [['ذ', 'ذكور'], ['إ', 'إناث'], ['م', 'مختلط']];
+const normTag = t => { t = String(t || '').trim(); return ({ 'ذكور': 'ذ', 'إناث': 'إ', 'اناث': 'إ', 'مختلط': 'م' })[t] || t; };
 const tagOf = (lv, g) => ((S.B && S.B.classTags) || {})[lv + '|' + (g || 'أ')] || '';
 /** دروس القسم: القسم «ذ» لا يرى دروس «إ» والعكس (العمود «خاص بـ» في البرنامج)؛ القسم بلا معرّف 2 يرى الكل */
 const lessonsOf = (lv, g, sj) => { const P = program(), ls = (P && P.levels[lv] && P.levels[lv][sj]) || [], t = tagOf(lv, g);
   return t === 'ذ' || t === 'إ' ? ls.filter(l => !l[4] || l[4] === t) : ls; };
-const needsTag = (lv, g, sj) => !['ذ', 'إ'].includes(tagOf(lv, g)) && lessonsOf(lv, g, sj).some(l => l[4]);
+const needsTag = (lv, g, sj) => !['ذ', 'إ', 'م'].includes(tagOf(lv, g)) && lessonsOf(lv, g, sj).some(l => l[4]);
 const tagTxt = (lv, g) => { const t = tagOf(lv, g); return t ? ' (' + esc(t) + ')' : ''; };
 const logKey = (id, lv, g) => id + '|' + lv + '|' + g;
 function logMap(){
@@ -2749,7 +2761,7 @@ function viewLessons(id){
     lastAx = l[1]; n++;
     return ax + `<div class="lsn ${rec ? 'on' : ''} ${overdue ? 'due' : ''} ${ro ? '' : 'click'}" ${ro ? '' : `data-act="lsn" data-l="${esc(l[0])}" data-k="${esc(id)}"`}>
       <span class="ck">${rec ? IC.check : n}</span>
-      <div class="b"><div>${esc(l[2])}${l[4] && needsTag(lv, g, sj) ? ` <span class="chip ${l[4] === 'ذ' ? 'v' : 'warn'}" style="font-size:11px">${l[4] === 'ذ' ? 'ذكور' : 'إناث'}</span>` : ''}</div><div class="small muted">${l[3] ? 'مقرر في ' + MONTHS_AR[l[3]] : 'بلا شهر'}${overdue ? ' · <b style="color:var(--bad)">متأخر</b>' : ''}</div></div>
+      <div class="b"><div>${esc(l[2])}${l[4] && !['ذ', 'إ'].includes(tagOf(lv, g)) ? ` <span class="chip ${l[4] === 'ذ' ? 'v' : 'warn'}" style="font-size:11px">${l[4] === 'ذ' ? 'ذكور' : 'إناث'}</span>` : ''}</div><div class="small muted">${l[3] ? 'مقرر في ' + MONTHS_AR[l[3]] : 'بلا شهر'}${overdue ? ' · <b style="color:var(--bad)">متأخر</b>' : ''}</div></div>
       ${rec ? `<span class="chip ok" style="white-space:nowrap">${esc(fmtDate(rec[3]))}</span>` : ''}</div>`;
   }).join('');
   return {
@@ -2757,7 +2769,7 @@ function viewLessons(id){
       <div style="margin-top:14px;padding:14px;border-radius:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:#fff"><div class="spread"><b>${p.done} من ${p.total} درس</b>${progChip(p)}</div>
         <div class="bar" style="margin-top:10px;background:rgba(255,255,255,.25)"><i style="width:${p.total ? p.done / p.total * 100 : 0}%;background:#5EE0A8"></i></div>
         <div class="small" style="margin-top:6px;opacity:.85">المقرر حتى الآن حسب التوزيع: ${p.prev}–${p.cur} درس</div></div>`,
-    body: `<div class="stack">${needsTag(lv, g, sj) ? `<div class="banner bad-b">في هذه المادة دروس خاصة بالذكور وأخرى خاصة بالإناث، وهذا القسم لم يُحدَّد له «ذ» أو «إ»، فتظهر له كلها. حدّده من استمارة المعلم ← «ما يدرّسه» ← معرّف القسم 2.</div>` : ''}${ro ? '' : '<div class="small muted">اضغط على الدرس عند تدريسه لتسجيله مع التاريخ.</div>'}${rows || emptyBox('لا توجد دروس لهذه المادة في البرنامج')}</div>`
+    body: `<div class="stack">${needsTag(lv, g, sj) ? `<div class="banner bad-b">في هذه المادة دروس خاصة بالذكور وأخرى خاصة بالإناث، وهذا القسم لم يُحدَّد له «ذ» أو «إ» أو «م»، فتظهر له كلها. حدّده من استمارة المعلم ← «ما يدرّسه» ← معرّف القسم 2.</div>` : ''}${ro ? '' : '<div class="small muted">اضغط على الدرس عند تدريسه لتسجيله مع التاريخ.</div>'}${rows || emptyBox('لا توجد دروس لهذه المادة في البرنامج')}</div>`
   };
 }
 /** ورقة تسجيل درس: شريط الأيام (اليوم افتراضيًا) */
