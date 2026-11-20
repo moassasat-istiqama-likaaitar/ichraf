@@ -556,7 +556,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.6.2';
+const VERSION = '5.6.3';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -949,7 +949,7 @@ function viewCoord(){
       <div class="spread"><b class="d" style="font-size:16px">${esc(r.name)}</b>${cur ? '<span class="chip v" style="padding:0 8px">المفتوحة الآن</span>' : ''}</div>
       <div class="bar"><i style="width:${p}%"></i></div>
       <div class="spread small"><span><b>${r.done}</b> / ${r.planned} زيارة مكتملة · <b>${p}%</b></span><span class="muted">${r.open ? r.open + ' مفتوحة' : ''}</span></div>
-      <div class="small muted">${r.supervisors} مساعد · ${r.teachers} معلم · متوسط النتائج ${r.avg == null ? '—' : esc(String(r.avg))} · ${r.lessons} درسًا مسجّلًا${r.lastVisit ? ' · آخر زيارة ' + esc(r.lastVisit) : ''}</div>
+      <div class="small muted">${r.supervisors} مساعد بيداغوجي · ${r.teachers} معلم · متوسط النتائج ${r.avg == null ? '—' : esc(String(r.avg))} · ${r.lessons} درسًا مسجّلًا${r.lastVisit ? ' · آخر زيارة ' + esc(r.lastVisit) : ''}</div>
       ${r.plans ? `<div class="row" style="gap:6px;margin-top:6px"><span class="chip v">${IC.cal} ${r.plans} موعدًا في الرزنامة</span>${r.plansMissed ? `<span class="chip bad">فاتت ${r.plansMissed}</span>` : ''}${r.plansLate ? `<span class="chip">متأخرة ${r.plansLate}</span>` : ''}</div>` : ''}
       ${fl.length ? `<div class="small" style="color:var(--warn)">⚠ ${fl.map(esc).join(' · ')}</div>` : ''}
       <div class="row" style="gap:8px"><button class="btn btn-p" data-act="enterSchool" data-s="${esc(r.code)}" style="flex:1">دخول المدرسة</button>
@@ -1028,7 +1028,7 @@ function viewNetwork(){
         <div class="n" style="background:${r.avg == null ? 'var(--soft)' : scoreColor(r.avg) + '22'};color:${r.avg == null ? 'var(--muted)' : scoreColor(r.avg)}">${r.avg ?? '—'}</div>
         <div class="b" style="min-width:0"><b class="d">${esc(r.name)}</b>
           <div class="bar" style="margin:6px 0 4px"><i style="width:${pctOf(r)}%"></i></div>
-          <div class="small muted">${r.done}/${r.planned} زيارة · ${pctOf(r)}% · ${r.supervisors} مساعد · ${r.teachers} معلم${r.lastVisit ? ' · آخر زيارة ' + esc(dm(r.lastVisit)) : ''}</div>
+          <div class="small muted">${r.done}/${r.planned} زيارة · ${pctOf(r)}% · ${r.supervisors} مساعد بيداغوجي · ${r.teachers} معلم${r.lastVisit ? ' · آخر زيارة ' + esc(dm(r.lastVisit)) : ''}</div>
           ${r.lateSubjects || r.plansMissed ? `<div class="row" style="gap:6px;margin-top:4px">${r.lateSubjects ? `<span class="chip bad">${r.lateSubjects} مادة متأخرة</span>` : ''}${r.plansMissed ? `<span class="chip bad">${r.plansMissed} موعدًا فات</span>` : ''}</div>` : ''}</div></div>`).join('')}</div>
       <div class="small muted">اضغط على مدرسة لتراها كما يراها مديرها.</div>`;
   } else if (tab === 'coords'){
@@ -1060,7 +1060,7 @@ function viewNetwork(){
   return {
     hero: `<div class="spread" style="margin-top:6px"><h1 style="margin:0">لوحة الإدارة العامة</h1><button class="back no-print" data-act="print">${IC.print} طباعة</button></div>
       <div class="sub">${esc(S.auth.name || '')}</div>
-      <div class="kpis" style="grid-template-columns:repeat(2,1fr)">${kpi(T.schools, 'مدرسة') + kpi(T.teachers, `معلمًا · ${T.supervisors} مساعد`)
+      <div class="kpis" style="grid-template-columns:repeat(2,1fr)">${kpi(T.schools, 'مدرسة') + kpi(T.teachers, `معلمًا · ${T.supervisors} مساعد بيداغوجي`)
         + kpi(`${T.done} <small>/ ${T.planned}</small>`, `زيارة مكتملة · ${pct}%`, 'accent') + kpi(T.avg ?? '—', 'متوسط النتائج')}</div>`,
     body: `<div class="stack">${tabs}${body}</div>`,
     mount
