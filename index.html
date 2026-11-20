@@ -347,6 +347,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .banner{border-radius:16px;padding:11px 14px;font-family:Changa;font-size:14px;background:var(--warn-l);color:var(--warn)}
 .banner.v{background:var(--v100);color:var(--v700)}
 .btn-bad{background:var(--bad);color:#fff}
+.net-r .n{font-size:15px}
 .cal-day{border:1px solid var(--line);border-radius:18px;padding:10px;background:var(--card)}
 .cal-day.today{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-l)}
 .cal-day .stack{gap:8px}
@@ -555,7 +556,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.5.0';
+const VERSION = '5.6.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -662,6 +663,14 @@ applyTheme();
 if (DARK_MQ) (DARK_MQ.addEventListener ? DARK_MQ.addEventListener('change', applyTheme) : DARK_MQ.addListener(applyTheme));
 
 /* ============================== الاتصال ============================== */
+/** معرّف هذا الجهاز ووصفه: لورقة «الأجهزة» (آخر نشاط، والإنهاء عن بُعد) */
+const DID = (() => { let d = LS.get('ishraf.did'); if (!d){ d = Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); LS.set('ishraf.did', d); } return d; })();
+const DEV = (() => { const u = navigator.userAgent || '';
+  const os = /iPhone|iPad/.test(u) ? (/iPad/.test(u) ? 'iPad' : 'iPhone') : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac OS/.test(u) ? 'Mac' : /Linux/.test(u) ? 'Linux' : 'جهاز';
+  const br = /Edg\//.test(u) ? 'Edge' : /SamsungBrowser/.test(u) ? 'Samsung' : /OPR\//.test(u) ? 'Opera' : /Firefox\//.test(u) ? 'Firefox' : /Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : '';
+  const app = matchMedia('(display-mode: standalone)').matches ? ' · مثبّت' : '';
+  return os + (br ? ' · ' + br : '') + app; })();
+const withDev = req => { req.auth = Object.assign({}, req.auth || {}, { did: DID, dev: DEV }); return req; };
 async function api(action, payload = {}){
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 35000);
@@ -670,7 +679,7 @@ async function api(action, payload = {}){
     res = await fetch(API_URL, {
       method: 'POST', signal: ctl.signal,
       headers: { 'Content-Type': 'application/json', apikey: SB_KEY },
-      body: JSON.stringify({ req: Object.assign({ action, cid: CID, auth: S.auth ? { school: S.auth.school, user: S.auth.user, code: S.auth.code } : null }, payload) })
+      body: JSON.stringify({ req: withDev(Object.assign({ action, cid: CID, auth: S.auth ? { school: S.auth.school, user: S.auth.user, code: S.auth.code } : null }, payload)) })
     });
   } catch(e){
     const err = new Error('تعذّر الاتصال بالخادم، تحقق من الإنترنت'); err.net = true; throw err;
@@ -770,12 +779,16 @@ async function runQ(){
 window.addEventListener('beforeunload', e => { if (Q.jobs.length){ e.preventDefault(); e.returnValue = ''; } });
 
 let persistT;
-function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.auth && S.B) LS.set(bootKey(), S.B); }, 300); if (S.auth && S.B && S.B.rt) rtConnect(S.B.rt); }
+function persist(){ clearTimeout(persistT); persistT = setTimeout(() => { if (S.auth && S.B && !onlineOnly()) LS.set(bootKey(), S.B); }, 300); if (S.auth && S.B && S.B.rt) rtConnect(S.B.rt); }
 
 /* ============================== البيانات ============================== */
 const B = () => S.B;
 // المنسق التربوي يرى ما يراه المدير (للاطلاع فقط) في كل مدرسة من مدارسه
-const isCoord = () => S.auth && S.auth.role === 'منسق تربوي';
+const isAdmin = () => S.auth && S.auth.role === 'إدارة عامة';
+// الإدارة العامة = منسق على كل المدارس (للاطلاع فقط)
+const isCoord = () => S.auth && (S.auth.role === 'منسق تربوي' || isAdmin());
+/** المنسق والإدارة العامة: البيانات في ذاكرة التطبيق فقط، لا نسخة في الجهاز */
+const onlineOnly = () => isCoord();
 const isDir = () => S.auth && (S.auth.role === 'مدير' || isCoord());
 const isTeacher = () => S.auth && S.auth.role === 'معلم';
 /** اسم التطبيق: «سيرورة الدروس» للمعلم، و«برنامج الزيارات» للمساعد والمدير */
@@ -964,6 +977,128 @@ function viewCoord(){
     }
   };
 }
+/* ============================== لوحة الإدارة العامة (كل المدارس، للاطلاع فقط) ============================== */
+const pctOf = r => r.planned ? Math.round(100 * r.done / r.planned) : 0;
+/** المؤشرات الحمراء لمدرسة */
+function netFlags(r){
+  const f = [];
+  if (r.teachers && !r.lastVisit) f.push('لا زيارات هذا الموسم');
+  else if (r.teachers && daysSince(r.lastVisit) > 30) f.push(`لا زيارة منذ ${daysSince(r.lastVisit)} يومًا`);
+  if (r.lateSubjects) f.push(`${r.lateSubjects} مادة متأخرة في السيرورة`);
+  if (r.plansMissed) f.push(`${r.plansMissed} موعدًا فات في الرزنامة`);
+  if (r.teachers && !r.supervisors) f.push('بلا مساعد بيداغوجي');
+  return f;
+}
+/** تجميع مؤشرات عدة مدارس (للمنسق وللشبكة) */
+function netSum(rows){
+  const s = k => rows.reduce((a, r) => a + (Number(r[k]) || 0), 0);
+  const sc = rows.filter(r => r.avg != null && r.done);
+  const w = sc.reduce((a, r) => a + r.done, 0);
+  return { schools: rows.length, teachers: s('teachers'), supervisors: s('supervisors'), planned: s('planned'), done: s('done'), open: s('open'),
+    lessons: s('lessons'), late: s('lateSubjects'), missed: s('plansMissed'), plans: s('plans'),
+    avg: w ? Math.round(10 * sc.reduce((a, r) => a + Number(r.avg) * r.done, 0) / w) / 10 : null };
+}
+const NET_SORT = { pct: ['الإنجاز', (a, b) => pctOf(a) - pctOf(b)], avg: ['المتوسط', (a, b) => (a.avg ?? 999) - (b.avg ?? 999)],
+  late: ['التأخر', (a, b) => (b.lateSubjects || 0) - (a.lateSubjects || 0)], plan: ['الرزنامة', (a, b) => (b.plansMissed || 0) - (a.plansMissed || 0)],
+  name: ['الاسم', (a, b) => a.name.localeCompare(b.name, 'ar')] };
+
+function viewNetwork(){
+  const d = S.netOv, tab = S.netTab || 'schools';
+  const kpi = (n, l, cls) => `<div class="glass kpi${cls ? ' ' + cls : ''}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const mount = () => {
+    if (S.netOvAt && Date.now() - S.netOvAt < 60000) return;
+    S.netOvAt = Date.now();
+    api('networkOverview').then(r => { S.netOv = r; if (route().r === '') render(true); }).catch(e => { S.netOvAt = 0; toast(e.message, true); });
+  };
+  if (!d) return { hero: `<h1>لوحة الإدارة العامة</h1><div class="sub">${esc(S.auth.name || '')} · جارٍ جمع بيانات كل المدارس…</div>
+      <div class="kpis" style="grid-template-columns:repeat(2,1fr)"><div class="sk" style="height:70px"></div><div class="sk" style="height:70px"></div></div>`,
+    body: '<div class="sk" style="height:120px"></div><div class="sk" style="height:220px;margin-top:12px"></div>', mount };
+  const rows = d.schools, T = netSum(rows), pct = T.planned ? Math.round(100 * T.done / T.planned) : 0;
+  const flagged = rows.filter(r => netFlags(r).length);
+  const tabs = `<div class="tabs no-print">${[['schools', 'المدارس'], ['coords', 'المنسقون'], ['axes', 'الأبعاد والتقديرات']].map(([k, l]) => `<button class="tab ${tab === k ? 'on' : ''}" data-act="netTab" data-k="${k}">${l}</button>`).join('')}</div>`;
+  let body;
+  if (tab === 'schools'){
+    const sk = S.netSort || 'pct', list = rows.slice().sort(NET_SORT[sk][1]);
+    body = `${flagged.length ? `<div class="sec-t" style="color:var(--bad)">تحتاج متابعة <span class="chip bad">${flagged.length}</span></div>
+      <div class="stack">${flagged.map(r => `<div class="slot click" data-act="enterSchool" data-s="${esc(r.code)}"><div class="b"><b class="d">${esc(r.name)}</b>
+        <div class="small" style="color:var(--bad)">${netFlags(r).map(esc).join(' · ')}</div></div><span class="chip">${pctOf(r)}%</span></div>`).join('')}</div>` : ''}
+      <div class="spread" style="margin-top:18px;flex-wrap:wrap;gap:8px"><div class="sec-t" style="margin:0">ترتيب المدارس</div>
+        <div class="seg no-print">${Object.entries(NET_SORT).map(([k, [l]]) => `<button data-act="netSort" data-k="${k}" class="${sk === k ? 'on' : ''}">${l}</button>`).join('')}</div></div>
+      <div class="stack net-l">${list.map(r => `<div class="slot click net-r" data-act="enterSchool" data-s="${esc(r.code)}">
+        <div class="n" style="background:${r.avg == null ? 'var(--soft)' : scoreColor(r.avg) + '22'};color:${r.avg == null ? 'var(--muted)' : scoreColor(r.avg)}">${r.avg ?? '—'}</div>
+        <div class="b" style="min-width:0"><b class="d">${esc(r.name)}</b>
+          <div class="bar" style="margin:6px 0 4px"><i style="width:${pctOf(r)}%"></i></div>
+          <div class="small muted">${r.done}/${r.planned} زيارة · ${pctOf(r)}% · ${r.supervisors} مساعد · ${r.teachers} معلم${r.lastVisit ? ' · آخر زيارة ' + esc(dm(r.lastVisit)) : ''}</div>
+          ${r.lateSubjects || r.plansMissed ? `<div class="row" style="gap:6px;margin-top:4px">${r.lateSubjects ? `<span class="chip bad">${r.lateSubjects} مادة متأخرة</span>` : ''}${r.plansMissed ? `<span class="chip bad">${r.plansMissed} موعدًا فات</span>` : ''}</div>` : ''}</div></div>`).join('')}</div>
+      <div class="small muted">اضغط على مدرسة لتراها كما يراها مديرها.</div>`;
+  } else if (tab === 'coords'){
+    const byCode = Object.fromEntries(rows.map(r => [r.code, r]));
+    const covered = new Set(d.coordinators.flatMap(c => c.schools));
+    const groups = d.coordinators.map(c => ({ name: c.name, rows: c.schools.map(x => byCode[x]).filter(Boolean) }))
+      .concat(rows.some(r => !covered.has(r.code)) ? [{ name: 'بلا منسق', none: true, rows: rows.filter(r => !covered.has(r.code)) }] : []);
+    body = groups.length ? groups.map(g => { const t = netSum(g.rows), p = t.planned ? Math.round(100 * t.done / t.planned) : 0;
+      return `<div class="card stack" style="gap:10px${g.none ? ';border:1.5px dashed var(--line)' : ''}">
+        <div class="spread"><b class="d" style="font-size:16px">${esc(g.name)}</b><span class="chip v">${t.schools} مدارس</span></div>
+        <div class="bar"><i style="width:${p}%"></i></div>
+        <div class="small"><b>${t.done}</b> / ${t.planned} زيارة مكتملة · <b>${p}%</b> · متوسط ${t.avg ?? '—'} · ${t.teachers} معلم${t.late ? ` · <span style="color:var(--bad)">${t.late} مادة متأخرة</span>` : ''}${t.missed ? ` · <span style="color:var(--bad)">${t.missed} موعدًا فات</span>` : ''}</div>
+        <div class="row" style="gap:6px">${g.rows.map(r => `<button class="chip ${netFlags(r).length ? 'bad' : ''}" style="border:0" data-act="enterSchool" data-s="${esc(r.code)}">${esc(r.name)} · ${pctOf(r)}%</button>`).join('')}</div></div>`; }).join('')
+      : emptyBox('لا يوجد منسقون بعد');
+    body = `<div class="small muted">مدرسة يتابعها منسقان تظهر تحت الاثنين، وتُحسب مرة واحدة في مجموع الشبكة.</div><div class="stack" style="margin-top:10px">${body}</div>`;
+  } else {
+    const gt = d.grades.reduce((a, g) => a + g.n, 0) || 1;
+    const ax = d.axes.filter(a => a.pct != null);
+    const rank = ax.slice().sort((a, b) => b.pct - a.pct), top = new Set(rank.slice(0, 3).map(a => a.id)), low = new Set(rank.slice(-3).map(a => a.id));
+    let last = '';
+    body = `<div class="sec-t">توزيع التقديرات <span class="small muted" style="font-weight:400">(الزيارات المكتملة)</span></div>
+      <div class="card stack" style="gap:10px">${d.grades.map(g => `<div><div class="spread small"><span>${esc(g.label)}</span><b>${g.n} · ${Math.round(100 * g.n / gt)}%</b></div><div class="bar"><i style="width:${100 * g.n / gt}%"></i></div></div>`).join('')}</div>
+      <div class="sec-t" style="margin-top:18px">الأبعاد على مستوى الشبكة</div>
+      ${ax.length ? `<div class="card stack" style="gap:10px">${d.axes.map(a => { const head = a.section !== last ? `<div class="small muted d" style="margin-top:6px">${esc(last = a.section)}</div>` : '';
+        return head + (a.pct == null ? `<div class="spread small muted"><span>${esc(a.name)}</span><span>—</span></div>`
+          : `<div><div class="spread small"><span>${esc(a.name)} ${top.has(a.id) ? '<span class="chip ok" style="padding:0 7px">الأقوى</span>' : low.has(a.id) ? '<span class="chip bad" style="padding:0 7px">الأضعف</span>' : ''}</span><b style="color:${scoreColor(a.pct)}">${a.pct}%</b></div><div class="bar"><i style="width:${a.pct}%;background:${scoreColor(a.pct)}"></i></div></div>`); }).join('')}</div>
+        <div class="small muted">النسبة: متوسط علامات بنود البعد في كل الزيارات المكتملة، مقيسة على سلّم التقييم.</div>` : emptyBox('لا توجد زيارات مكتملة بعد')}`;
+  }
+  return {
+    hero: `<div class="spread" style="margin-top:6px"><h1 style="margin:0">لوحة الإدارة العامة</h1><button class="back no-print" data-act="print">${IC.print} طباعة</button></div>
+      <div class="sub">${esc(S.auth.name || '')} · الموسم ${esc(d.season)} · للاطلاع فقط · ${esc(d.at)}</div>
+      <div class="kpis" style="grid-template-columns:repeat(2,1fr)">${kpi(T.schools, 'مدرسة') + kpi(T.teachers, `معلمًا · ${T.supervisors} مساعد`)
+        + kpi(`${T.done} <small>/ ${T.planned}</small>`, `زيارة مكتملة · ${pct}%`, 'accent') + kpi(T.avg ?? '—', 'متوسط النتائج')}</div>`,
+    body: `<div class="stack">${tabs}${body}</div>`,
+    mount
+  };
+}
+
+/* ===== دخول الإدارة العامة: 5 ضغطات متتالية على الشعار في شاشة الدخول ===== */
+let LOGO_TAPS = [];
+document.addEventListener('click', e => {
+  if (S.auth || !e.target.closest('.brandbig .mark')) return;
+  const now = Date.now(); LOGO_TAPS = LOGO_TAPS.filter(t => now - t < 3000).concat(now);
+  if (LOGO_TAPS.length >= 5){ LOGO_TAPS = []; buzz([10, 40, 10]); adminLogin(); }
+});
+function adminLogin(){
+  document.onkeydown = null; S.L.step = 'admin';
+  $('#app').innerHTML = loginFrame(`<div class="stack"><h2 style="margin:0;font-family:Changa">الإدارة العامة</h2>
+    <label class="field"><span>اسم المستخدم</span><input id="aU" autocomplete="username" dir="ltr" style="text-align:right" autocapitalize="off"></label>
+    <label class="field"><span>الرمز (6 أرقام)</span><input id="aC" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" dir="ltr" style="text-align:right;letter-spacing:6px"></label>
+    <button class="btn btn-p btn-block" id="aOk" style="min-height:52px">دخول</button>
+    <button class="btn btn-g btn-block" id="aBack">رجوع</button></div>`);
+  $('#aU').focus();
+  $('#aBack').onclick = () => { S.L.step = ''; renderLogin(); };
+  const go_ = async () => {
+    const user = $('#aU').value.trim(), code = $('#aC').value.trim();
+    if (!user) return toast('اكتب اسم المستخدم', true);
+    if (!/^\d{6}$/.test(code)) return toast('الرمز من 6 أرقام', true);
+    try{
+      const r = await busy($('#aOk'), () => api('adminLogin', { user, code }));
+      S.auth = { school: r.school, user: r.user.id, code: r.code, name: r.user.name, role: r.user.role };
+      LS.set('ishraf.auth', S.auth);
+      S.B = null; S.netOv = null; S.netOvAt = 0;
+      history.replaceState(null, '', location.pathname + '#/'); S.lastRoute = null;
+      boot();
+    } catch(e){ toast(e.message, true); $('#aC').value = ''; $('#aC').focus(); }
+  };
+  $('#aOk').onclick = go_;
+  $('#aC').onkeydown = e => { if (e.key === 'Enter') go_(); };
+}
 /** يدخل مدرسة من اللوحة: نفس المدرسة = انتقال فقط، غيرها = تحميل بياناتها */
 function enterSchool(code, to){
   to = to || '#/tea';
@@ -976,11 +1111,12 @@ function enterSchool(code, to){
 
 async function boot(){
   if (!S.auth) return render();
-  const cached = LS.get(bootKey());
+  if (onlineOnly()) LS.del(bootKey());   // لا نسخة محفوظة للمنسق والإدارة العامة
+  const cached = onlineOnly() ? null : LS.get(bootKey());
   if (cached && cached.cfg){ S.B = cached; render(); refreshBg(); return; }
   $('#app').innerHTML = skeleton();
   try { const t0 = performance.now(); S.B = await api('bootstrap'); notePerf(S.B, t0); persist(); render(); }
-  catch(e){ handleAuthError(e) || ($('#app').innerHTML = `<div class="login"><div class="lcard stack"><div class="banner">${esc(e.message)}</div><button class="btn btn-p btn-block" onclick="boot()">إعادة المحاولة</button></div></div>`); }
+  catch(e){ handleAuthError(e) || ($('#app').innerHTML = `<div class="login"><div class="lcard stack"><div class="banner">${esc(e.net && onlineOnly() ? 'تحتاج اتصالًا بالإنترنت: البيانات لا تُحفظ على هذا الجهاز.' : e.message)}</div><button class="btn btn-p btn-block" onclick="boot()">إعادة المحاولة</button></div></div>`); }
 }
 /** زمن آخر تحميل: الكلي (مع الشبكة) وزمن الخادم، للتشخيص في «حسابي» */
 function perfLine(){
@@ -1021,7 +1157,9 @@ async function refreshBg(force){
   } catch(e){ setSync(e.net ? 'offline' : 'ok'); if (!e.net) LS.set('ishraf.lastErr', { msg: e.message, at: Date.now() }); const el = document.getElementById('perfLine'); if (el) el.innerHTML = perfLine(); handleAuthError(e); }
 }
 function logout(silent){
+  if (S.auth && !silent) api('logout').catch(() => {});   // يظهر «خرج» في ورقة الأجهزة
   if (S.auth) LS.del(bootKey());
+  S.netOv = null; S.coordOv = null;
   rtClose();
   S.auth = null; S.B = null; LS.del('ishraf.auth'); S.L = { step: '' };
   if (!silent) toast('تم الخروج');
@@ -1049,6 +1187,7 @@ function render(keep){
   if (r === 'blank' && !isTeacher()) return renderBlank(id);
   let v;
   if (isTeacher()) v = r === 'me' ? viewMe() : r === 'cls' ? viewLessons(id) : viewTeacherHome();
+  else if (isAdmin() && r === '') v = viewNetwork();
   else if (isCoord() && r === '') v = viewCoord();
   else if (r === 'cal') v = viewCal();
   else if (r === 'prog') v = viewProgress();
@@ -1074,8 +1213,8 @@ function render(keep){
 }
 function topbar(){
   return `<div class="topbar"><div class="mark"><img src="emblem.svg" alt=""></div>
-    <div class="tb-t"><b>${esc(B().school.name || appName())}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
-    ${isCoord() && route().r !== '' ? `<a class="coord-b" href="#/">→ لوحة المنسق</a>` : ''}
+    <div class="tb-t"><b>${esc(isAdmin() && route().r === '' ? 'الإدارة العامة' : (B().school.name || appName()))}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
+    ${isCoord() && route().r !== '' ? `<a class="coord-b" href="#/">→ ${isAdmin() ? 'لوحة الإدارة العامة' : 'لوحة المنسق'}</a>` : ''}
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
@@ -1120,7 +1259,7 @@ function navBadges(){
 /* ============================== الدخول ============================== */
 async function loadDir(force){
   const cached = LS.get('ishraf.dir');
-  if (cached && !force) { S.L.dir = cached; api('start').then(d => { LS.set('ishraf.dir', d); if (JSON.stringify(d) !== JSON.stringify(S.L.dir)){ S.L.dir = d; if (!S.auth && !['pin', 'new1', 'new2'].includes(S.L.step)) renderLogin(); } }).catch(() => {}); return; }
+  if (cached && !force) { S.L.dir = cached; api('start').then(d => { LS.set('ishraf.dir', d); if (JSON.stringify(d) !== JSON.stringify(S.L.dir)){ S.L.dir = d; if (!S.auth && !['pin', 'new1', 'new2', 'admin'].includes(S.L.step)) renderLogin(); } }).catch(() => {}); return; }
   S.L.dir = await api('start');
   LS.set('ishraf.dir', S.L.dir);
 }
@@ -3310,6 +3449,8 @@ const ACT = {
   assignSheet: el => assignSheet(el.dataset.id),
 
   startVisit: el => startVisitSheet(teacher(el.dataset.id)),
+  netTab: el => { S.netTab = el.dataset.k; render(true); },
+  netSort: el => { S.netSort = el.dataset.k; render(true); },
   calSup: el => { S.cal.sup = el.dataset.k; render(true); },
   calMode: el => { S.cal.mode = el.dataset.k; LS.set('ishraf.calMode', S.cal.mode); if (S.cal.mode === 'month') S.cal.day = S.cal.at; render(true); },
   calNav: el => { const c = S.cal, n = Number(el.dataset.d);
