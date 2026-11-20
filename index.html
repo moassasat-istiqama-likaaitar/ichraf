@@ -556,7 +556,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.6.0';
+const VERSION = '5.6.1';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -1218,7 +1218,10 @@ function topbar(){
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
+  // الإدارة العامة: لوحتي + حسابي، والقائمة العادية فقط داخل مدرسة (من ضغطة على مدرسة إلى الرجوع للوحة)
+  if (isAdmin()){ if (r === '') S.inSchool = false; else if (r !== 'me') S.inSchool = true; }
   const items = isTeacher() ? [['#/', '', 'دروسي', IC.book2], ['#/me', 'me', 'حسابي', IC.me]]
+    : isAdmin() && !S.inSchool ? [['#/', '', 'لوحتي', IC.shield], ['#/me', 'me', 'حسابي', IC.me]]
     : isCoord()
     ? [['#/', '', 'لوحتي', IC.shield], ['#/tea', 'tea', 'المعلمون', IC.users], ['#/vis', 'vis', 'الزيارات', IC.clip], ['#/prog', 'prog', 'السيرورة', IC.road], ['#/stats', 'stats', 'الإحصاءات', IC.chart], ['#/me', 'me', 'حسابي', IC.me]]
     : isDir()
