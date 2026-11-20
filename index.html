@@ -556,7 +556,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.6.1';
+const VERSION = '5.6.2';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -1059,7 +1059,7 @@ function viewNetwork(){
   }
   return {
     hero: `<div class="spread" style="margin-top:6px"><h1 style="margin:0">لوحة الإدارة العامة</h1><button class="back no-print" data-act="print">${IC.print} طباعة</button></div>
-      <div class="sub">${esc(S.auth.name || '')} · الموسم ${esc(d.season)} · للاطلاع فقط · ${esc(d.at)}</div>
+      <div class="sub">${esc(S.auth.name || '')}</div>
       <div class="kpis" style="grid-template-columns:repeat(2,1fr)">${kpi(T.schools, 'مدرسة') + kpi(T.teachers, `معلمًا · ${T.supervisors} مساعد`)
         + kpi(`${T.done} <small>/ ${T.planned}</small>`, `زيارة مكتملة · ${pct}%`, 'accent') + kpi(T.avg ?? '—', 'متوسط النتائج')}</div>`,
     body: `<div class="stack">${tabs}${body}</div>`,
@@ -1169,6 +1169,8 @@ function logout(silent){
 
 function render(keep){
   PS_MEMO = null;
+  // الإدارة العامة «داخل مدرسة» من ضغطة على مدرسة إلى الرجوع للوحة؛ «حسابي» يبقي الحال كما هي
+  if (isAdmin()){ const r0 = route().r; if (r0 === '') S.inSchool = false; else if (r0 !== 'me') S.inSchool = true; }
   $('#app').classList.remove('shell');
   // أثناء التحميل الأول نعرض الهياكل، ولا نعود لشاشة الدخول إلا إن لم يكن هناك حساب
   if (S.auth && !S.B && !['new1', 'new2'].includes(S.L.step)){ $('#app').innerHTML = skeleton(); return; }
@@ -1213,13 +1215,12 @@ function render(keep){
 }
 function topbar(){
   return `<div class="topbar"><div class="mark"><img src="emblem.svg" alt=""></div>
-    <div class="tb-t"><b>${esc(isAdmin() && route().r === '' ? 'الإدارة العامة' : (B().school.name || appName()))}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
-    ${isCoord() && route().r !== '' ? `<a class="coord-b" href="#/">→ ${isAdmin() ? 'لوحة الإدارة العامة' : 'لوحة المنسق'}</a>` : ''}
+    <div class="tb-t"><b>${esc(isAdmin() && !S.inSchool ? 'الإدارة العامة' : (B().school.name || appName()))}</b><small>${esc(B().cfg.season)} · ${esc(S.auth.role === 'مشرف' ? ASST : S.auth.role)}${isMain() ? ' رئيسي' : ''}</small></div>
+    ${isAdmin() ? (S.inSchool ? '<a class="coord-b" href="#/">→ اللوحة</a>' : '') : isCoord() && route().r !== '' ? '<a class="coord-b" href="#/">→ لوحة المنسق</a>' : ''}
     <span class="sync"><i></i><span>محفوظ</span></span></div>`;
 }
 function bottomNav(r){
   // الإدارة العامة: لوحتي + حسابي، والقائمة العادية فقط داخل مدرسة (من ضغطة على مدرسة إلى الرجوع للوحة)
-  if (isAdmin()){ if (r === '') S.inSchool = false; else if (r !== 'me') S.inSchool = true; }
   const items = isTeacher() ? [['#/', '', 'دروسي', IC.book2], ['#/me', 'me', 'حسابي', IC.me]]
     : isAdmin() && !S.inSchool ? [['#/', '', 'لوحتي', IC.shield], ['#/me', 'me', 'حسابي', IC.me]]
     : isCoord()
@@ -1816,7 +1817,7 @@ function viewMe(){
   const ios = /iphone|ipad/i.test(navigator.userAgent);
   return {
     hero: `<div style="display:flex;align-items:center;gap:14px;margin-top:18px"><div class="pin-top"><span class="ini" style="${avGrad(S.auth.name)};width:64px;height:64px;font-size:22px">${esc(initials(S.auth.name))}</span></div>
-      <div><h1 style="margin:0;font-size:23px">${esc(S.auth.name)}</h1><div class="sub">${esc(S.auth.role)} · ${esc(B().school.name)}</div></div></div>`,
+      <div><h1 style="margin:0;font-size:23px">${esc(S.auth.name)}</h1><div class="sub">${esc(S.auth.role)}${isAdmin() ? '' : ' · ' + esc(B().school.name)}</div></div></div>`,
     body: `<div class="stack">
       <div class="card stack"><div class="spread"><b class="d">المظهر</b>
         <div class="seg" id="thSeg">${[['auto', 'تلقائي'], ['light', 'نهاري'], ['dark', 'ليلي']].map(([k, l]) => `<button data-th="${k}" class="${th === k ? 'on' : ''}">${l}</button>`).join('')}</div></div></div>
