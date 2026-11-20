@@ -556,7 +556,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.6.3';
+const VERSION = '5.6.4';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -2113,7 +2113,7 @@ function viewDirector(tab){
   const planned = ts.filter(x => x.active).reduce((a, x) => a + x.planned, 0);
   const tabs = isMain() ? `<div class="seg" style="margin-top:14px">${[['sup', 'المساعدون'], ['tea', 'الإسناد'], ['vis', 'كل الزيارات']].map(([k, l]) => `<button data-go="#/${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>` : '';
   const hero = `<h1>${{ sup: 'المساعدون البيداغوجيون', tea: 'المعلمون', vis: 'زيارات المساعدين' }[tab]}</h1><div class="sub">مرحبًا ${esc(S.auth.name.split(' ')[0])} · ${esc(B().school.name)}${ro ? ' · للاطلاع فقط' : ''}</div>${tabs}${isDir() && tab === 'vis' ? visitsTabs('vis') : ''}
-    <div class="kpis"><div class="kpi glass"><div class="n">${sups.filter(u => u.active).length}</div><div class="l">مساعد</div></div>
+    <div class="kpis"><div class="kpi glass"><div class="n">${sups.filter(u => u.active).length}</div><div class="l">مساعد بيداغوجي</div></div>
       <div class="kpi glass"><div class="n">${ts.filter(x => x.active).length}</div><div class="l">معلم</div></div>
       <div class="kpi glass accent"><div class="n">${done}<small> / ${planned}</small></div><div class="l">زيارة مكتملة</div></div></div>`;
   let body = '', mount;
@@ -2142,7 +2142,7 @@ function viewDirector(tab){
     const noCls = ts.filter(noClass).length;
     const wide = matchMedia('(min-width:900px)').matches;
     const useK = wide && S.kanban && !ro;
-    body = `<div class="spread"><div class="sec-t" style="margin:0">${ro ? 'المعلمون والمساعدون' : 'الإسناد'}</div>
+    body = `<div class="spread"><div class="sec-t" style="margin:0">${ro ? 'المعلمون والمساعدون البيداغوجيون' : 'الإسناد'}</div>
         ${ro ? '' : `<div class="row">${wide ? `<button class="btn btn-g" data-act="toggleKanban">${useK ? IC.list + ' قائمة' : IC.cols + ' أعمدة'}</button>` : ''}
           <button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div>`}</div>
       ${unassigned && !ro ? `<div class="banner" style="margin-top:12px">${unassigned} معلمين غير مسندين — ${useK ? 'اسحبهم إلى عمود المساعد' : 'اضغط على «إسناد» بجانب كل معلم'}</div>` : ''}
