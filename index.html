@@ -346,6 +346,26 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .empty svg{opacity:.4;margin-bottom:8px}
 .banner{border-radius:16px;padding:11px 14px;font-family:Changa;font-size:14px;background:var(--warn-l);color:var(--warn)}
 .banner.v{background:var(--v100);color:var(--v700)}
+.btn-bad{background:var(--bad);color:#fff}
+.cal-day{border:1px solid var(--line);border-radius:18px;padding:10px;background:var(--card)}
+.cal-day.today{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-l)}
+.cal-day .stack{gap:8px}
+.cal-dh{font-family:Changa;font-weight:600;font-size:14px;margin:0 4px 8px;color:var(--ink)}
+.cal-add{min-height:36px;margin-top:8px;font-size:13px}
+.cal-m{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal-m small{font-size:11.5px;color:var(--muted);padding:4px 0}
+.cal-c{border:1px solid var(--line);background:var(--card);border-radius:12px;min-height:54px;padding:4px 2px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink)}
+.cal-c b{font-family:Changa;font-weight:600;font-size:14px}
+.cal-c.out{opacity:.4}
+.cal-c.today{border-color:var(--amber)}
+.cal-c.on{border-color:var(--v600);background:var(--v50)}
+.cal-c span{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.cal-c i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.cal-c i.done{background:var(--ok)}.cal-c i.late{background:var(--v600)}.cal-c i.today{background:var(--amber)}.cal-c i.missed{background:var(--bad)}
+.slot.plan-r.missed{border-inline-start:3px solid var(--bad)}
+.slot.plan-r.today{border-inline-start:3px solid var(--amber)}
+.slot.plan-r.done .n{background:var(--ok-l);color:var(--ok)}
+.pl-slot .seg button{padding:7px 12px}
 .banner.bad-b{background:var(--bad-l);color:var(--bad)}
 .kc.nocls{border-inline-start:3px solid var(--bad)}
 :root[data-theme="dark"] .banner.v{color:var(--v300)}
@@ -535,7 +555,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.4.7';
+const VERSION = '5.5.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -574,6 +594,7 @@ const IC = {
   road:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h11a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h11"/><circle cx="4" cy="6" r="1.6"/><circle cx="20" cy="18" r="1.6"/></svg>',
   chart:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   print:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg>',
+  cal:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-3px"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
   empty:'<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
 };
 
@@ -885,7 +906,7 @@ function skeleton(){
 }
 
 /* ============================== التوجيه ============================== */
-const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3, codes: 3, blank: 3 };
+const ROUTES_DEPTH = { '': 0, sup: 0, tea: 0, vis: 0, visits: 0, prog: 0, stats: 0, me: 0, cal: 0, t: 1, cls: 1, v: 2, fill: 3, close: 3, report: 3, codes: 3, blank: 3 };
 function go(h){ if (location.hash === h) render(); else location.hash = h; }
 window.addEventListener('hashchange', () => render());
 
@@ -916,6 +937,7 @@ function viewCoord(){
       <div class="bar"><i style="width:${p}%"></i></div>
       <div class="spread small"><span><b>${r.done}</b> / ${r.planned} زيارة مكتملة · <b>${p}%</b></span><span class="muted">${r.open ? r.open + ' مفتوحة' : ''}</span></div>
       <div class="small muted">${r.supervisors} مساعد · ${r.teachers} معلم · متوسط النتائج ${r.avg == null ? '—' : esc(String(r.avg))} · ${r.lessons} درسًا مسجّلًا${r.lastVisit ? ' · آخر زيارة ' + esc(r.lastVisit) : ''}</div>
+      ${r.plans ? `<div class="row" style="gap:6px;margin-top:6px"><span class="chip v">${IC.cal} ${r.plans} موعدًا في الرزنامة</span>${r.plansMissed ? `<span class="chip bad">فاتت ${r.plansMissed}</span>` : ''}${r.plansLate ? `<span class="chip">متأخرة ${r.plansLate}</span>` : ''}</div>` : ''}
       ${fl.length ? `<div class="small" style="color:var(--warn)">⚠ ${fl.map(esc).join(' · ')}</div>` : ''}
       <div class="row" style="gap:8px"><button class="btn btn-p" data-act="enterSchool" data-s="${esc(r.code)}" style="flex:1">دخول المدرسة</button>
         <button class="btn btn-g" data-act="enterSchool" data-s="${esc(r.code)}" data-to="#/sup">المساعدون</button></div>
@@ -1008,6 +1030,7 @@ function logout(silent){
 }
 
 function render(keep){
+  PS_MEMO = null;
   $('#app').classList.remove('shell');
   // أثناء التحميل الأول نعرض الهياكل، ولا نعود لشاشة الدخول إلا إن لم يكن هناك حساب
   if (S.auth && !S.B && !['new1', 'new2'].includes(S.L.step)){ $('#app').innerHTML = skeleton(); return; }
@@ -1027,6 +1050,7 @@ function render(keep){
   let v;
   if (isTeacher()) v = r === 'me' ? viewMe() : r === 'cls' ? viewLessons(id) : viewTeacherHome();
   else if (isCoord() && r === '') v = viewCoord();
+  else if (r === 'cal') v = viewCal();
   else if (r === 'prog') v = viewProgress();
   else if (r === 'cls') v = viewLessons(id);
   else if (r === 'stats') v = viewStats();
@@ -1066,6 +1090,7 @@ function bottomNav(r){
   let cur = ['t', 'v', 'close'].includes(r) ? (isDir() ? 'tea' : '') : (isDir() && !isCoord() && r === '' ? 'sup' : r);
   if (isMain() && ['sup', 'tea', 'vis'].includes(r)) cur = 'team';
   if (r === 'cls') cur = isTeacher() ? '' : 'prog';
+  if (r === 'cal') cur = isDir() ? 'vis' : 'visits';
   const bd = navBadges();
   return `<nav class="bnav${items.length > 5 ? ' n6' : ''}">${items.map(([h, k, l, i]) => `<a href="${h}" class="${k === cur ? 'on' : ''}" style="position:relative">${i}<span>${l}</span>${bd[k] ? `<b class="badge">${bd[k]}</b>` : ''}</a>`).join('')}</nav>`;
 }
@@ -1074,6 +1099,8 @@ function bottomNav(r){
 function navBadges(){
   const out = {};
   try{
+    // مواعيد الرزنامة التي فاتت: على تبويب الزيارات (مواعيد معلميه للمساعد، وكل المدرسة للمدير)
+    if (!isTeacher()){ const st = planStates(), l = isDir() ? plansAll() : myPlans(); out[isDir() ? 'vis' : 'visits'] = l.filter(p => st[p.id].st === 'missed').length; }
     if (!PROG || PROG.ver !== B().progVer) return out;
     const map = logMap(), list = B().assignments || [];
     if (isTeacher()){
@@ -1224,7 +1251,7 @@ function teacherCard(t){
   return `<div class="card tcard" data-go="#/t/${esc(t.id)}">${avatar(tName(t), t.planned ? done / t.planned : 0, color)}
     <div class="b"><h3>${esc(tName(t))}</h3>
       <div class="small muted">${esc(ROLE_LABEL[t.role] || '')} · ${esc(t.level || '—')}${t.experience === 0 ? ' · <span class="chip clay" style="padding:0 8px">جديد</span>' : ''}</div>
-      <div class="row" style="margin-top:4px;gap:6px">${chip}${noClass(t) ? NOCLS : ''}${seeAll() && t.supervisor !== S.auth.user ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
+      <div class="row" style="margin-top:4px;gap:6px">${chip}${planChip(t)}${noClass(t) ? NOCLS : ''}${seeAll() && t.supervisor !== S.auth.user ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
     ${last ? `<span class="score-pill" style="background:${scoreColor(last.score)}22;color:${scoreColor(last.score)}">${last.score}</span>` : ''}</div>`;
 }
 function filterTeachers(list){
@@ -1248,8 +1275,9 @@ function viewSupervisor(){
         <div class="kpi glass"><div class="n">${done}<small> / ${planned}</small></div><div class="l">زيارة مكتملة</div></div>
         <div class="kpi glass accent"><div class="n">${open}</div><div class="l">مفتوحة الآن</div></div></div>`,
     body: `<div class="stack">
-      <div class="spread"><div class="sec-t" style="margin:0">معلميّ</div>
-        ${isMain() ? `<div class="row"><button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button></div>` : ''}</div>
+      ${planBanners(myPlans())}
+      <div class="spread" style="flex-wrap:wrap;gap:8px"><div class="sec-t" style="margin:0">معلميّ</div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-g" data-go="#/cal">${IC.cal} الرزنامة</button>${isMain() ? `<button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button>` : ''}</div></div>
       <div class="search">${IC.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>
       <div class="tabs">${f('all', 'الكل')}${f('none', 'لم تكتمل')}${f('open', 'مفتوحة')}${f('done', 'مكتملة')}</div>
       ${list.length ? `<div class="grid g2">${list.map(teacherCard).join('')}</div>` : emptyBox(ts.length ? 'لا نتائج مطابقة' : isMain() ? 'لا يوجد معلمون مسندون إليك بعد.<br>أضف معلمًا أو استورد قائمة من إكسل، أو أسندهم من صفحة «الفريق».' : 'لا يوجد معلمون مسندون إليك بعد.<br>اطلب من المساعد البيداغوجي الرئيسي إسنادهم إليك.')}
@@ -1276,7 +1304,7 @@ function viewMyVisits(){
   const done = mine.filter(v => v.status === 'مكتملة').sort((a, b) => (b.closed || '').localeCompare(a.closed || ''));
   const avg = done.length ? Math.round(done.reduce((a, v) => a + (v.score || 0), 0) / done.length * 10) / 10 : null;
   return {
-    hero: `<h1>زياراتي</h1><div class="sub">الموسم ${esc(B().cfg.season)}</div>
+    hero: `<h1>زياراتي</h1><div class="sub">الموسم ${esc(B().cfg.season)}</div>${visitsTabs('visits')}
       <div class="kpis"><div class="kpi glass accent"><div class="n">${open.length}</div><div class="l">مفتوحة</div></div>
         <div class="kpi glass"><div class="n">${done.length}</div><div class="l">مكتملة</div></div>
         <div class="kpi glass"><div class="n">${avg ?? '—'}</div><div class="l">متوسط النقاط</div></div></div>`,
@@ -1286,6 +1314,310 @@ function viewMyVisits(){
       ${done.length ? `<div class="stack">${done.map(v => visitRow(v)).join('')}</div>` : emptyBox('لم تُغلق أي زيارة بعد')}
     </div>`
   };
+}
+
+/* ============================== رزنامة الزيارات (سرية: لا يراها المعلم) ============================== */
+const QURAN = 'القرآن الكريم';
+const PL_ST = { done: ['تمّ', 'ok'], late: ['تمّ متأخرًا', 'v'], today: ['اليوم', 'warn'], due: ['قادم', ''], missed: ['فاتت', 'bad'] };
+const PL_REASONS = ['غياب المعلم', 'غياب المساعد', 'نشاط في المدرسة', 'عطلة أو مناسبة', 'ظرف طارئ'];
+const plansAll = () => (B() && B().plans) || [];
+const todayIso = () => isoDate(new Date());
+const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return isoDate(d); };
+const dm = iso => { const d = new Date(iso + 'T12:00:00'); return `${d.getDate()}/${d.getMonth() + 1}`; };
+const isAsstMe = () => S.auth && !isDir() && !isTeacher();
+const planSup = p => (teacher(p.teacher) || {}).supervisor || p.supervisor || '';
+const canPlanT = t => isAsstMe() && t && t.active !== false && !String(t.id).startsWith('tmp') && (isMain() || t.supervisor === S.auth.user);
+const myPlans = () => plansAll().filter(p => planSup(p) === S.auth.user);
+const slotTxt = s => s.kind === 'قرآن' ? 'قرآن' : 'درس' + (s.subject ? ' ' + s.subject : '');
+const slotsTxt = p => (p.slots || []).map(slotTxt).join(' + ') || '—';
+
+/** حالة كل موعد بمطابقته مع أيام الحصص الميدانية للمعلم (نفس قاعدة الخادم):
+    1) في الموعد: يوم حصة بين (الموعد − 7 أيام) والموعد، الأقرب إليه  2) متأخرًا: أول يوم حصة بعده لم يُستعمل */
+let PS_MEMO = null;
+function planStates(){
+  if (PS_MEMO && PS_MEMO.b === S.B && PS_MEMO.n === plansAll().length + ':' + B().sessions.length && PS_MEMO.d === todayIso()) return PS_MEMO.v;
+  const out = {}, td = todayIso(), vt = {}, byT = {};
+  B().visits.forEach(v => vt[v.id] = v.teacher);
+  plansAll().forEach(p => (byT[p.teacher] = byT[p.teacher] || []).push(p));
+  Object.keys(byT).forEach(tid => {
+    const ds = [...new Set(B().sessions.filter(s => s.date && vt[s.visit] === tid).map(s => s.date))].sort();
+    const used = ds.map(() => false), m = {};
+    const ps = byT[tid].slice().sort((a, b) => a.date.localeCompare(b.date));
+    ps.forEach(p => { const lo = addDays(p.date, -7); let best = -1; ds.forEach((d, i) => { if (!used[i] && d >= lo && d <= p.date) best = i; }); if (best >= 0){ used[best] = true; m[p.id] = ds[best]; } });
+    ps.forEach(p => { if (m[p.id]) return; const i = ds.findIndex((d, k) => !used[k] && d > p.date); if (i >= 0){ used[i] = true; m[p.id] = ds[i]; } });
+    ps.forEach(p => { const on = m[p.id] || ''; out[p.id] = { st: on ? (on <= p.date ? 'done' : 'late') : p.date > td ? 'due' : p.date === td ? 'today' : 'missed', on }; });
+  });
+  PS_MEMO = { b: S.B, n: plansAll().length + ':' + B().sessions.length, d: td, v: out };
+  return out;
+}
+const planSt = p => planStates()[p.id] || { st: 'due', on: '' };
+const touchPlans = () => { PS_MEMO = null; };
+
+/** التوصية: ثلاث حصص في الزيارة الواحدة (قرآن + درس + درس في مادة أخرى)، حسب المنصب */
+const tSubjects = t => [...new Set((B().assignments || []).filter(a => a.teacher === t.id && a.subject !== QURAN).map(a => a.subject))];
+function recSlots(t){
+  const p = post(t.role), subs = tSubjects(t);
+  if (p === 'قرآن') return [{ kind: 'قرآن', subject: QURAN }];
+  const l = [{ kind: 'درس', subject: subs[0] || '' }, { kind: 'درس', subject: subs[1] || '' }];
+  if (p === 'مادة') return subs.length > 1 ? l : [l[0]];
+  return [{ kind: 'قرآن', subject: QURAN }].concat(l);
+}
+function recNeeds(t){
+  const p = post(t.role);
+  if (p === 'قرآن') return [['q', 'حصة قرآن']];
+  if (p === 'مادة') return tSubjects(t).length > 1 ? [['l1', 'حصة درس'], ['l2', 'درس في مادة أخرى']] : [['l1', 'حصة درس']];
+  return [['q', 'حصة قرآن'], ['l1', 'حصة درس'], ['l2', 'درس في مادة أخرى']];
+}
+const recText = t => recNeeds(t).map(x => x[1]).join(' + ');
+/** شارات التوصية في صفحة الزيارة: ما تحقق من حصصها */
+function recChips(t, ss){
+  if (!t) return '';
+  const subs = new Set(ss.filter(s => s.subject && s.subject !== QURAN).map(s => s.subject));
+  const nLes = ss.filter(s => s.subject !== QURAN).length;
+  const ok = { q: ss.some(s => s.subject === QURAN), l1: nLes > 0, l2: subs.size > 1 };
+  const need = recNeeds(t);
+  if (need.length < 2) return '';
+  return `<div class="row rec" style="gap:6px;align-items:center"><span class="small muted">التوصية:</span>${need.map(([k, l]) => `<span class="chip ${ok[k] ? 'ok' : ''}">${ok[k] ? '✓' : '○'} ${l}</span>`).join('')}</div>`;
+}
+
+/** شارة المعلم: موعد فات / اليوم / القادم */
+function planChip(t){
+  const ps = plansAll().filter(p => p.teacher === t.id);
+  if (!ps.length) return '';
+  const st = planStates();
+  const miss = ps.filter(p => st[p.id] && st[p.id].st === 'missed').sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (miss) return `<span class="chip bad">فاتت ${dm(miss.date)}</span>`;
+  if (ps.some(p => st[p.id] && st[p.id].st === 'today')) return '<span class="chip warn">موعد اليوم</span>';
+  const nx = ps.filter(p => st[p.id] && st[p.id].st === 'due').sort((a, b) => a.date.localeCompare(b.date))[0];
+  return nx ? `<span class="chip">موعد ${dm(nx.date)}</span>` : '';
+}
+
+/** تنبيهات الصفحة الرئيسية: البرتقالي لمواعيد اليوم، والأحمر لما فات */
+function planBanners(list){
+  const st = planStates(), td = list.filter(p => st[p.id].st === 'today'), ms = list.filter(p => st[p.id].st === 'missed');
+  const names = l => l.slice(0, 3).map(p => esc(tName(teacher(p.teacher)))).join('، ') + (l.length > 3 ? ` و${l.length - 3} آخرين` : '');
+  return (ms.length ? `<div class="banner bad-b click" data-go="#/cal" style="cursor:pointer">${IC.cal} ${ms.length === 1 ? 'زيارة مبرمجة فاتت ولم تُنجز' : ms.length + ' زيارات مبرمجة فاتت ولم تُنجز'}: ${names(ms)}</div>` : '')
+    + (td.length ? `<div class="banner click" data-go="#/cal" style="cursor:pointer">${IC.cal} ${td.length === 1 ? 'زيارة مبرمجة اليوم' : td.length + ' زيارات مبرمجة اليوم'}: ${names(td)}</div>` : '');
+}
+
+function planRow(p, showSup){
+  const t = teacher(p.teacher), s = planSt(p), [lab, cls] = PL_ST[s.st];
+  const d = new Date(p.date + 'T12:00:00');
+  return `<div class="slot click plan-r ${s.st}" data-act="planSheet" data-id="${esc(p.id)}">
+    <div class="n" style="flex-direction:column;line-height:1.1"><b style="font-size:16px">${d.getDate()}</b><small style="font-size:10.5px">${AR_MONTHS[d.getMonth()]}</small></div>
+    <div class="b"><b class="d">${esc(tName(t))}</b><div class="small muted">${esc(slotsTxt(p))}${p.postponed ? ` · أُجّل ${p.postponed === 1 ? 'مرة' : p.postponed + ' مرات'}` : ''}${showSup ? ' · ' + esc(userName(planSup(p))) : ''}</div></div>
+    <span class="chip ${cls}">${lab}${s.st === 'late' ? ' ' + dm(s.on) : ''}</span></div>`;
+}
+
+/** نسبة الالتزام: ما أُنجز في موعده من المواعيد التي حلّ يومها */
+function compliance(list){
+  const st = planStates(), c = { all: list.length, done: 0, late: 0, missed: 0, today: 0, due: 0 };
+  list.forEach(p => c[st[p.id].st]++);
+  const past = c.done + c.late + c.missed;
+  c.rate = past ? Math.round(c.done / past * 100) : null;
+  return c;
+}
+
+const weekStart = iso => { const d = new Date(iso + 'T12:00:00'); return addDays(iso, -((d.getDay() + 1) % 7)); };   // الأسبوع من السبت
+function visitsTabs(cur){
+  const items = isDir() ? [['#/vis', 'vis', 'زيارات المساعدين'], ['#/cal', 'cal', 'الرزنامة']] : [['#/visits', 'visits', 'زياراتي'], ['#/cal', 'cal', 'الرزنامة']];
+  return `<div class="seg" style="margin-top:14px">${items.map(([h, k, l]) => `<button data-go="${h}" class="${cur === k ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+
+function viewCal(){
+  const td = todayIso();
+  const c = S.cal || (S.cal = { mode: LS.get('ishraf.calMode') || 'week', at: td, day: td, sup: isDir() ? 'all' : 'me' });
+  const st = planStates();
+  const scope = p => c.sup === 'all' || planSup(p) === (c.sup === 'me' ? S.auth.user : c.sup);
+  const ps = plansAll().filter(scope).sort((a, b) => a.date.localeCompare(b.date));
+  const k = compliance(ps);
+  const showSup = c.sup === 'all' && seeAll();
+  const canAdd = isAsstMe() && B().teachers.some(canPlanT);
+  const missed = ps.filter(p => st[p.id].st === 'missed').reverse();
+  const supF = seeAll() ? `<div class="tabs">${(isAsstMe() ? [['me', 'معلميّ']] : []).concat([['all', 'الكل']], assts().filter(u => u.active && !(isAsstMe() && u.id === S.auth.user)).map(u => [u.id, u.name.split(' ')[0]]))
+    .map(([id, l]) => `<button class="tab ${c.sup === id ? 'on' : ''}" data-act="calSup" data-k="${esc(id)}">${esc(l)}</button>`).join('')}</div>` : '';
+  const dayList = (iso, plus) => {
+    const l = ps.filter(p => p.date === iso);
+    return (l.length ? `<div class="stack">${l.map(p => planRow(p, showSup)).join('')}</div>` : '')
+      + (plus && canAdd && iso >= td ? `<button class="btn btn-g cal-add" data-act="planNew" data-d="${iso}">${IC.plus} موعد</button>` : (!l.length ? '<div class="small muted" style="padding:2px 4px">—</div>' : ''));
+  };
+  let grid;
+  if (c.mode === 'week'){
+    const w0 = weekStart(c.at);
+    grid = `<div class="spread"><button class="ibtn" data-act="calNav" data-d="-1">${IC.prev}</button><b class="d">${esc(fmtDate(w0))} — ${esc(fmtDate(addDays(w0, 6)))}</b><button class="ibtn" data-act="calNav" data-d="1">${IC.next}</button></div>
+      <div class="stack cal-week">${[0, 1, 2, 3, 4, 5, 6].map(i => { const iso = addDays(w0, i); return `<div class="cal-day ${iso === td ? 'today' : ''}"><div class="cal-dh">${esc(fmtDate(iso))}${iso === td ? ' · اليوم' : ''}</div>${dayList(iso, true)}</div>`; }).join('')}</div>`;
+  } else {
+    const d = new Date(c.at + 'T12:00:00'), m0 = isoDate(new Date(d.getFullYear(), d.getMonth(), 1, 12)), g0 = weekStart(m0);
+    const cells = [];
+    for (let i = 0; i < 42; i++){
+      const iso = addDays(g0, i), inM = new Date(iso + 'T12:00:00').getMonth() === d.getMonth();
+      if (i >= 35 && !inM) break;
+      const l = ps.filter(p => p.date === iso);
+      cells.push(`<button class="cal-c ${inM ? '' : 'out'} ${iso === td ? 'today' : ''} ${iso === c.day ? 'on' : ''}" data-act="calDay" data-d="${iso}"><b>${new Date(iso + 'T12:00:00').getDate()}</b><span>${l.slice(0, 4).map(p => `<i class="${st[p.id].st}"></i>`).join('')}</span></button>`);
+    }
+    grid = `<div class="spread"><button class="ibtn" data-act="calNav" data-d="-1">${IC.prev}</button><b class="d">${AR_MONTHS[d.getMonth()]} ${d.getFullYear()}</b><button class="ibtn" data-act="calNav" data-d="1">${IC.next}</button></div>
+      <div class="cal-m">${['سبت', 'أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة'].map(x => `<small>${x}</small>`).join('')}${cells.join('')}</div>
+      <div class="cal-day today-b"><div class="cal-dh">${esc(fmtDate(c.day))}</div>${dayList(c.day, true)}</div>`;
+  }
+  let comp = '';
+  if (seeAll()){
+    const rows = assts().filter(u => u.active || plansAll().some(p => planSup(p) === u.id)).map(u => [u, compliance(plansAll().filter(p => planSup(p) === u.id))]).filter(([, x]) => x.all);
+    comp = rows.length ? `<div class="sec-t" style="margin-top:20px">الالتزام بالرزنامة</div><div class="card tbl-wrap" style="padding:6px 12px"><table class="tbl">
+      <thead><tr><th>المساعد</th><th>مبرمجة</th><th>تمّ</th><th>متأخرًا</th><th>فاتت</th><th>الالتزام</th></tr></thead><tbody>
+      ${rows.map(([u, x]) => `<tr><td>${esc(u.name)}</td><td>${x.all}</td><td>${x.done}</td><td>${x.late}</td><td style="${x.missed ? 'color:var(--bad);font-weight:600' : ''}">${x.missed}</td><td><b class="d">${x.rate === null ? '—' : x.rate + '%'}</b></td></tr>`).join('')}</tbody></table></div>` : '';
+  }
+  return {
+    hero: `<h1>الرزنامة</h1><div class="sub">مواعيد الزيارات · لا يراها المعلمون</div>${visitsTabs('cal')}
+      <div class="kpis"><div class="kpi glass ${k.today ? 'accent' : ''}"><div class="n">${k.today}</div><div class="l">مبرمجة اليوم</div></div>
+        <div class="kpi glass"><div class="n" style="${k.missed ? 'color:#FFB4AE' : ''}">${k.missed}</div><div class="l">فاتت</div></div>
+        <div class="kpi glass"><div class="n">${k.rate === null ? '—' : k.rate + '<small>%</small>'}</div><div class="l">الالتزام</div></div></div>`,
+    body: `<div class="stack">
+      ${supF}
+      ${missed.length ? `<div class="sec-t" style="color:var(--bad)">فاتت ولم تُنجز</div><div class="stack">${missed.map(p => planRow(p, showSup)).join('')}</div>` : ''}
+      <div class="spread" style="margin-top:6px"><div class="seg">${[['week', 'أسبوع'], ['month', 'شهر']].map(([m, l]) => `<button data-act="calMode" data-k="${m}" class="${c.mode === m ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="row">${c.at !== td ? `<button class="btn btn-g" data-act="calToday">اليوم</button>` : ''}${canAdd ? `<button class="btn btn-p" data-act="planNew">${IC.plus} موعد</button>` : ''}</div></div>
+      ${grid}
+      ${comp}
+      ${!ps.length ? emptyBox(canAdd ? 'لا مواعيد بعد. برمج زياراتك القادمة لتصلك التنبيهات في يومها، وبالأحمر إن فاتت.' : 'لا مواعيد مبرمجة بعد') : ''}
+    </div>`
+  };
+}
+
+/** تفاصيل الموعد وأفعاله */
+function planSheet(id){
+  const p = plansAll().find(x => x.id === id); if (!p) return;
+  const t = teacher(p.teacher), s = planSt(p), [lab, cls] = PL_ST[s.st];
+  const can = canPlanT(t), open = !['done', 'late'].includes(s.st);
+  sheet(`<h3>موعد زيارة ${esc(tName(t))}</h3>
+    <div class="stack">
+      <div class="row" style="gap:8px"><span class="chip ${cls}">${lab}${s.on ? ' · ' + esc(fmtDate(s.on)) : ''}</span><b class="d">${esc(fmtDate(p.date))}</b></div>
+      <div><div class="small muted d">الحصص المبرمجة</div><div class="row" style="gap:6px;margin-top:4px">${(p.slots || []).map(x => `<span class="chip v">${esc(slotTxt(x))}</span>`).join('')}</div></div>
+      ${p.postponed ? `<div class="banner">أُجّل ${p.postponed === 1 ? 'مرة واحدة' : p.postponed + ' مرات'}${p.reason ? ' · آخر سبب: ' + esc(p.reason) : ''}</div>` : ''}
+      ${p.note ? `<div><div class="small muted d">ملاحظة</div><div>${esc(p.note)}</div></div>` : ''}
+      ${seeAll() ? `<div class="small muted">المساعد: ${esc(userName(planSup(p)))}</div>` : ''}
+    </div>
+    <div class="acts" style="flex-wrap:wrap">
+      <button class="btn btn-g" data-go="#/t/${esc(p.teacher)}" id="plGoT">صفحة المعلم</button>
+      ${can && open ? `<button class="btn btn-g" id="plDel" style="color:var(--bad)">حذف</button><button class="btn btn-g" id="plEdit">${IC.edit} الحصص</button><button class="btn btn-p" id="plPost">تأجيل</button>` : ''}
+    </div>`,
+  (m, close) => {
+    m.querySelector('#plGoT').onclick = () => { close(); go('#/t/' + p.teacher); };
+    if (!(can && open)) return;
+    m.querySelector('#plPost').onclick = () => { close(); postponeSheet(p); };
+    m.querySelector('#plEdit').onclick = () => { close(); planForm(p); };
+    m.querySelector('#plDel').onclick = async e => {
+      close();
+      if (!await confirmBox('حذف الموعد', `حذف موعد ${esc(tName(t))} يوم ${esc(fmtDate(p.date))}؟`, 'حذف', 'btn-bad')) return;
+      try { await api('deletePlan', { id: p.id }); B().plans = plansAll().filter(x => x.id !== p.id); touchPlans(); persist(); render(true); toast('حُذف الموعد'); }
+      catch(err){ toast(err.message, true); }
+    };
+  });
+}
+
+/** شريط الأيام القادمة (اليوم + 60 يومًا) */
+function daysStrip(sel){
+  const t0 = todayIso();
+  return `<div class="days" id="plDays">${range(0, 60).map(k => { const iso = addDays(t0, k), d = new Date(iso + 'T12:00:00');
+    return `<button type="button" class="day ${k === 0 ? 'today' : ''} ${iso === sel ? 'on' : ''}" data-d="${iso}"><small>${AR_DAYS[d.getDay()]}</small><b>${d.getDate()}</b><small>${AR_MONTHS[d.getMonth()]}</small></button>`; }).join('')}</div>`;
+}
+function bindDays(m, onPick){
+  const box = m.querySelector('#plDays');
+  box.onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; box.querySelectorAll('.day').forEach(x => x.classList.toggle('on', x === b)); buzz(5); onPick(b.dataset.d); };
+  const on = box.querySelector('.on'); if (on) setTimeout(() => on.scrollIntoView({ block: 'nearest', inline: 'center' }), 30);
+}
+
+function postponeSheet(p){
+  const t = teacher(p.teacher);
+  let d = '';
+  sheet(`<h3>تأجيل موعد ${esc(tName(t))}</h3><div class="small muted" style="margin:-6px 0 12px">الموعد الحالي: ${esc(fmtDate(p.date))}</div>
+    <div class="stack">
+      <div class="field"><span>اليوم الجديد *</span>${daysStrip('')}<div class="small muted" id="plDl">اختر يومًا</div></div>
+      <div class="field"><span>سبب التأجيل *</span>${chips('rs', PL_REASONS, '')}<input id="plR" placeholder="أو اكتب السبب" style="margin-top:8px"></div>
+    </div>
+    <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="plOk">تأجيل</button></div>`,
+  (m, close) => {
+    bindSegs(m);
+    bindDays(m, x => { d = x; m.querySelector('#plDl').textContent = fmtDate(x); });
+    m.querySelector('#plOk').onclick = async e => {
+      const reason = m.querySelector('#plR').value.trim() || segVal(m, 'rs');
+      if (!d) return toast('اختر اليوم الجديد', true);
+      if (d === p.date) return toast('اختر يومًا غير يوم الموعد الحالي', true);
+      if (!reason) return toast('اختر سبب التأجيل أو اكتبه', true);
+      try{
+        const r = await busy(e.currentTarget, () => api('savePlan', { id: p.id, date: d, reason }));
+        Object.assign(p, r); touchPlans(); persist(); close(); render(true); buzz(15); toast('أُجّل الموعد إلى ' + fmtDate(d));
+      } catch(err){ toast(err.message, true); }
+    };
+  });
+}
+
+/** موعد جديد أو تعديل حصصه: المعلم ← اليوم ← الحصص (تُقترح حسب التوصية) */
+function planForm(p, preset){
+  const edit = !!(p && p.id);
+  const mine = B().teachers.filter(canPlanT).sort((a, b) => tName(a).localeCompare(tName(b), 'ar'));
+  if (!edit && !mine.length) return toast('لا يوجد معلمون مسندون إليك', true);
+  preset = preset || {};
+  let tid = edit ? p.teacher : (preset.teacher || (mine.length === 1 ? mine[0].id : ''));
+  let d = edit ? p.date : (preset.date && preset.date >= todayIso() ? preset.date : '');
+  let slots = edit ? p.slots.map(x => Object.assign({}, x)) : (tid ? recSlots(teacher(tid)) : []);
+  sheet(`<h3>${edit ? 'تعديل حصص الموعد' : 'برمجة زيارة'}</h3>
+    <div class="stack">
+      ${edit ? `<div class="small muted">${esc(tName(teacher(tid)))} · ${esc(fmtDate(d))}</div>` : `
+      <label class="field"><span>المعلم *</span><select id="plT"><option value="">— اختر المعلم —</option>${mine.map(t => `<option value="${esc(t.id)}" ${t.id === tid ? 'selected' : ''}>${esc(tName(t))} · ${esc(ROLE_LABEL[t.role] || '')}</option>`).join('')}</select></label>
+      <div class="field"><span>اليوم *</span>${daysStrip(d)}<div class="small muted" id="plDl">${d ? esc(fmtDate(d)) : 'اختر يومًا'}</div></div>`}
+      <div class="field"><span>الحصص التي ستحضرها *</span><div id="plRec" class="small muted" style="margin-bottom:6px"></div><div id="plS" class="stack"></div>
+        <button type="button" class="btn btn-g" id="plAdd" style="margin-top:8px;align-self:flex-start">${IC.plus} حصة</button></div>
+      <label class="field"><span>ملاحظة</span><input id="plN" value="${esc(edit ? p.note || '' : '')}" placeholder="اختياري"></label>
+    </div>
+    <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="plOk">${edit ? 'حفظ' : IC.plus + ' برمجة'}</button></div>`,
+  (m, close) => {
+    const draw = () => {
+      const t = teacher(tid), subs = t ? tSubjects(t) : [];
+      m.querySelector('#plRec').innerHTML = t ? `التوصية لـ${esc(ROLE_LABEL[t.role] || 'المعلم')}: ${esc(recText(t))} في الزيارة الواحدة` : 'اختر المعلم أولًا';
+      m.querySelector('#plS').innerHTML = slots.map((s, i) => `<div class="row pl-slot" style="gap:8px;flex-wrap:nowrap">
+        <div class="seg" style="flex:none">${['قرآن', 'درس'].map(k => `<button type="button" data-i="${i}" data-k="${k}" class="${s.kind === k ? 'on' : ''}">${k}</button>`).join('')}</div>
+        ${s.kind === 'درس' ? `<select data-si="${i}" style="flex:1;min-width:0"><option value="">أي مادة</option>${[...new Set(subs.concat(s.subject ? [s.subject] : []))].map(x => `<option ${x === s.subject ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>` : '<span style="flex:1"></span>'}
+        <button type="button" class="ibtn" data-rm="${i}" aria-label="حذف">×</button></div>`).join('') || '<div class="small muted">لا حصص بعد</div>';
+      m.querySelector('#plAdd').style.display = slots.length >= 4 ? 'none' : '';
+    };
+    const box = m.querySelector('#plS');
+    box.onclick = e => {
+      const k = e.target.closest('[data-k]'), rm = e.target.closest('[data-rm]');
+      if (k){ const s = slots[+k.dataset.i]; s.kind = k.dataset.k; s.subject = s.kind === 'قرآن' ? QURAN : ''; buzz(5); draw(); }
+      if (rm){ slots.splice(+rm.dataset.rm, 1); draw(); }
+    };
+    box.onchange = e => { const x = e.target.closest('[data-si]'); if (x) slots[+x.dataset.si].subject = x.value; };
+    m.querySelector('#plAdd').onclick = () => { if (slots.length < 4){ slots.push({ kind: 'درس', subject: '' }); draw(); } };
+    if (!edit){
+      m.querySelector('#plT').onchange = e => { tid = e.target.value; slots = tid ? recSlots(teacher(tid)) : []; draw(); };
+      bindDays(m, x => { d = x; m.querySelector('#plDl').textContent = fmtDate(x); });
+    }
+    draw();
+    m.querySelector('#plOk').onclick = async e => {
+      if (!tid) return toast('اختر المعلم', true);
+      if (!d) return toast('اختر يوم الزيارة', true);
+      if (!slots.length) return toast('أضف حصة واحدة على الأقل', true);
+      const body = { slots, note: m.querySelector('#plN').value.trim() };
+      if (edit){ body.id = p.id; body.date = p.date; } else { body.teacherId = tid; body.date = d; }
+      try{
+        const r = await busy(e.currentTarget, () => api('savePlan', body));
+        if (!B().plans) B().plans = [];
+        const i = B().plans.findIndex(x => x.id === r.id); if (i >= 0) B().plans[i] = r; else B().plans.push(r);
+        touchPlans(); persist(); close(); buzz(15);
+        if (!edit && S.cal){ S.cal.at = r.date; S.cal.day = r.date; }
+        render(true); toast(edit ? 'حُفظ الموعد' : 'بُرمجت الزيارة يوم ' + fmtDate(r.date));
+      } catch(err){ toast(err.message, true); }
+    };
+  });
+}
+
+/** قسم المواعيد في صفحة المعلم */
+function teacherPlans(t){
+  const ps = plansAll().filter(p => p.teacher === t.id).sort((a, b) => a.date.localeCompare(b.date));
+  const can = canPlanT(t);
+  if (!ps.length && !can) return '';
+  return `<div class="spread" style="margin-top:18px"><div class="sec-t" style="margin:0">مواعيد الزيارة <span class="small muted" style="font-weight:400">(لا يراها المعلم)</span></div>${can ? `<button class="btn btn-g" data-act="planNew" data-t="${esc(t.id)}">${IC.plus} موعد</button>` : ''}</div>
+    ${ps.length ? `<div class="stack">${ps.map(p => planRow(p)).join('')}</div>` : `<div class="small muted">التوصية: ${esc(recText(t))} في الزيارة الواحدة.</div>`}`;
 }
 
 /* ============================== حسابي ============================== */
@@ -1392,6 +1724,7 @@ function viewTeacher(id){
       <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
         ${info.map(([k, v]) => `<div><div class="small muted d">${k}</div><div style="font-weight:500">${esc(v || '—')}</div></div>`).join('')}</div></div>
       ${teachingCard(t)}
+      ${teacherPlans(t)}
       <div class="sec-t" style="margin-top:18px">الزيارات</div>
       <div class="stack">${slots}</div></div>`
   };
@@ -1447,6 +1780,7 @@ function viewVisit(id){
       <div class="row" style="gap:6px;margin-top:10px">${v.level ? `<span class="chip glass-chip">${esc(v.level)}${v.group ? ' ' + esc(v.group) : ''}${tagTxt(v.level, v.group)}</span>` : ''}${v.type ? `<span class="chip glass-chip">${esc(v.type)}</span>` : ''}${v.boys !== '' && v.boys !== undefined ? `<span class="chip glass-chip">ذكور ${esc(v.boys)} · إناث ${esc(v.girls || 0)}</span>` : ''}</div>`,
     body: `<div class="stack">${main}
       <div class="spread" style="margin-top:14px"><div class="sec-t" style="margin:0">الحصص الميدانية</div>${editable ? `<button class="btn btn-a" data-act="addSession" data-v="${esc(id)}">${IC.plus} حصة</button>` : ''}</div>
+      ${v.status === 'مفتوحة' ? recChips(t, ss) : ''}
       ${sess}</div>`
   };
 }
@@ -1635,7 +1969,7 @@ function viewDirector(tab){
   const done = B().visits.filter(v => v.status === 'مكتملة').length;
   const planned = ts.filter(x => x.active).reduce((a, x) => a + x.planned, 0);
   const tabs = isMain() ? `<div class="seg" style="margin-top:14px">${[['sup', 'المساعدون'], ['tea', 'الإسناد'], ['vis', 'كل الزيارات']].map(([k, l]) => `<button data-go="#/${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>` : '';
-  const hero = `<h1>${{ sup: 'المساعدون البيداغوجيون', tea: 'المعلمون', vis: 'زيارات المساعدين' }[tab]}</h1><div class="sub">مرحبًا ${esc(S.auth.name.split(' ')[0])} · ${esc(B().school.name)}${ro ? ' · للاطلاع فقط' : ''}</div>${tabs}
+  const hero = `<h1>${{ sup: 'المساعدون البيداغوجيون', tea: 'المعلمون', vis: 'زيارات المساعدين' }[tab]}</h1><div class="sub">مرحبًا ${esc(S.auth.name.split(' ')[0])} · ${esc(B().school.name)}${ro ? ' · للاطلاع فقط' : ''}</div>${tabs}${isDir() && tab === 'vis' ? visitsTabs('vis') : ''}
     <div class="kpis"><div class="kpi glass"><div class="n">${sups.filter(u => u.active).length}</div><div class="l">مساعد</div></div>
       <div class="kpi glass"><div class="n">${ts.filter(x => x.active).length}</div><div class="l">معلم</div></div>
       <div class="kpi glass accent"><div class="n">${done}<small> / ${planned}</small></div><div class="l">زيارة مكتملة</div></div></div>`;
@@ -1690,7 +2024,8 @@ function viewDirector(tab){
     const groups = sups.map(u => ({ u, vs: B().visits.filter(v => v.supervisor === u.id).sort((a, b) => (b.created || '').localeCompare(a.created || '')) })).filter(g => g.vs.length);
     body = groups.length ? groups.map(g => `<div class="sec-t" style="margin-top:14px">${esc(g.u.name)} <span class="chip v">${g.vs.length}</span></div><div class="stack">${g.vs.map(v => visitRow(v)).join('')}</div>`).join('') : emptyBox('لا توجد زيارات بعد هذا الموسم');
   }
-  return { hero, body: `<div>${body}</div>`, mount };
+  const bn = isDir() && tab === 'sup' ? planBanners(plansAll()) : '';
+  return { hero, body: `<div>${bn ? `<div class="stack" style="margin-bottom:14px">${bn}</div>` : ''}${body}</div>`, mount };
 }
 function bindKanban(){
   let dragId = null;
@@ -2975,6 +3310,16 @@ const ACT = {
   assignSheet: el => assignSheet(el.dataset.id),
 
   startVisit: el => startVisitSheet(teacher(el.dataset.id)),
+  calSup: el => { S.cal.sup = el.dataset.k; render(true); },
+  calMode: el => { S.cal.mode = el.dataset.k; LS.set('ishraf.calMode', S.cal.mode); if (S.cal.mode === 'month') S.cal.day = S.cal.at; render(true); },
+  calNav: el => { const c = S.cal, n = Number(el.dataset.d);
+    if (c.mode === 'week') c.at = addDays(c.at, 7 * n);
+    else { const d = new Date(c.at + 'T12:00:00'); c.at = isoDate(new Date(d.getFullYear(), d.getMonth() + n, 1, 12)); c.day = c.at; }
+    render(true); },
+  calToday: () => { S.cal.at = S.cal.day = todayIso(); render(true); },
+  calDay: el => { S.cal.day = el.dataset.d; render(true); },
+  planSheet: el => planSheet(el.dataset.id),
+  planNew: el => planForm(null, { date: el.dataset.d || (S.cal && route().r === 'cal' && S.cal.mode === 'month' ? S.cal.day : ''), teacher: el.dataset.t || '' }),
   addSession: el => sessionSheet(el.dataset.v),
   editSession: el => sessionSheet(el.dataset.v, B().sessions.find(x => x.id === el.dataset.id)),
   pickSessSheet: el => {
