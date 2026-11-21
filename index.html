@@ -556,7 +556,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.6.4';
+const VERSION = '5.6.5';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -798,7 +798,9 @@ const appName = () => (S.auth ? isTeacher() : LS.get('ishraf.mode') === 'sira') 
   const q = new URLSearchParams(location.search);
   if (q.get('app') === 'sira') LS.set('ishraf.mode', 'sira');
   if (q.get('s')){ const l = LS.get('ishraf.last') || {}; l.school = q.get('s'); LS.set('ishraf.last', l); }
-  if (q.has('app') || q.has('s')) history.replaceState(null, '', location.pathname + location.hash);
+  // بطاقة الدخول الشخصية: ?s=المدرسة&u=المستخدم ← يفتح مباشرة على اسمه، فلا يكتب إلا رمزه
+  if (q.get('u')) LS.set('ishraf.goUser', q.get('u'));
+  if (q.has('app') || q.has('s') || q.has('u')) history.replaceState(null, '', location.pathname + location.hash);
 } catch(e){} })();
 const ASST = 'مساعد بيداغوجي';
 const isAsst = u => u && (u.role === ASST || u.role === 'مشرف');
@@ -1278,7 +1280,11 @@ async function renderLogin(){
   }
   const schools = L.dir.schools;
   if (!L.step){
-    if (last.school && schools.some(s => s.code === last.school)){ L.school = last.school; L.step = 'name'; }
+    const gu = LS.get('ishraf.goUser'); LS.del('ishraf.goUser');
+    if (last.school && schools.some(s => s.code === last.school)){
+      L.school = last.school; L.step = 'name';
+      if (gu && L.dir.users.some(u => u.id === gu && u.school === L.school)){ L.user = gu; L.step = 'pin'; L.code = ''; }
+    }
     else L.step = 'school';
   }
   const school = schools.find(s => s.code === L.school);
