@@ -347,6 +347,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 .banner{border-radius:16px;padding:11px 14px;font-family:Changa;font-size:14px;background:var(--warn-l);color:var(--warn)}
 .banner.v{background:var(--v100);color:var(--v700)}
 .btn-bad{background:var(--bad);color:#fff}
+.dot-bad{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);margin-inline-end:6px;vertical-align:middle;box-shadow:0 0 0 3px var(--bad-l, rgba(220,38,38,.18))}
+.tcard h3 .lin{font-size:11px;font-weight:400;color:var(--muted);font-family:Plex}
 .net-r .n{font-size:15px}
 .cal-day{border:1px solid var(--line);border-radius:18px;padding:10px;background:var(--card)}
 .cal-day.today{border-color:var(--amber);box-shadow:0 0 0 2px var(--amber-l)}
@@ -556,7 +558,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.6.5';
+const VERSION = '5.7.0';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -619,19 +621,20 @@ function toast(msg, err){
   setTimeout(() => t.remove(), err ? 4200 : 2400);
 }
 
-function sheet(html, onMount, onClose){
+function sheet(html, onMount, onClose, locked){
   const bg = document.createElement('div');
   bg.className = 'sheet-bg';
   bg.innerHTML = '<div class="sheet"><div class="grab"></div>' + html + '</div>';
   document.body.appendChild(bg);
   let closed = false;
   const close = () => { if (closed) return; closed = true; bg.remove(); if (onClose) onClose(); };
-  bg.addEventListener('click', e => { if (e.target === bg) close(); });
+  if (locked) bg.classList.add('locked');
+  bg.addEventListener('click', e => { if (e.target === bg && !locked) close(); });
   bg.querySelectorAll('[data-close]').forEach(b => b.onclick = close);
   // سحب الورقة للأسفل لإغلاقها
   const sh = bg.querySelector('.sheet');
   let y0 = null;
-  sh.addEventListener('touchstart', e => { if (sh.scrollTop <= 0 && e.target.closest('.grab,h3')) y0 = e.touches[0].clientY; }, { passive: true });
+  sh.addEventListener('touchstart', e => { if (!locked && sh.scrollTop <= 0 && e.target.closest('.grab,h3')) y0 = e.touches[0].clientY; }, { passive: true });
   sh.addEventListener('touchmove', e => { if (y0 === null) return; const dy = e.touches[0].clientY - y0; if (dy > 0) sh.style.transform = `translateY(${dy}px)`; }, { passive: true });
   sh.addEventListener('touchend', e => { if (y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if (dy > 110) close(); else sh.style.transform = ''; });
   if (onMount) onMount(sh, close);
@@ -809,6 +812,13 @@ const isMain = () => !!(S.B && S.B.me && S.B.me.main);
 const seeAll = () => isDir() || isMain();
 const assts = () => B().users.filter(isAsst);
 const tName = t => t ? `${t.last} ${t.first}` : '—';
+/** النسب: «بن الأب بن الجد» للذكر، «بنت الأب بن الجد» للأنثى */
+const tLineage = t => !t ? '' : [t.father ? (t.gender === 'أنثى' ? 'بنت ' : 'بن ') + t.father : '', t.grandfather ? 'بن ' + t.grandfather : ''].filter(Boolean).join(' ');
+/** الاسم الكامل: صفحة المعلم والتقارير والشيت */
+const tFull = t => !t ? '—' : [tName(t), tLineage(t)].filter(Boolean).join(' ');
+/** معلومات المعلم الإجبارية الناقصة (اللقب، الاسم، الأب، الجد، الجنس) */
+const tMissing = t => !t || String(t.id || '').startsWith('tmp') ? [] : [['last', 'اللقب'], ['first', 'الاسم'], ['father', 'اسم الأب'], ['grandfather', 'اسم الجد'], ['gender', 'الجنس']].filter(([k]) => !String(t[k] || '').trim()).map(x => x[1]);
+const INCOMPLETE = '<span class="dot-bad" title="معلومات ناقصة"></span>';
 const allTeachers = () => B().teachers.concat(B().extraTeachers || []);
 const teacher = id => allTeachers().find(t => t.id === id);
 const user = id => B().users.find(u => u.id === id);
@@ -1398,7 +1408,7 @@ function teacherCard(t){
   const last = vs.filter(v => v.score !== null).pop();
   const chip = { open: '<span class="chip warn">زيارة مفتوحة</span>', done: '<span class="chip ok">اكتملت</span>', progress: `<span class="chip v">${done}/${t.planned}</span>`, none: '<span class="chip">لم تبدأ</span>' }[st];
   return `<div class="card tcard" data-go="#/t/${esc(t.id)}">${avatar(tName(t), t.planned ? done / t.planned : 0, color)}
-    <div class="b"><h3>${esc(tName(t))}</h3>
+    <div class="b"><h3>${tMissing(t).length ? INCOMPLETE : ''}${esc(tName(t))}${tLineage(t) ? ` <small class="lin">${esc(tLineage(t))}</small>` : ''}</h3>
       <div class="small muted">${esc(ROLE_LABEL[t.role] || '')} · ${esc(t.level || '—')}${t.experience === 0 ? ' · <span class="chip clay" style="padding:0 8px">جديد</span>' : ''}</div>
       <div class="row" style="margin-top:4px;gap:6px">${chip}${planChip(t)}${noClass(t) ? NOCLS : ''}${seeAll() && t.supervisor !== S.auth.user ? `<span class="small muted">${esc(t.supervisor ? userName(t.supervisor) : 'غير مسند')}</span>` : ''}</div></div>
     ${last ? `<span class="score-pill" style="background:${scoreColor(last.score)}22;color:${scoreColor(last.score)}">${last.score}</span>` : ''}</div>`;
@@ -1425,6 +1435,8 @@ function viewSupervisor(){
         <div class="kpi glass accent"><div class="n">${open}</div><div class="l">مفتوحة الآن</div></div></div>`,
     body: `<div class="stack">
       ${planBanners(myPlans())}
+      ${(() => { const inc = (isMain() ? B().teachers.filter(t => t.active) : ts).filter(t => tMissing(t).length);
+        return inc.length ? `<div class="banner bad-b">${INCOMPLETE} ${inc.length === 1 ? 'معلم واحد معلوماته ناقصة' : inc.length + ' معلمين معلوماتهم ناقصة'} (اسم الأب أو الجد أو الجنس)${isMain() ? '. افتح صفحة كل معلم عليه نقطة حمراء لإكمالها.' : '. يكملها المساعد الرئيسي.'}</div>` : ''; })()}
       <div class="spread" style="flex-wrap:wrap;gap:8px"><div class="sec-t" style="margin:0">معلميّ</div>
         <div class="row" style="gap:8px;flex-wrap:wrap;justify-content:flex-end"><button class="btn btn-g" data-go="#/cal">${IC.cal} الرزنامة</button>${isMain() ? `<button class="btn btn-g" data-act="import">${IC.xls} استيراد</button><button class="btn btn-p" data-act="addTeacher">${IC.plus} معلم</button>` : ''}</div></div>
       <div class="search">${IC.search}<input id="q" placeholder="ابحث باسم المعلم أو المستوى" value="${esc(S.q)}"></div>
@@ -1865,17 +1877,20 @@ function viewTeacher(id){
     hero: `<div class="row" style="margin-top:14px"><button class="back" data-go="${back}">${IC.back} رجوع</button></div>
       <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
         <div class="av" style="width:68px;height:68px">${ring(t.planned ? done / t.planned : 0, '#fff', 68, 4)}<div class="in" style="${avGrad(tName(t))};font-size:20px">${esc(initials(tName(t)))}</div></div>
-        <div style="flex:1;min-width:0"><h1 style="margin:0;font-size:23px">${esc(tName(t))}</h1><div class="sub">${done} من ${t.planned} زيارات · ${esc(t.level || '')}</div></div>
+        <div style="flex:1;min-width:0"><h1 style="margin:0;font-size:23px">${esc(tName(t))}</h1>${tLineage(t) ? `<div style="font-size:14px;opacity:.85;margin-top:2px">${esc(tLineage(t))}</div>` : ''}<div class="sub">${done} من ${t.planned} زيارات · ${esc(t.level || '')}</div></div>
         ${isMain() ? `<button class="back" data-act="editTeacher" data-id="${esc(id)}">${IC.edit}</button>` : ''}</div>`,
     body: `<div class="stack">
       ${!t.active ? '<div class="banner">هذا المعلم موقوف</div>' : ''}
+      ${tMissing(t).length ? `<div class="banner bad-b"><div class="spread" style="gap:10px"><span>معلومات المعلم ناقصة: ${esc(tMissing(t).join('، '))}</span>${isMain() ? `<button class="btn btn-p" data-act="editTeacher" data-id="${esc(id)}" data-sec="1" style="flex:none">إكمال</button>` : ''}</div></div>` : ''}
       ${noClass(t) ? `<div class="banner bad-b"><div class="spread" style="gap:10px"><span>لم يُسند لهذا المعلم أي قسم، فلا تظهر له مواد في السيرورة.</span>${isMain() ? `<button class="btn btn-p" data-act="editTeacher" data-id="${esc(id)}" data-sec="3" style="flex:none">إضافة قسمه</button>` : ''}</div></div>` : ''}
       <div class="card"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
         ${info.map(([k, v]) => `<div><div class="small muted d">${k}</div><div style="font-weight:500">${esc(v || '—')}</div></div>`).join('')}</div></div>
       ${teachingCard(t)}
       ${teacherPlans(t)}
       <div class="sec-t" style="margin-top:18px">الزيارات</div>
-      <div class="stack">${slots}</div></div>`
+      <div class="stack">${slots}</div></div>`,
+    // المساعد الرئيسي: لا يغادر صفحة معلم ناقص حتى يكمل معلوماته
+    mount: () => { if (isMain() && tMissing(t).length && !document.querySelector('.sheet-bg.locked')) teacherSheet(Object.assign({}, t), 1, true); }
   };
 }
 
@@ -2206,12 +2221,12 @@ function chips(name, list, val){
 function bindSegs(m){ m.querySelectorAll('[data-seg]').forEach(s => s.onclick = e => { const b = e.target.closest('[data-val]'); if (!b) return; const was = b.classList.contains('on'); s.querySelectorAll('button').forEach(x => x.classList.remove('on')); if (!was || s.dataset.req) b.classList.add('on'); buzz(5); }); }
 const segVal = (m, name) => { const b = m.querySelector(`[data-seg="${name}"] .on`); return b ? b.dataset.val : ''; };
 
-function teacherSheet(t, openSec){
+function teacherSheet(t, openSec, locked){
   const L = B().cfg.lists;
   const sups = assts().filter(u => u.active || u.id === t.supervisor);
   const lv = t.levels || (t.level ? String(t.level).split(/\s*[،,]\s*/).filter(Boolean) : []);
   const P = program();
-  if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t, openSec); return; }
+  if (!P){ toast('جارٍ تحميل البرنامج الدراسي…'); S.progWait = () => teacherSheet(t, openSec, locked); return; }
   // الأقسام: من الإسناد الحالي، أو من المستويات القديمة بمعرّف القسم «أ» والمواد الافتراضية
   let cls = classesOf((B().assignments || []).filter(a => a.teacher === t.id)).map(c => ({ level: c.level, group: c.group, tag: tagOf(c.level, c.group), subs: c.subs.map(a => a.subject) }));
   // من عمود المستويات: أول معرّف قسم غير مستعمل عند معلم آخر في نفس المستوى (أ ثم ب…)
@@ -2219,12 +2234,14 @@ function teacherSheet(t, openSec){
   if (!cls.length && lv.length) cls = lv.filter(x => P.levels[x]).map(x => ({ level: x, group: freeGrp(x), subs: defaultSubs(P, x, t.role) }));
   const posts = [...new Set((L['المنصب'] && L['المنصب'].length ? L['المنصب'] : ['قسم', 'قرآن', 'مادة']).map(post))];
   sheet(`<h3>${t.id ? 'تعديل بيانات المعلم' : 'معلم جديد'}</h3>
+    ${locked ? `<div class="banner bad-b" style="margin-bottom:12px">أكمل معلومات المعلم للمتابعة: ${esc(tMissing(t).join('، '))}</div>` : ''}
     <div class="stack">
       <div class="acc" data-acc="1"><button type="button" class="acc-h"><span class="acc-n">1</span><span class="acc-t"><b>البيانات الشخصية</b><small class="acc-s"></small></span><span class="acc-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
         <div class="acc-b">
           <div class="grid" style="grid-template-columns:1fr 1fr"><label class="field"><span>اللقب *</span><input id="tLast" value="${esc(t.last)}"></label><label class="field"><span>الاسم *</span><input id="tFirst" value="${esc(t.first)}"></label></div>
-          <label class="field"><span>اسم الأب</span><input id="tFather" value="${esc(t.father)}"></label>
-          <div class="field"><span>الجنس</span>${chips('gender', L['الجنس'], t.gender)}</div>
+          <div class="grid" style="grid-template-columns:1fr 1fr"><label class="field"><span>اسم الأب *</span><input id="tFather" value="${esc(t.father || '')}"></label><label class="field"><span>اسم الجد *</span><input id="tGrand" value="${esc(t.grandfather || '')}"></label></div>
+          <div class="field"><span>الجنس *</span>${chips('gender', L['الجنس'] && L['الجنس'].length ? L['الجنس'] : ['ذكر', 'أنثى'], t.gender)}</div>
+          <div class="small muted" id="tFullP"></div>
           <button type="button" class="btn btn-g acc-nx" data-nx>التالي ←</button>
         </div></div>
       <div class="acc" data-acc="2"><button type="button" class="acc-h"><span class="acc-n">2</span><span class="acc-t"><b>المنصب والمؤهل</b><small class="acc-s"></small></span><span class="acc-c"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></button>
@@ -2254,16 +2271,19 @@ function teacherSheet(t, openSec){
         ${String(t.id).startsWith('tmp') ? '' : hasData(t.id) ? `<div class="small muted">لهذا المعلم زيارات أو دروس مسجّلة، فلا يُحذف؛ يكفي إيقافه.</div>`
           : `<button type="button" class="btn btn-x" id="tDel">حذف المعلم نهائيًا</button>`}` : ''}
     </div>
-    <div class="acts"><button class="btn btn-g" data-close>إلغاء</button><button class="btn btn-p" id="svT">حفظ</button></div>`,
+    <div class="acts">${locked ? '' : '<button class="btn btn-g" data-close>إلغاء</button>'}<button class="btn btn-p" id="svT">حفظ</button></div>`,
   (m, close) => {
     bindSegs(m);
+    const fullP = () => { const o = { last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(), grandfather: m.querySelector('#tGrand').value.trim(), gender: segVal(m, 'gender') };
+      m.querySelector('#tFullP').innerHTML = o.last || o.first ? 'الاسم الكامل: <b>' + esc(tFull(o)) + '</b>' : ''; };
+    m.addEventListener('input', fullP); m.addEventListener('click', () => setTimeout(fullP, 0)); fullP();
     // الأقسام المنطوية: قسم واحد مفتوح، و✓ عند اكتمال القسم، وملخص ما اختير تحت العنوان
     const accs = [...m.querySelectorAll('.acc')];
     const openAcc = n => accs.forEach(a => a.classList.toggle('open', a.dataset.acc === String(n) && !a.classList.contains('open')));
     const accUpd = () => {
       const v = id => (m.querySelector(id) || {}).value || '';
       const st = {
-        1: [!!(v('#tLast').trim() && v('#tFirst').trim()), [v('#tLast').trim() + ' ' + v('#tFirst').trim(), segVal(m, 'gender')]],
+        1: [!!(v('#tLast').trim() && v('#tFirst').trim() && v('#tFather').trim() && v('#tGrand').trim() && segVal(m, 'gender')), [v('#tLast').trim() + ' ' + v('#tFirst').trim(), segVal(m, 'gender')]],
         2: [!!segVal(m, 'role'), [ROLE_LABEL[segVal(m, 'role')] || segVal(m, 'role'), segVal(m, 'edu'), v('#tExp') !== '' ? v('#tExp') + ' سنة خبرة' : '']],
         3: [cls.length > 0 && cls.every(c => c.subs.length && c.tag), [cls.length ? cls.map(c => c.level + ' ' + c.group + (c.tag ? ' (' + c.tag + ')' : '')).join('، ') : 'لم يُضف قسم']],
         4: [true, [segVal(m, 'vo') === 'تلقائي' ? 'الزيارات تلقائيًا' : segVal(m, 'vo') + ' زيارة', segVal(m, 'sup')]]
@@ -2321,10 +2341,11 @@ function teacherSheet(t, openSec){
       const taken = (B().assignments || []).find(a => a.teacher !== t.id && teaching.some(x => x.level === a.level && x.group === a.group && x.subject === a.subject));
       if (taken){ const ot = teacher(taken.teacher); return toast(`${taken.subject} في ${taken.level} ${taken.group} مسندة إلى ${ot ? tName(ot) : 'معلم آخر'}`, true); }
       const levels = [...new Set(cls.map(c => c.level))];
-      const o = { id: t.id, teaching, last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(),
+      const o = { id: t.id, teaching, last: m.querySelector('#tLast').value.trim(), first: m.querySelector('#tFirst').value.trim(), father: m.querySelector('#tFather').value.trim(), grandfather: m.querySelector('#tGrand').value.trim(),
         role: segVal(m, 'role') || 'قسم', gender: segVal(m, 'gender'), levels, level: levels.join('، '), edu: segVal(m, 'edu'),
         experience: yi.value.trim() === '' ? '' : Number(yi.value), visitsOverride: segVal(m, 'vo') === 'تلقائي' ? '' : segVal(m, 'vo') };
-      if (!o.last || !o.first) { if (!m.querySelector('[data-acc="1"]').classList.contains('open')) openAcc(1); return toast('اللقب والاسم مطلوبان', true); }
+      { const miss = tMissing(Object.assign({}, o, { id: 'x' }));
+        if (miss.length) { if (!m.querySelector('[data-acc="1"]').classList.contains('open')) openAcc(1); return toast('أكمل: ' + miss.join('، '), true); } }
       if (o.experience !== '' && !(o.experience >= 0 && o.experience <= 60)) return toast('سنوات الخبرة غير صحيحة', true);
       if (sups.length > 1){ const sn = segVal(m, 'sup'); const su = sups.find(u => u.name === sn); o.supervisor = su ? su.id : ''; }
       else o.supervisor = t.supervisor || (sups[0] ? sups[0].id : '');
@@ -2333,7 +2354,7 @@ function teacherSheet(t, openSec){
       cls.forEach(c => { const k = c.level + '|' + c.group; if (c.tag) B().classTags[k] = c.tag; else delete B().classTags[k]; });
       close(); saveTeacherOptimistic(o, t);
     };
-  });
+  }, null, locked);
 }
 /** المواد الافتراضية حسب المنصب: القسم كل المواد، القرآن القرآن فقط، المادة كل المواد ما عدا القرآن */
 function defaultSubs(P, level, role){
@@ -2342,7 +2363,7 @@ function defaultSubs(P, level, role){
 }
 function localTeacher(o){
   const cfg = B().cfg;
-  const t = Object.assign({ gender: '', level: '', levels: [], edu: '', father: '', active: true, role: 'قسم', experience: '' }, o);
+  const t = Object.assign({ gender: '', level: '', levels: [], edu: '', father: '', grandfather: '', active: true, role: 'قسم', experience: '' }, o);
   t.role = post(t.role);
   const ov = Number(t.visitsOverride);
   t.planned = ov > 0 ? ov : t.experience === '' ? cfg.visitsNormal : (Number(t.experience) <= 0 ? cfg.visitsNew : cfg.visitsNormal);
@@ -2568,7 +2589,7 @@ function clockPicker(value, title){
 }
 
 /* ============================== الاستيراد من إكسل ============================== */
-const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['معرّف القسم 1', 'group'], ['معرّف القسم 2', 'tag'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
+const IMPORT_COLS = [['اللقب', 'last'], ['الاسم', 'first'], ['اسم الأب', 'father'], ['اسم الجد', 'grandfather'], ['الجنس', 'gender'], ['المنصب', 'role'], ['المستوى المدرَّس', 'level'], ['معرّف القسم 1', 'group'], ['معرّف القسم 2', 'tag'], ['المستوى التعليمي', 'edu'], ['سنوات الخبرة', 'experience']];
 const IMPORT_ALIAS = { 'المستوى المدرَّس': 'المستويات المدرَّسة', 'معرّف القسم 1': 'الفوج' };   // الملفات القديمة بالعنوان القديم تُقبل
 const tKey = o => [o.last, o.first, o.father].map(x => String(x || '').trim()).join('|');
 function loadQR(){
@@ -2642,7 +2663,7 @@ function openImport(){
   sheet(`<h3>استيراد المعلمين من إكسل</h3>
     <div class="stack">
       <div class="small muted">حمّل النموذج، املأه بسطر لكل معلم، ثم ارفعه هنا.${assts().length > 1 ? ' يمكنك إضافة عمود «المساعد» باسمه كما في التطبيق.' : ''} عمود «معرّف القسم 1»: أ أو ب أو ج…، ويُترك فارغًا إن كان للمستوى قسم واحد.
-عمود «معرّف القسم 2» إجباري: ذ = ذكور، إ = إناث، م = مختلط، ويظهر بين قوسين: الثانية ابتدائية أ (ذ). المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
+عمود «معرّف القسم 2» إجباري: ذ = ذكور، إ = إناث، م = مختلط، ويظهر بين قوسين: الثانية ابتدائية أ (ذ). المعلم الذي يدرّس قسمين يُكتب في سطرين بنفس الاسم، سطر لكل قسم.<br>اسم الأب واسم الجد والجنس <b>إجبارية</b>: السطر الناقص يُقبل، ويظهر المعلم بنقطة حمراء حتى تُكمل معلوماته في التطبيق.<br>المعلم الموجود مسبقًا (نفس اللقب والاسم واسم الأب) <b>تُحدَّث</b> بياناته وأقسامه من الملف، والخانة الفارغة لا تمسح القديم؛ وزياراته ورمزه لا تتغير.</div>
       <button class="btn btn-g" id="tpl">${IC.xls} تحميل النموذج</button>
       <label class="card" style="display:flex;flex-direction:column;align-items:center;gap:8px;border:2px dashed var(--v300);cursor:pointer;box-shadow:none;text-align:center">
         ${IC.xls}<b class="d">اختر ملف إكسل</b><span class="small muted" id="fname">xlsx · xls · csv</span>
@@ -2757,11 +2778,11 @@ function renderReport(id){
     <div class="rp-stage" id="rpStage"><div class="rp-scale" id="rpS"><div class="a4" id="a4">
       <div class="rh">
         <div class="brand"><img src="logo-wide.svg" alt="مؤسسة الاستقامة"></div>
-        <h1>تقرير الزيارة التربوية ${ORD[v.number - 1] || v.number}<small>${esc(tName(t))}</small><small style="font-size:8pt">${esc(B().school.name)} · الموسم ${esc(cfg.season)}</small></h1>
+        <h1>تقرير الزيارة التربوية ${ORD[v.number - 1] || v.number}<small>${esc(tFull(t))}</small><small style="font-size:8pt">${esc(B().school.name)} · الموسم ${esc(cfg.season)}</small></h1>
         <div class="lg"><span>برنامج الزيارات · ${esc(id)}<br>أُغلقت ${esc(fmtDate((v.closed || '').slice(0, 10)))}<br>طُبع ${esc(fmtDate(today))}</span>${schoolLogoImg()}</div>
       </div>
       <div class="rinfo">
-        <table><tr><td>المعلم</td><td>${esc(tName(t))}${t.father ? ' بن ' + esc(t.father) : ''}</td></tr>
+        <table><tr><td>المعلم</td><td>${esc(tFull(t))}</td></tr>
           <tr><td>المنصب والمستوى</td><td>${esc(ROLE_LABEL[t.role] || '')} · ${esc(v.level || t.level || '—')}${v.group ? ' ' + esc(v.group) : ''}${v.level ? tagTxt(v.level, v.group) : ''}${v.type ? ' · ' + esc(v.type) : ''}</td></tr>
           <tr><td>المستوى التعليمي</td><td>${esc(t.edu || '—')}</td></tr>
           <tr><td>سنوات الخبرة</td><td>${t.experience === '' ? '—' : t.experience}</td></tr>
