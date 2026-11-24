@@ -558,7 +558,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.7.0';
+const VERSION = '5.7.1';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -2618,9 +2618,11 @@ async function downloadTemplate(){
   head.font = { bold: true, color: { argb: 'FFFFFFFF' } }; head.height = 22;
   head.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF6B45AD' } }; c.alignment = { horizontal: 'center', vertical: 'middle' }; });
   const lv = levels, edu = (L['المستوى التعليمي'] || [''])[0] || '';
-  [['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[1] || '', 'أ', 'ذ', edu, 3],
-   ['بن أحمد', 'محمد', 'عمر', 'ذكر', 'معلم قسم', lv[2] || '', 'ب', 'ذ', edu, 3],
-   ['حاج سعيد', 'مريم', 'يوسف', 'أنثى', 'معلم مادة', lv[7] || '', '', 'إ', edu, 0]].forEach(r => ws.addRow(r).eachCell(c => { c.font = { color: { argb: 'FF8A80A8' }, italic: true }; }));
+  // أسطر المثال بأسماء الأعمدة (لا بمواضعها) حتى تبقى في مكانها مهما أُضيف من أعمدة
+  [{ 'اللقب': 'بن أحمد', 'الاسم': 'محمد', 'اسم الأب': 'عمر', 'اسم الجد': 'صالح', 'الجنس': 'ذكر', 'المنصب': 'معلم قسم', 'المستوى المدرَّس': lv[1] || '', 'معرّف القسم 1': 'أ', 'معرّف القسم 2': 'ذ', 'المستوى التعليمي': edu, 'سنوات الخبرة': 3 },
+   { 'اللقب': 'بن أحمد', 'الاسم': 'محمد', 'اسم الأب': 'عمر', 'اسم الجد': 'صالح', 'الجنس': 'ذكر', 'المنصب': 'معلم قسم', 'المستوى المدرَّس': lv[2] || '', 'معرّف القسم 1': 'ب', 'معرّف القسم 2': 'ذ', 'المستوى التعليمي': edu, 'سنوات الخبرة': 3 },
+   { 'اللقب': 'حاج سعيد', 'الاسم': 'مريم', 'اسم الأب': 'يوسف', 'اسم الجد': 'إبراهيم', 'الجنس': 'أنثى', 'المنصب': 'معلم مادة', 'المستوى المدرَّس': lv[7] || '', 'معرّف القسم 1': '', 'معرّف القسم 2': 'إ', 'المستوى التعليمي': edu, 'سنوات الخبرة': 0 }]
+    .forEach(o => ws.addRow(cols.map(h => o[h] ?? '')).eachCell(c => { c.font = { color: { argb: 'FF8A80A8' }, italic: true }; }));
   const N = 500, letter = i => String.fromCharCode(65 + i);
   let li = 0;
   Object.entries(lists).forEach(([h, vals]) => {
