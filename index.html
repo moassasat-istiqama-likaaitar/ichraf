@@ -558,7 +558,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--v500);box-shadow:0 0 
 const SB_URL = 'https://fgcpfyjubulcgbgemwqs.supabase.co';
 const SB_KEY = 'sb_publishable_t4B790Y2Rhv3fnsUEU7pIQ_L2iBOmDc';
 const API_URL = SB_URL + '/rest/v1/rpc/api';
-const VERSION = '5.7.1';
+const VERSION = '5.7.2';
 const CID = Math.random().toString(36).slice(2, 10);   // هذا الجهاز: لا يُحدِّث نفسه بتنبيه صادر عنه
 
 /* ============================== أدوات ============================== */
@@ -852,6 +852,8 @@ const valueOf = (vid, id) => { const d = getDraft(vid); if (d[id] !== undefined)
 
 const PALETTE = ['#7C3AED','#A0522D','#0B7F58','#BE185D','#2563EB','#B45309','#0E7490','#9333EA','#C2410C','#4F46E5'];
 function hue(str){ let h = 0; for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return PALETTE[h % PALETTE.length]; }
+/** الاسم دون النسب: كل ما قبل أول «بن» أو «بنت» (يحفظ الألقاب المركّبة: أبي إسماعيل، أولاد عمارة…) */
+const shortName = n => String(n || '').trim().split(/\s+(?:بن|بنت)\s+/)[0] || String(n || '').trim();
 function initials(name){ const w = String(name || '').trim().split(/\s+/)[0] || ''; return (w.length > 3 && w.startsWith('ال') ? w.slice(2) : w).charAt(0); }
 function avGrad(name){ const c = hue(name); return `background:linear-gradient(140deg,${c},${c}E6)`; }
 
@@ -1424,7 +1426,7 @@ function viewSupervisor(){
   const mine = B().visits.filter(v => v.supervisor === S.auth.user);
   const done = mine.filter(v => v.status === 'مكتملة').length;
   const open = mine.filter(v => v.status === 'مفتوحة').length;
-  const first = S.auth.name.split(' ')[0];
+  const first = shortName(S.auth.name);
   const list = filterTeachers(ts);
   const extra = B().extraTeachers || [];
   const f = (k, l) => `<button class="tab ${S.filter === k ? 'on' : ''}" data-act="filter" data-k="${k}">${l}</button>`;
@@ -1595,7 +1597,7 @@ function viewCal(){
   const showSup = c.sup === 'all' && seeAll();
   const canAdd = isAsstMe() && B().teachers.some(canPlanT);
   const missed = ps.filter(p => st[p.id].st === 'missed').reverse();
-  const supF = seeAll() ? `<div class="tabs">${(isAsstMe() ? [['me', 'معلميّ']] : []).concat([['all', 'الكل']], assts().filter(u => u.active && !(isAsstMe() && u.id === S.auth.user)).map(u => [u.id, u.name.split(' ')[0]]))
+  const supF = seeAll() ? `<div class="tabs">${(isAsstMe() ? [['me', 'معلميّ']] : []).concat([['all', 'الكل']], assts().filter(u => u.active && !(isAsstMe() && u.id === S.auth.user)).map(u => [u.id, shortName(u.name)]))
     .map(([id, l]) => `<button class="tab ${c.sup === id ? 'on' : ''}" data-act="calSup" data-k="${esc(id)}">${esc(l)}</button>`).join('')}</div>` : '';
   const dayList = (iso, plus) => {
     const l = ps.filter(p => p.date === iso);
@@ -2133,7 +2135,7 @@ function viewDirector(tab){
   const done = B().visits.filter(v => v.status === 'مكتملة').length;
   const planned = ts.filter(x => x.active).reduce((a, x) => a + x.planned, 0);
   const tabs = isMain() ? `<div class="seg" style="margin-top:14px">${[['sup', 'المساعدون'], ['tea', 'الإسناد'], ['vis', 'كل الزيارات']].map(([k, l]) => `<button data-go="#/${k}" class="${tab === k ? 'on' : ''}">${l}</button>`).join('')}</div>` : '';
-  const hero = `<h1>${{ sup: 'المساعدون البيداغوجيون', tea: 'المعلمون', vis: 'زيارات المساعدين' }[tab]}</h1><div class="sub">مرحبًا ${esc(S.auth.name.split(' ')[0])} · ${esc(B().school.name)}${ro ? ' · للاطلاع فقط' : ''}</div>${tabs}${isDir() && tab === 'vis' ? visitsTabs('vis') : ''}
+  const hero = `<h1>${{ sup: 'المساعدون البيداغوجيون', tea: 'المعلمون', vis: 'زيارات المساعدين' }[tab]}</h1><div class="sub">مرحبًا ${esc(shortName(S.auth.name))} · ${esc(B().school.name)}${ro ? ' · للاطلاع فقط' : ''}</div>${tabs}${isDir() && tab === 'vis' ? visitsTabs('vis') : ''}
     <div class="kpis"><div class="kpi glass"><div class="n">${sups.filter(u => u.active).length}</div><div class="l">مساعد بيداغوجي</div></div>
       <div class="kpi glass"><div class="n">${ts.filter(x => x.active).length}</div><div class="l">معلم</div></div>
       <div class="kpi glass accent"><div class="n">${done}<small> / ${planned}</small></div><div class="l">زيارة مكتملة</div></div></div>`;
